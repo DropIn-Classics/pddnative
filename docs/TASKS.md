@@ -8,9 +8,9 @@ task's branch (see AGENTS.md).
 
 | id | for | status | what |
 |---|---|---|---|
-| T1 | Muse | working | DDPCINTR.EXE: stage 1 with the names from its debug information |
+| T1 | Muse | changes | DDPCINTR.EXE: stage 1 with the names from its debug information |
 | T2 | Muse | later | DDPCMAIN.EXE: stage 1 |
-| T3 | Claude | later | a headless 8086 runner for the original programs |
+| T3 | Claude | working | a headless runner for the original programs (C, from pfemu's core) |
 | T4 | Claude | later | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
@@ -64,3 +64,27 @@ the generated source under its name; `tools/gaps.py` leaves only data,
 and the notes list each remaining gap and what it is; the notes say in a
 few lines what the program does, step by step, as far as the code shows
 it.
+
+## T3: a headless runner (Claude)
+
+Runs the shipped programs without a window to check what the hints claim
+and, later, to compare the C port with the original. C, built with MSVC,
+from pfemu's emulation core (`../pfemu`, the same author's Pinball
+Fantasies emulator: 386 real-mode CPU, VGA, PIT/PIC/keyboard, BIOS, Sound
+Blaster and DMA) without its Fantasies, replay and launcher parts; a DOS
+layer whose `C:\` is the unpacked CD with a writable layer in `build/`.
+
+Files: `tools/run/*` (new), `tools/run.py` (new), README.md and
+docs/HANDOFF.md (a section each).
+
+Done when:
+
+- `tools\run\build.bat` builds `build\pddrun.exe` from a clean checkout.
+- PD.EXE and PD2.EXE run to a table with sound off and with the Sound
+  Blaster driver; a screenshot at a given emulated time shows it.
+- A key script starts a game and the ball can be seen moving in
+  screenshots.
+- Two runs with the same arguments give the same RAM at the end (the
+  runner prints a hash).
+- `tools/run.py` stops at an address given by its name in the hints
+  (`CODE:4CEE`, a label) and prints the registers and memory asked for.
