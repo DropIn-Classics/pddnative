@@ -61,6 +61,11 @@ num CODE:4D05
 num CODE:4D0B
 num CODE:4D10
 num CODE:4D16
+dptr CODE:0864 DATA         ; mov [td_count_obj2], an object (table 0)
+dptr CODE:09E6 DATA         ; the same (table 1)
+name CODE:4B54 make_off_colours
+comment CODE:4B54 PD2's own, called by each table's set-up where PD calls table_check: the lights' "off" colours (lights_off_pal) := the "on" colours halved, C0h bytes
+comment CODE:4B76 (PD2: the carried table_check and its comment land on make_off_colours' last RET; PD2 has no table_check)
 comment CODE:4CD5 PD2's own: opt_palette 1 makes the table's palette grey but for the last two colours, which get grey 10h and 3Fh (PD: only the first 40h colours)
 
 ; the handlers of PD2's event objects (+16h of each; see run_events in
@@ -628,9 +633,11 @@ comment CODE:0652 state 5: the game: scroll, ball, nudge, plunger, the table's l
 name CODE:15E3 st_ball_lost
 comment CODE:15E3 state 6: the ball is lost: scrolls down, bonus (times the multiplier) and boosters counted into the score, then the next player (state 3), or a locked ball back into play (state 5), or game over (state 7)
 name CODE:169E ball_lost_count
+comment CODE:169E after a drained ball: "ball lost" for 46h frames, then (unless tilted) count_bonus, "bonus held", count_boosters
 name CODE:1725 count_boosters
 comment CODE:1725 the player's boosters (player record +10h, BCD) one by one: shown in td_txt_boosters, add_booster, minus booster_step
 name CODE:1794 next_player
+comment CODE:1794 extra_ball: the same player again; else the next player, after the last one the next ball (ball_num), after the last ball game over (state 7)
 name CODE:17DD release_locked_ball
 comment CODE:17DD a ball is locked: the first lock of td_locks puts its ball back into play (position and speed from the lock's object), state 5
 name CODE:1872 st_game_over
@@ -771,6 +778,7 @@ comment CODE:1DF1 AL = the angle byte of a 1Fh pixel: FCh gravity 10h, FBh gravi
 name CODE:1E81 collision_response
 comment CODE:1E81 the hit point into hit_x/hit_y, then the routine of response_table for the surface (all: bounce_response)
 name CODE:2521 bounce_response
+comment CODE:2521 the response of every surface: bounce, then the step sizes again; 9782h keeps the largest step count
 name CODE:20B8 bounce
 comment CODE:20B8 the ball's speed reflected at the surface (angle [9777h]) with the surface's constants (surface_params), the flippers' and the nudge's push added
 name CODE:239E surface_params
@@ -927,13 +935,19 @@ name DATA:7D64 vram_seg
 comment DATA:7D64 A000h
 name CODE:451D sort_sprite_list
 name CODE:4540 grab_area
+comment CODE:4540 the area from the screen into video memory BB10h..
 name CODE:45A8 restore_backgrounds
+comment CODE:45A8 the sprites' old backgrounds put back into the area
 name CODE:45FE save_backgrounds
+comment CODE:45FE the sprites' new backgrounds saved from the area
 name CODE:468D draw_sprite_shapes
+comment CODE:468D the sprites drawn into the area; the ball's pixels only where the area's colour is below its level byte (80h lower, FFh upper), so the lower level's ball goes behind colours 80h.. (presumably the ramps; read, not checked)
 name CODE:4782 put_area
+comment CODE:4782 the area back to the screen
 name CODE:47BD set_sprite_frame
 comment CODE:47BD BX = frame, SI = the sprite's offset in sprites: its shape, position and size from sprite_frames
 name CODE:4804 make_sprite_shapes
+comment CODE:4804 the flipper frames (sprite_frames) cut from FLIPPERS.SPR into sprite shapes
 name CODE:4851 make_sprite_shape
 name CODE:4956 set_mode_x
 comment CODE:4956 mode 13h unchained, 320x200 (opt_screen 1)
@@ -1049,6 +1063,7 @@ name CODE:428D bcd_sub
 name CODE:42D1 add_booster
 comment CODE:42D1 booster_value (6 bytes BCD: 00 00 00 01 00 00, a million if added at +0) added at player record +4: its 01 lands in byte +7, above the twelve digits of the score that show_score shows and check_hiscore copies; so a booster adds nothing that is seen (a bug, presumably; read, not checked by running)
 name CODE:19B9 check_hiscores
+comment CODE:19B9 each player's score through check_hiscore
 name CODE:2538 check_hiscore
 comment CODE:2538 SI = a player's score: into the table's high scores when high enough, with the initials entered
 name CODE:2565 insert_hiscore
@@ -1057,6 +1072,7 @@ name CODE:266C enter_initials
 comment CODE:266C the flipper keys choose a letter, the nudge key takes it (three), Esc leaves them blank
 name CODE:0DE8 clear_player
 name CODE:29FC clear_players_lights
+comment CODE:29FC at a new game: the eight players' lamp bytes cleared, all lamps out, objects and sequences reset (reset_objects_all), object timers stopped, table_game_objects
 name CODE:2BA1 clear_player_lights
 name CODE:2F2A count_bonus
 comment CODE:2F2A the bonus times the multiplier ("bonus x n"), then counted into the score digit by digit
@@ -1199,7 +1215,9 @@ comment CODE:30E1 hit_x/hit_y in a lane (0Ah bytes: x1, y1, x2, y2 (x2, y2 not i
 comment CODE:30E1 the lanes' and holes' objects: +0 type, +1 busy/hit bits, +2 a lamp, +4 the group (score, sounds, sequence)
 name CODE:30D9 test_lanes_b
 name CODE:312D light_hit_object
+comment CODE:312D the lamp of hit_object (+2) lit for the player
 name CODE:3148 mark_hit_object
+comment CODE:3148 hit_object of type 1 or 8: its bit for the player set; type 7: its hit timer (+0Eh) := 14h
 name CODE:3180 add_hit_score
 comment CODE:3180 the score record's points (+4) to the score, (+0Ch) to the bonus; repeated for a while when a spinner-like object set 8A90h
 name CODE:31D2 map_event_run
@@ -1217,8 +1235,11 @@ comment CODE:3A13 type 2Ah (a word): the words from +2 up to FFFFh, all of them;
 name CODE:422A score_object
 comment CODE:422A the object's points: +6 to the score, +0Eh to the bonus
 name CODE:3497 set_message
+comment CODE:3497 CX = a message: shown if its priority (DI +2) is not below the running one's
 name CODE:34AE restart_timer
+comment CODE:34AE the object's timer (+26h) := its period (+24h)
 name CODE:34B5 count_object
+comment CODE:34B5 counts the hits of td_count_obj and td_count_obj2 in the player's record
 name CODE:351A blink_lights
 comment CODE:351A each light group every +17h frames: lamps with flag 40h change their blink phase, with 20h the group's chase moves a lamp on
 name CODE:357C update_lights
@@ -1234,24 +1255,37 @@ comment CODE:4208 light_palette to the DAC from colour 40h; the frame callback o
 name CODE:3666 ign_timers
 comment CODE:3666 Ignition only: timed lights (td_ign_timers)
 name CODE:3710 light_chains
+comment CODE:3710 td_chains' groups: the first lamp not lit blinks, the ones after it cleared
 name CODE:3754 rect_group_done
 comment CODE:3754 all objects of a hit rectangle group lit: its event, then they go out one by one (clear_rect_group)
 name CODE:3797 light_group_done
+comment CODE:3797 a light group (td_lights) with every lamp lit for the player (flag 8 lamps excepted): its sequence runs, the lamps go out and the group blinks (blink_light_group)
 name CODE:37F3 clear_rect_group
+comment CODE:37F3 the targets of a completed hit rectangle group go out one by one (rect_clear_target)
 name CODE:381F blink_light_group
+comment CODE:381F the completed light group (done_light_group) blinks, 4-frame phases, until light_group_timer runs out
 name CODE:386E rotate_lights
 comment CODE:386E a flipper was pressed: the lit states of each group of td_rotating move by one (lane change)
 name CODE:38A9 object_timers7
+comment CODE:38A9 the hit timers (+0Eh) of the type 7 targets of the level's hit rectangles count down
 name CODE:38D9 hold_ball_check
+comment CODE:38D9 a ball in a hole of type 6 or taken by a lock stays held while a message or the events it started run; then it goes (sound 8)
 name CODE:2BC7 object_timers
+comment CODE:2BC7 td_timed: each running timer (+26h) counts down; at 0 the object is disarmed for the player; its lamp +1Eh goes out while the timer is not running
 name CODE:2BFF clear_object_timers
+comment CODE:2BFF td_timed's timers stopped
 name CODE:28D5 reset_locks
 comment CODE:28D5 each lock empty, its lamp's flags 14h cleared
 name CODE:28F5 lights_off_player
+comment CODE:28F5 the player's bits of every lamp cleared, but lamps with flag 80h; the flags 2 cleared
 name CODE:2922 lights_off_all
+comment CODE:2922 every lamp out for every player, flags 2 cleared
 name CODE:2946 reset_objects
+comment CODE:2946 at a new ball: event objects not kept (+1 = 0) disarmed (type 1Fh: armed for all), timers stopped; the sequences of td_events (not kept, not type 2Ah) back to step 0
 name CODE:29A6 reset_objects_all
+comment CODE:29A6 at a new game: as reset_objects for every object and sequence, kept or not
 name CODE:2A41 restore_lights
+comment CODE:2A41 at a new ball (reset_ball): the lights' palette from the off colours, then the current player's lit lamps on
 name CODE:27B9 reset_targets
 comment CODE:27B9 the player's bits of every target of both levels' hit rectangles cleared
 name CODE:27C8 reset_rect_targets
@@ -1261,10 +1295,13 @@ comment CODE:27C8 DI = hit rectangles: the player's bit of each target of their 
 name CODE:2B7C clear_hit
 comment CODE:2B7C hit_score, hit_object, hit_x/hit_y and hit_lane cleared, unless the ball is held
 name CODE:32F6 pick_random_light
+comment CODE:32F6 one of td_random_lights (frame_count AND 7, the list repeated) gets its lamp blinking (flag 2)
 name CODE:3322 random_light_check
+comment CODE:3322 while a random light blinks: toggles the blink; a lamp of the list lit (its target hit): if it was the blinking one, td_random_event's sequence; then all stop blinking
 name CODE:4316 table_ball_events
 comment CODE:4316 per table at a new ball (Steel Wheel, Nightmare: an event)
 name CODE:4353 table_game_objects
+comment CODE:4353 per table at a new game (Nightmare: the object at 30A6h armed for all)
 ; object handlers (+16h of an object; coderanges 3C4D-3F99, 4162-41B2)
 name CODE:3C2E extra_ball_award
 name CODE:3BC1 advance_object
@@ -1295,15 +1332,20 @@ comment CODE:3D0A adds the current player's score to the best other player's tha
 name CODE:3D68 nightmare_switch
 comment CODE:3D68 jingle 11h, the object at 30A6h armed and the one at 3078h disarmed for the player
 name CODE:3D81 double_score
+comment CODE:3D81 the score doubled
 name CODE:3D9C double_bonus
+comment CODE:3D9C the bonus doubled
 name CODE:3DB9 hold_bonus
 name CODE:3DBF count_message
 comment CODE:3DBF the message of td_count_texts for the count (player record +16h)
 name CODE:3DDA collect_jackpot
+comment CODE:3DDA the jackpot to the score, then back to jackpot_base
 name CODE:3E11 raise_jackpot
+comment CODE:3E11 jackpot += jackpot_step
 name CODE:3E35 roulette
 comment CODE:3E35 "russian roulette": runs through td_roulette slowing down, lighting each; the last one's event (the start from td_roulette_pick by the frame counter)
 name CODE:3F17 countdown
+comment CODE:3F17 a handler: the bonus counted into the score now (td_txt_countdown), then waits
 name CODE:40FA light_locks
 comment CODE:40FA unless a ball is locked: locks_lit, each lock's lamp lit and blinking (flags 14h)
 name CODE:412D lock_ball
@@ -1316,16 +1358,23 @@ name CODE:4179 lock_ball3
 name CODE:50BC start_music
 comment CODE:50BC the table's module (LEVELn.MOD) loaded by the driver, the callbacks timer_callback and module_callback set
 name CODE:5157 stop_sound
+comment CODE:5157 the driver stopped (INT 66h AL=0), no frame callback
 name CODE:5177 module_callback
+comment CODE:5177 the driver's call at the end of a module pattern (presumably): after jingle 6 the main tune again, after 5 tune 0; else the position of the tune playing
 ; (not mapped) name CODE:5201 timer_callback
 ; (not mapped) comment CODE:5201 each tick of the driver's timer: the sprites (sprites_in_irq), the frame callback, the music and sound requests, timer_tick
 name CODE:52A8 music_volume_step
 comment CODE:52A8 not called
 name CODE:52C5 play_tune
+comment CODE:52C5 the table's main tune (main_tunes) started
 name CODE:52EE music_fade
+comment CODE:52EE music_fade_dir 1: the volume up in 10h steps, 2: down, then the main tune (the volume set with INT 66h AL=6)
 name CODE:536E tune_request_run
+comment CODE:536E tune_request: 80h fades out, else that position of the table's tunes (music_files)
 name CODE:53C0 jingle_request_run
+comment CODE:53C0 jingle_request: a position of the table's jingle list played (80h: back to the main tune)
 name CODE:545D sound_request_run
+comment CODE:545D sound_request: the effect of the table's list played (INT 66h AL=11h)
 name XDATA:0000 jingle_num
 comment XDATA:0000 XDATA: the sound routines' data (DS = XDATA there): the jingle playing
 name XDATA:0001 music_pos
@@ -1358,6 +1407,8 @@ name DATA:846A sprites_in_irq
 name DATA:846B frame_callback
 comment DATA:846B called every tick: nothing (4BE4h) until the game runs, then upload_lights
 name CODE:4B77 no_callback
+name DATA:846D unused_845C
+comment DATA:846D st_load writes 5208h here, the value it already has; read nowhere
 name DATA:845F music_fade_dir
 ; ---- options (C:\DELUXE\DDPCOPTN.BIN, written by the menu)
 name DATA:9AA7 opt_balls
