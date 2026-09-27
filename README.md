@@ -65,6 +65,8 @@ it when needed. Its options are at the top of
     share the engine; about 97 % of the instructions align).
   - `portmap.py`: the hints' names with their addresses in both programs,
     for the C (`port/src/gen/pdnames.h`).
+  - `pdfiles.py`: reads and re-encodes the table programs' data files
+    (collision maps, high scores, options); pictures of the maps.
   - `memcmp.py`: compares the memory of the C and of the original (tools/run)
     stopped at the same point, by the names of the hints.
   - `tasm.py`, `x86enc.py`, `tlink.py`: assembler and linker work-alikes,

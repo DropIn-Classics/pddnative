@@ -13,7 +13,8 @@ task's branch (see AGENTS.md).
 | T3 | Claude | done | a headless runner for the original programs (C) |
 | T4 | Claude | done | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
 | T6 | Claude | working | the implementation in C (port/): the table programs' engine, routine by routine |
-| T5 | Sol | changes | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
+| T5 | Sol | done | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
+| T7 | Sol | open | tools/ddfiles.py: the history viewer's files (HISTORY/*.HOP, *.IDX, HISTORY.FNT, the pictures) |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
@@ -217,3 +218,48 @@ like tables (describe them in the notes, do not commit them); both
 HISCORES files print sensible names and scores; `tools/check.py` says
 `all ok`; the notes list every place where a file disagreed with a
 comment in PD.hints (or say that none did).
+
+## T7: tools/ddfiles.py, the history viewer's files (Sol)
+
+The F9 History of Pinball viewer of DDPCMAIN.EXE reads the files in
+`HISTORY/`: per language a `.HOP` and a `.IDX` (ENGLISH, FRENCH, GERMAN,
+ITALIAN, SPANISH), `HISTORY.FNT` (2,048 bytes), `DDPCHIST.VGA`, and per
+table pictures with the extensions `.016` (153,600 bytes each) and
+`.256` (307,968 bytes each). Their formats are not described yet. Find
+them from DDPCMAIN.EXE, as T5 did for the table programs, and write a
+tool that reads them.
+
+Files: `src/DDPCMAIN.hints` (comments and names at the routines that
+read these files), `tools/ddfiles.py` (new), `docs/tasks/T7.md`.
+Branch `sol/T7-history`.
+
+Starting points in `src/DDPCMAIN.hints`: `history_screen`,
+`history_init`, `history_loop`, `select_history_table`,
+`filter_history_records`, the `words` tables at `HISTORY:0D4A..1445`
+(language directories, .HOP/.IDX names, the name lists), and
+`load_vga_image`. Which picture files are opened, and how their names
+are made, is part of the task: some files in `HISTORY/` may not be read
+at all (say which, and how you know).
+
+Steps:
+
+1. Follow the viewer from `history_screen` to every file it opens; for
+   each, the routine that reads it and what it does with the bytes.
+   Write that as `comment`/`name` hints (a guess says it is one). The
+   build must stay identical.
+2. `ddfiles.py idx FILE`, `ddfiles.py hop FILE`: print the index entries
+   and the text records (per record which table it belongs to, as the
+   viewer links them); `ddfiles.py font FILE --png OUT` and
+   `ddfiles.py picture FILE --png OUT`: the font's glyphs and a picture
+   as PNG into `build/` (standard library only, as in pdfiles.py).
+3. An encoder for each format the tool parses; the tool checks that
+   parsing and encoding again gives the file's bytes.
+
+Done when: every .IDX and .HOP of the five languages, HISTORY.FNT, and
+every .016 and .256 picture the viewer opens parse to their last byte
+and re-encode to identical bytes (the counts in the notes); the text of
+one table's record prints readably in two languages; two pictures (one
+.016, one .256) and the font look right (describe them in the notes, do
+not commit them); `tools/check.py` says `all ok`; the notes say which
+statements were checked by running (`tools/run`, if at all) and which
+were only read.

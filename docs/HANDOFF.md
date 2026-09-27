@@ -15,7 +15,8 @@ matches the original for both programs).
 - T1 (DDPCINTR.EXE, by Muse) and T2 (DDPCMAIN.EXE, begun by Muse and
   finished by Sol) are merged, see below. Sol, the second agent now,
   works in `../pddnative-muse` on `sol/*` (older branches `muse/*`); do
-  not touch that checkout. T5 is open for Sol. When the user says
+  not touch that checkout. T5 (`tools/pdfiles.py`) is merged; T7 is open for
+  Sol. When the user says
   "Review Tn", follow CLAUDE.md (review steps) and AGENTS.md (who writes
   what where).
 - T3 (the runner) and T4 (PD.EXE's engine into the hints) are done; see
@@ -132,6 +133,17 @@ Checked by running (tools/run.py, 2026-09-27):
   another drive than C: (the CD's).
 - With `-sound sb` SBLASTER.SDR plays the table's music (12 kHz at
   quality 0); with NOSOUND.SDR the frame timer runs as well.
+- The collision maps (`tools/pdfiles.py map`, T5; all fifteen TBLDET
+  files parse and re-encode to identical bytes): besides the surfaces
+  the engine tests (low nibble for the response and surface_table,
+  high nibble 10h/20h kickers, xFh passages and lines) they hold 33h and
+  37h (DREAMS1) and 30h, 36h, 37h, 42h (DREAMS2); nothing tests a high
+  nibble of 30h or 40h, so these act as their low nibble (read in
+  `surface_params`, `collision_response`; the same in PD2.EXE; not
+  checked by running). Low nibbles 0 and 1 share surface_table's first
+  entry. TBLDETHI.BBX has one 1Fh pixel with angle byte 80h; it becomes
+  event 0 (`map_event_run` doubles the byte). Three rows repeat an x;
+  `map_test` takes the first.
 - The option byte `DATA:9AA2` (the last of DDPCOPTN.BIN's 13 bytes; the
   menu insists on 13, PD.EXE's defaults write a word there)
   picks the screen: 1 is 320x200 Mode X, 2 the tweaked mode at
@@ -374,8 +386,9 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    (T1). The FLI player needs no disassembly (FLI is documented).
 2. Understanding, into the hints: PD.EXE's engine is done (T4, "Not
    understood" above lists what is left); the formats FLIPPERS.SPR,
-   DDPCICON.SPR, HISTORY *.HOP/*.IDX, HISCORES.PD* are not described
-   yet. The table data is still DB lines apart from the handler words: a
+   DDPCICON.SPR, HISTORY *.HOP/*.IDX (T7) are not described yet; the
+   collision maps, HISCORES.PD* and DDPCOPTN.BIN are (T5,
+   `tools/pdfiles.py`). The table data is still DB lines apart from the handler words: a
    `struct`/`dw` hint kind will be needed before data can move.
 3. The runner (done, T3) for comparing the C port with the original
    frame by frame will want savestates (start both at the same moment)
