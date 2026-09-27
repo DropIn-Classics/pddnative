@@ -28,6 +28,8 @@ dptr CODE:0091 DATA         ; ADD BX,state_table
 name CODE:4EC8 crtc_350
 name CODE:51AE tune_saved
 name CODE:51B0 in_timer
+name CODE:4DB4 load_handle
+comment CODE:4DB4 load_file keeps the file handle here (PD2 only)
 name CODE:0000 start
 name CODE:0088 main_loop
 name CODE:4EE8 st_quit

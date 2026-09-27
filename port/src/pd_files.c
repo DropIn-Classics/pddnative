@@ -105,6 +105,8 @@ int load_file(uint16_t name, uint16_t seg, uint16_t di)
     data = sys_load(path, &size);
     if (!data)
         return 1;
+    if (V(load_handle) != NONE)
+        fww(seg_code, V(load_handle), 5);           /* DOS's first free handle */
     for (i = 0; i < size && a + i < MEM_SIZE; i++)
         mem[a + i] = data[i];
     free(data);

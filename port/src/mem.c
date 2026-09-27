@@ -18,10 +18,10 @@ static const PdNames names_pd2 = {PDN_NAMES(PDN_PD2)};
 
 /* Where pddrun (tools/run) puts the program: its PSP at 0067h, the
  * image 10h paragraphs above.  The program keeps 1A40h paragraphs from
- * its PSP on (INT 21h 4Ah at `start`); what it allocates comes after,
- * each block behind a paragraph of MCB, as DOS does it. */
+ * its PSP on (PD2.EXE 1A4Ah; INT 21h 4Ah at `start`); what it allocates
+ * comes after, each block behind a paragraph of MCB, as DOS does it. */
 #define LOAD_PSP 0x0067u
-#define PROG_PARAS 0x1A40u
+#define PROG_PARAS (prog_id == 1 ? 0x1A40u : 0x1A4Au)
 #define MEM_TOP 0xA000u
 
 static uint16_t sw(const uint8_t *p) { return (uint16_t)(p[0] | p[1] << 8); }

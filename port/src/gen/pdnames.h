@@ -285,6 +285,7 @@
     X(CODE, setup_table2, 0xFFFF, 0x0A48) \
     X(CODE, setup_table3, 0xFFFF, 0x0BB2) \
     X(CODE, make_off_colours, 0xFFFF, 0x4B54) \
+    X(CODE, load_handle, 0xFFFF, 0x4DB4) \
     X(TDATA, display_dots, 0x1900, 0x1900) \
     X(TDATA, display_font, 0x1AB8, 0x1AB8) \
     X(DATA, txt_load_error, 0x0058, 0x0058) \

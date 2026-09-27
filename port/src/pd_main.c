@@ -158,11 +158,11 @@ void table_setup(void)
     ww(V(unused_obj1), 0x81);
     ww(V(unused_obj2), 0x81);
     ww(V(ball_obj), 1);
-    ww(si, 1);
-    ww((uint16_t)(si + 2), 0);
-    ww((uint16_t)(si + 4), 0x26);
+    ww(si, 1);                                      /* PD2.EXE's plunger differs */
+    ww((uint16_t)(si + 2), prog_id == 1 ? 0 : 0x8000);
+    ww((uint16_t)(si + 4), prog_id == 1 ? 0x26 : 0x25);
     ww((uint16_t)(si + 6), 0x2000);
-    ww((uint16_t)(si + 8), 0x3D);
+    ww((uint16_t)(si + 8), prog_id == 1 ? 0x3D : 0x3C);
     if (prog_id == 1)
         pd1_setup_table(rb(V(table_num)));
     else

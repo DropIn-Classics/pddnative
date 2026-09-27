@@ -16,7 +16,8 @@ The program stops at the first routine not translated yet, with its name
 (now `st_idle`, state 2), and leaves its last picture on the screen.
 
 Checked: at the entry of `st_idle` the port's memory equals the
-original's in tools/run for Steel Wheel (DATA, BSS, TDATA, XDATA and all
+original's in tools/run for Steel Wheel (PD.EXE) and Safari (PD2.EXE)
+(DATA, BSS, TDATA, XDATA and all
 of video memory byte for byte; different only where the port has no reason
 to be the same: the saved INT 9 vector, the scratch space of the driver's
 EXEC in CODE, the stack).
