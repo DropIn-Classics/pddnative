@@ -296,6 +296,7 @@
     X(DATA, ball_event_1, 0x0E20, 0x0E23) \
     X(DATA, ball_event_3, 0x29D0, 0x29F9) \
     X(DATA, ball_object_3, 0x2DCC, 0x2DF5) \
+    X(DATA, switch_object_3, 0x3078, 0x30FD) \
     X(DATA, game_object_3, 0x30A6, 0x312B) \
     X(DATA, player, 0x651C, 0x65EF) \
     X(DATA, last_player, 0x651D, 0x65F0) \
@@ -318,6 +319,7 @@
     X(DATA, hurry_step, 0x6575, 0x6648) \
     X(DATA, tour_lamps, 0x657D, 0x6650) \
     X(DATA, always_ff, 0x6581, 0x6654) \
+    X(DATA, bonus_unit, 0x6582, 0x6655) \
     X(DATA, idle_timer, 0x658A, 0x665D) \
     X(DATA, msg_count_buf, 0x658C, 0x665F) \
     X(DATA, event_sp, 0x65A1, 0x6674) \
@@ -443,6 +445,7 @@
     X(DATA, player_7, 0x8872, 0x8883) \
     X(DATA, player_8, 0x890A, 0x891B) \
     X(DATA, score_msb, 0x89A2, 0x89B3) \
+    X(DATA, bonus_saved, 0x89AD, 0x89BE) \
     X(DATA, booster_col, 0x89B5, 0x89C6) \
     X(DATA, always_0, 0x89B7, 0x89C8) \
     X(DATA, attract_mode, 0x89B8, 0x89C9) \
@@ -476,6 +479,9 @@
     X(DATA, unused_8A9E, 0x8A9E, 0x8AAF) \
     X(DATA, bonus_count_period, 0x8A9F, 0x8AB0) \
     X(DATA, wait_count, 0x8AA1, 0x8AB2) \
+    X(DATA, bonus_digits, 0x8AA3, 0x8AB4) \
+    X(DATA, bonus_step, 0x8AA5, 0x8AB6) \
+    X(DATA, bonus_left, 0x8AAD, 0x8ABE) \
     X(DATA, rect_clear_target, 0x8AB5, 0x8AC6) \
     X(DATA, rect_clear_timer, 0x8AB7, 0x8AC8) \
     X(DATA, running_object, 0x8AB9, 0x8ACA) \
@@ -496,8 +502,11 @@
     X(DATA, msg_length, 0x8ACF, 0x8AE0) \
     X(DATA, event_stack, 0x8AD3, 0x8AE4) \
     X(DATA, event_sp_ball, 0x8C53, 0x8C64) \
+    X(DATA, double_tmp, 0x8C95, 0x8CA6) \
     X(DATA, msg_count_max, 0x8CB5, 0x8CC6) \
     X(DATA, msg_count_src, 0x8CB6, 0x8CC7) \
+    X(DATA, bonus_step_ptr, 0x8CBE, 0x8CCF) \
+    X(DATA, bonus_left_ptr, 0x8CC2, 0x8CD3) \
     X(DATA, score_copy, 0x8CC6, 0x8CD7) \
     X(DATA, event_arm, 0x8CCE, 0x8CDF) \
     X(DATA, msg_counting, 0x8CD2, 0x8CE3) \

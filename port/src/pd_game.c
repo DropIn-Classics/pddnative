@@ -163,7 +163,7 @@ static void reset_rect_targets(uint16_t di)
 }
 
 /* each lock empty, its lamp's flags 14h cleared */
-static void reset_locks(void)
+void reset_locks(void)
 {
     uint16_t si = rw(V(td_locks)), lamp;
 
@@ -213,7 +213,7 @@ static void reset_ball_objects(void)
 
 /* the player's bits of every lamp cleared, but lamps with flag 80h; the
  * flags 2 cleared */
-static void lights_off_player(void)
+void lights_off_player(void)
 {
     uint16_t bx = rw(V(td_lights)), g, si;
 

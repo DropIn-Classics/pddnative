@@ -161,6 +161,7 @@ void plunger(void)
 /* state 3: a new ball for the current player, then ball_start */
 void st_ball_start(void)
 {
+    checkpoint("ball_start");
     wb(V(sprites_in_irq), 0xFF);
     reset_ball();
     ball_start();

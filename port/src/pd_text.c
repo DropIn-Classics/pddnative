@@ -202,3 +202,27 @@ int message_step(uint16_t msg)
 {
     return message_run(msg, 0);
 }
+
+/* `bytes` BCD bytes at bx (low first) as digits from column col, without
+ * leading zeros; the last digit always (show_score: the score from column
+ * 8, show_bonus and show_bonus_count: 5 bytes from column 0Ah) */
+void show_bcd(uint16_t bx, uint8_t col, int bytes)
+{
+    uint8_t lead = 0;
+    int i;
+
+    wb(V(display_col), col);
+    for (i = bytes - 1; i >= 0; i--) {
+        uint8_t v = rb((uint16_t)(bx + i)), hi = v >> 4, lo = v & 0x0F;
+        lead |= hi;
+        draw_char(lead ? (uint8_t)(hi + '0') : ' ');
+        wb(V(display_col), (uint8_t)(rb(V(display_col)) + 1));
+        lead |= lo;
+        draw_char(lead ? (uint8_t)(lo + '0') : ' ');
+        wb(V(display_col), (uint8_t)(rb(V(display_col)) + 1));
+    }
+    if (!(rb(bx) & 0x0F)) {
+        wb(V(display_col), (uint8_t)(rb(V(display_col)) - 1));
+        draw_char('0');
+    }
+}

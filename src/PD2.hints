@@ -1140,6 +1140,18 @@ comment CODE:29FC at a new game: the eight players' lamp bytes cleared, all lamp
 name CODE:2BA1 clear_player_lights
 name CODE:2F2A count_bonus
 comment CODE:2F2A the bonus times the multiplier ("bonus x n"), then counted into the score digit by digit
+name DATA:89BE bonus_saved
+comment DATA:89BE st_ball_lost: the player's bonus (record +8, 8 bytes BCD) as it was when the ball drained, given back when the bonus is held
+name DATA:8ABE bonus_left
+comment DATA:8ABE count_bonus: the bonus times the multiplier (8 bytes BCD); bonus_count_step counts it down into the score
+name DATA:8AB6 bonus_step
+comment DATA:8AB6 bonus_count_step: what one step moves (8 bytes BCD, from bonus_unit: 1, then 10, 100 ... as the digits of bonus_left are used up)
+name DATA:6655 bonus_unit
+name DATA:8AB4 bonus_digits
+comment DATA:8AB4 bonus_count_step: the digits of bonus_left still to count (0Fh at the start; the lowest first)
+name DATA:8CCF bonus_step_ptr
+comment DATA:8CCF bonus_count_step writes where its subtraction starts and ends (bonus_step, bonus_step + 6) here, and bonus_left at 8CC2h; nothing reads them (as far as the code shows)
+name DATA:8CD3 bonus_left_ptr
 name CODE:3F87 bonus_count_step
 comment CODE:3F87 moves one step of the bonus into the score; AX = FFFFh when it is all there
 ; ---- lights, hit rectangles, objects, events
@@ -1424,8 +1436,12 @@ name CODE:3D0A score_to_best
 comment CODE:3D0A adds the current player's score to the best other player's that is not lower (as the code reads; not checked)
 name CODE:3D68 nightmare_switch
 comment CODE:3D68 jingle 11h, the object at 30A6h armed and the one at 3078h disarmed for the player
+name DATA:30FD switch_object_3
+comment DATA:30FD the event object nightmare_switch disarms for the player
 name CODE:3D81 double_score
 comment CODE:3D81 the score doubled
+name DATA:8CA6 double_tmp
+comment DATA:8CA6 double_score, double_bonus: a copy of the score or bonus (8 bytes BCD) added to it
 name CODE:3D9C double_bonus
 comment CODE:3D9C the bonus doubled
 name CODE:3DB9 hold_bonus

@@ -8,96 +8,12 @@
  * map_event_run, event object at run_events. */
 #include "pd.h"
 
-/* ---- BCD, with DAA and DAS as the CPU does them (flags included) */
-
-static uint8_t daa(uint8_t al, int *cf, int af)
-{
-    uint8_t old = al;
-    int oc = *cf;
-
-    *cf = 0;
-    if ((al & 0x0F) > 9 || af) {
-        int t = al + 6;
-        al = (uint8_t)t;
-        *cf = oc | (t >> 8);
-    }
-    if (old > 0x99 || oc) {
-        al = (uint8_t)(al + 0x60);
-        *cf = 1;
-    }
-    return al;
-}
-
-static uint8_t das(uint8_t al, int *cf, int af)
-{
-    uint8_t old = al;
-    int oc = *cf;
-
-    *cf = 0;
-    if ((al & 0x0F) > 9 || af) {
-        int t = al - 6;
-        al = (uint8_t)t;
-        *cf = oc | (t < 0);
-    }
-    if (old > 0x99 || oc) {
-        al = (uint8_t)(al - 0x60);
-        *cf = 1;
-    }
-    return al;
-}
-
-/* ADD/ADC then DAA: a + b + carry in decimal */
-static uint8_t bcd_adc(uint8_t a, uint8_t b, int *cf)
-{
-    int sum = a + b + *cf;
-    int af = ((a ^ b ^ sum) >> 4) & 1;
-    *cf = sum >> 8;
-    return daa((uint8_t)sum, cf, af);
-}
-
-/* the 6-byte BCD number at `bp` added to the one at `di` (low byte
- * first); idle_timer restarts */
-void bcd_add(uint16_t di, uint16_t bp)
-{
-    int i, cf = 0;
-
-    for (i = 0; i < 6; i++)
-        wb((uint16_t)(di + i), bcd_adc(rb((uint16_t)(di + i)), rb((uint16_t)(bp + i)), &cf));
-    ww(V(idle_timer), 0x348);
-}
-
-/* ... subtracted; 1 when the result's top byte has bit 7 (below 0) */
-static int bcd_sub(uint16_t di, uint16_t bp)
-{
-    int i, cf = 0, d, af;
-    uint8_t a = 0, b, r = 0;
-
-    for (i = 0; i < 6; i++) {
-        a = rb((uint16_t)(di + i));
-        b = rb((uint16_t)(bp + i));
-        d = a - b - cf;
-        af = ((a ^ b ^ d) >> 4) & 1;
-        cf = d < 0;
-        r = das((uint8_t)d, &cf, af);
-        wb((uint16_t)(di + i), r);
-    }
-    return (r & 0x80) != 0;
-}
-
 /* the object's points: +0Eh to the bonus, +6 to the score */
 static void score_object(uint16_t di)
 {
     uint16_t p = rw(V(player_rec));
     bcd_add((uint16_t)(p + 8), (uint16_t)(di + 0x0E));
     bcd_add(p, (uint16_t)(di + 6));
-}
-
-/* a word of two BCD bytes + 1 (ADD 1, DAA, ADC 0, DAA) */
-static void bcd_inc_word(uint16_t at)
-{
-    int cf = 0;
-    wb(at, bcd_adc(rb(at), 1, &cf));
-    wb((uint16_t)(at + 1), bcd_adc(rb((uint16_t)(at + 1)), 0, &cf));
 }
 
 /* the hits of td_count_obj (record +16h, shown in BCD at +14h; at
@@ -131,30 +47,6 @@ static void run_object_event(uint16_t g)
 }
 
 /* ---- the display */
-
-/* the player's score from column 8 without leading zeros (its last digit
- * always) */
-static void show_score(void)
-{
-    uint16_t bx = rw(V(player_rec));
-    uint8_t lead = 0;
-    int i;
-
-    wb(V(display_col), 8);
-    for (i = 5; i >= 0; i--) {
-        uint8_t v = rb((uint16_t)(bx + i)), hi = v >> 4, lo = v & 0x0F;
-        lead |= hi;
-        draw_char(lead ? (uint8_t)(hi + '0') : ' ');
-        wb(V(display_col), (uint8_t)(rb(V(display_col)) + 1));
-        lead |= lo;
-        draw_char(lead ? (uint8_t)(lo + '0') : ' ');
-        wb(V(display_col), (uint8_t)(rb(V(display_col)) + 1));
-    }
-    if (!(rb(bx) & 0x0F)) {
-        wb(V(display_col), (uint8_t)(rb(V(display_col)) - 1));
-        draw_char('0');
-    }
-}
 
 /* the hurry-up counting (up; down on table 3, its end at 0), else the
  * running message, else after a while without score the texts of
@@ -207,7 +99,7 @@ score:
         wb((uint16_t)(t + 1), 0);
     wb((uint16_t)(V(txt_player) + 7), (uint8_t)(rb(V(player)) + '1'));
     show_text(V(txt_player));
-    show_score();
+    show_bcd(rw(V(player_rec)), 8, 6);
 }
 
 /* 4 BCD bytes at si as 8 digits, written backwards from di; returns di

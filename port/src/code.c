@@ -15,7 +15,7 @@ typedef struct {
 
 #define FN(name) {offsetof(PdNames, name), name}
 static const CodeFn ported[] = {
-    FN(st_load), FN(st_idle), FN(st_ball_start), FN(st_play), FN(st_restart), FN(st_quit), FN(st_exit),
+    FN(st_load), FN(st_idle), FN(st_ball_start), FN(st_play), FN(st_ball_lost), FN(st_restart), FN(st_quit), FN(st_exit),
     FN(no_callback), FN(upload_lights),
 };
 
@@ -43,7 +43,14 @@ typedef struct {
 
 #define HN(name) {offsetof(PdNames, name), name}
 static const HandlerFn handlers[] = {
-    {0, NULL}
+    HN(obj_nop1), HN(obj_nop2), HN(obj_nop3), HN(obj_nop4), HN(obj_nop5),
+    HN(obj_nop6), HN(mult_2), HN(mult_3), HN(mult_4), HN(mult_5), HN(mult_6),
+    HN(mult_7), HN(mult_8), HN(mult_10), HN(advance_object),
+    HN(extra_ball_award), HN(add_hurry_value), HN(double_score),
+    HN(double_bonus), HN(hold_bonus), HN(count_message), HN(collect_jackpot),
+    HN(raise_jackpot), HN(lock_jackpot), HN(score_to_best),
+    HN(nightmare_switch), HN(countdown), HN(roulette), HN(light_locks),
+    HN(lock_ball), HN(lock_ball2), HN(lock_ball3),
 };
 
 int call_handler(uint16_t offset, uint16_t di)
@@ -51,7 +58,7 @@ int call_handler(uint16_t offset, uint16_t di)
     size_t i;
 
     for (i = 0; i < sizeof handlers / sizeof handlers[0]; i++)
-        if (handlers[i].fn && value(handlers[i].field) == offset)
+        if (value(handlers[i].field) == offset)
             return handlers[i].fn(di);
     call_code(offset);                  /* not ported: ends with its name */
     return 1;

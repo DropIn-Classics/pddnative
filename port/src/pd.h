@@ -80,14 +80,50 @@ void game_scroll_down(void);
 void new_game(void);
 void reset_ball(void);
 void clear_object_timers(void);
+void lights_off_player(void);
+
+void reset_locks(void);
+
+/* ---- pd_lost.c: state 6 */
+void st_ball_lost(void);
+void show_bonus_count(void);
+/* a step of the bonus count; 1 when all is counted */
+int bonus_count_step(void);
 
 /* ---- pd_events.c: DI = a sequence, its objects pushed on the event stack */
 void run_event(uint16_t di);
 
 /* ---- pd_rules.c: state 5, a frame of play */
 void st_play(void);
-/* the 6-byte BCD number at bp added to the one at di; idle_timer restarts */
-void bcd_add(uint16_t di, uint16_t bp);
+
+/* ---- pd_bcd.c: decimal arithmetic as the CPU's DAA and DAS do it */
+uint8_t daa(uint8_t al, int *cf, int af);
+uint8_t das(uint8_t al, int *cf, int af);
+/* ADD/ADC then DAA, SUB/SBB then DAS: a + b + *cf, a - b - *cf; *cf the carry */
+uint8_t bcd_adc(uint8_t a, uint8_t b, int *cf);
+uint8_t bcd_sbb(uint8_t a, uint8_t b, int *cf);
+/* the 6-byte BCD number at bp added to the one at di; idle_timer restarts;
+ * 1 when the top byte came out 0 (ZF) */
+int bcd_add(uint16_t di, uint16_t bp);
+/* ... subtracted; 1 when the result's top byte has bit 7 (below 0) */
+int bcd_sub(uint16_t di, uint16_t bp);
+/* a word of two BCD bytes + 1 */
+void bcd_inc_word(uint16_t at);
+
+/* ---- pd_handlers.c: the event objects' handlers (DI = the object; ZF) */
+int obj_nop1(uint16_t di), obj_nop2(uint16_t di), obj_nop3(uint16_t di);
+int obj_nop4(uint16_t di), obj_nop5(uint16_t di), obj_nop6(uint16_t di);
+int mult_2(uint16_t di), mult_3(uint16_t di), mult_4(uint16_t di);
+int mult_5(uint16_t di), mult_6(uint16_t di), mult_7(uint16_t di);
+int mult_8(uint16_t di), mult_10(uint16_t di), advance_object(uint16_t di);
+int extra_ball_award(uint16_t di), add_hurry_value(uint16_t di);
+int double_score(uint16_t di), double_bonus(uint16_t di);
+int hold_bonus(uint16_t di), count_message(uint16_t di);
+int collect_jackpot(uint16_t di), raise_jackpot(uint16_t di);
+int lock_jackpot(uint16_t di), score_to_best(uint16_t di);
+int nightmare_switch(uint16_t di), countdown(uint16_t di);
+int roulette(uint16_t di), light_locks(uint16_t di), lock_ball(uint16_t di);
+int lock_ball2(uint16_t di), lock_ball3(uint16_t di);
 
 /* ---- pd_play.c: state 3, the nudge, the plunger, the scroll */
 void ball_start(void);
@@ -169,5 +205,6 @@ void end_running(void);
  * also begins it; message_step ends the running object with it) */
 int message_start(uint16_t msg);
 int message_step(uint16_t msg);
+void show_bcd(uint16_t bx, uint8_t col, int bytes);
 
 #endif

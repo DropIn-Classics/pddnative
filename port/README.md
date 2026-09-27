@@ -20,11 +20,13 @@ nudge, the scroll following the ball), state 5 (a frame of play: hit
 rectangles, lanes, holes and locks, the scores in BCD, the event stack and
 its objects, the lamp groups, the display's messages and hurry-up) and the
 ball's physics (`ball_step`: the flippers' shapes, the collision map, the
-bounce). The event objects' handlers (the tables' own code, +16h) are not
-translated yet. The program stops at the first routine not translated
-yet, with its name (now `st_ball_lost`, state 6, when the ball drains, or
-the first handler an event object runs), and leaves its last picture on
-the screen.
+bounce), the event objects' handlers (the tables' own code: multipliers,
+jackpots, locks, the roulette, the hurry-up ...), state 6 (the ball lost:
+the bonus times the multiplier counted, the boosters, the next player, a
+locked ball back into play). The program stops at the first routine not
+translated yet, with its name (now `st_game_over`, state 7, after the last
+ball; `st_ball_locked`, `st_pause`, `st_tilt` for states 4, 8, 9), and
+leaves its last picture on the screen.
 
 Checked: the port's memory equals the original's in tools/run (DATA, BSS,
 TDATA, XDATA and all of video memory byte for byte; different only where
@@ -41,8 +43,16 @@ space of the driver's EXEC in CODE, the stack)
   100th and 132nd frame of state 3's loop (CODE:0553), the last before the
   ball leaves the lane in both; then at the 1st, 100th, 300th and 615th
   frame of state 5 (`st_play`), the last before the ball drains (18,000
-  points scored on the way, the flippers not touched). The ball's bounces
-  on the table and the kickers are thus checked; the flippers' are not yet.
+  points scored on the way, the flippers not touched); at the entry of
+  state 6 and of the next ball's state 3 (the bonus count between); ball 2
+  (plunger: port pictures 2208 to 2238, runner 33.80946 to 34.23749 s) at
+  its 1st, 185th and 461st frame of play (event handlers run on the way),
+  the third ball's state 3. The ball's bounces on the table and the kickers
+  are thus checked; the flippers' are not yet.
+- XDATA's `music_pos` can differ from the original's: INT 66h AL=10h
+  returns the position the driver's player has reached in the module, and
+  the port's player does not advance in the headless build (no audio
+  device). Only the sound routines read it.
 
 ## Build and run
 
@@ -60,7 +70,8 @@ Comparing with the original: stop both at the same place and compare
 their memory by the names of the hints. The port stops at the first routine
 not translated yet or, with `PD_STOP=where#N`, the Nth time it passes `checkpoint(where)`
 (`idle_loop`: the head of state 2's loop, `ball_start_loop`: state 3's,
-`play`: the entry of `st_play`;
+`play`: the entry of `st_play`, `ball_lost`, `ball_start`: of states 6
+and 3;
 `PD_TRACE` prints each with the pictures shown so far), the runner with
 `-break ADDR#N`.
 
