@@ -31,7 +31,7 @@ ADDR_OPTS = {'-break': 1, '-log': 1, '-watch': 1, '-dump': 2}
 # options and how many arguments they take (to find PROGRAM)
 OPTS = {'-game': 1, '-state': 1, '-sound': 1, '-until': 1, '-ips': 1, '-key': 2, '-keys': 1,
         '-shot': 2, '-shotevery': 2, '-break': 1, '-log': 1, '-watch': 1, '-trace': 2,
-        '-dump': 2, '-ram': 1, '-vram': 1, '-wav': 1, '-dos': 0, '-intwatch': 1, '-prof': 0,
+        '-dump': 2, '-dumpevery': 1, '-ram': 1, '-vram': 1, '-wav': 1, '-dos': 0, '-intwatch': 1, '-prof': 0,
         '-v': 0}
 
 

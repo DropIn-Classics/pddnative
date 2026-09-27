@@ -189,33 +189,48 @@ def main():
     out = [MARK + os.path.basename(args.src) + ' by tools/xfer.py; check, then keep or edit']
     skip = ('exe', 'segment', 'relocorder')
     n_ok = n_bad = 0
+    lines = []                  # (source line, its words mapped or None)
     for line in open(args.src, encoding='utf-8'):
         line = line.rstrip('\n')
         f = line.split()
         if not f or f[0].startswith(';') or f[0] in skip:
             if f and f[0].startswith(';'):
-                out.append(line)
+                lines.append((line, 'comment'))
             continue
         new = []
-        ok = True
         for i, t in enumerate(f):
             if i > 0 and re.fullmatch(r'[A-Z]+:[0-9A-F]+(-[0-9A-F]+)?', t) and t.split(':')[0] in a.byname:
                 c = conv(t)
                 if c is None:
-                    ok = False
+                    new = None
                     break
                 new.append(c)
             else:
                 new.append(t)
-        if f[0] == 'words' and ok:
-            # the table's contents must be code there as well; the count stays
-            pass
-        if ok:
-            out.append(' '.join(new[:1]) + ' ' + ' '.join(new[1:]) if len(new) > 1 else new[0])
-            n_ok += 1
-        else:
+        lines.append((line, new))
+    # two routines that differ only in an immediate (MOV AX,1201h / 1200h)
+    # can both map to the one the target has, and two data addresses to
+    # one: then none of the names is sure, and none is carried
+    names = {}
+    for line in own.split('\n'):
+        f = line.split(';', 1)[0].split()
+        if len(f) == 3 and f[0] == 'name':
+            names.setdefault(f[1], []).append(f[2])
+    for line, new in lines:
+        if new not in (None, 'comment') and new[0] == 'name' and len(new) > 2:
+            names.setdefault(new[1], []).append(new[2])
+    for line, new in lines:
+        if new == 'comment':
+            out.append(line)
+        elif new is None:
             out.append('; (not mapped) ' + line)
             n_bad += 1
+        elif new[0] == 'name' and len(new) > 2 and len(names[new[1]]) > 1:
+            out.append(f'; (not mapped: {new[1]} would be {" and ".join(names[new[1]])}) ' + line)
+            n_bad += 1
+        else:
+            out.append(' '.join(new[:1]) + ' ' + ' '.join(new[1:]) if len(new) > 1 else new[0])
+            n_ok += 1
     result = own + '\n' + '\n'.join(out) + '\n'
     if args.check:
         if result != text:

@@ -22,6 +22,35 @@ code CODE:51B1              ; (PD CODE:5201)
 ; PD's CODE:27D5 (a row of INC AX) has no counterpart here
 code CODE:2B62              ; (PD CODE:2B73, changed: clears words, not bytes)
 
+; names xfer.py could not carry (the code around them differs, or two
+; PD names meet at one address); what they are: see PD.hints
+dptr CODE:0091 DATA         ; ADD BX,state_table
+name CODE:0000 start
+name CODE:0088 main_loop
+name CODE:4EE8 st_quit
+name CODE:0F9B fatal_error
+name CODE:4D7C load_file
+name CODE:279B write_file
+name CODE:2B2C wait_keys_up
+name CODE:0708 table_setup
+name CODE:0780 setup_table0
+comment CODE:0780 table 0: files .UND (presumably Neptune)
+name CODE:08E4 setup_table1
+comment CODE:08E4 table 1: .SFR (Safari)
+name CODE:0A48 setup_table2
+comment CODE:0A48 table 2: .MNG (the one REVENGE.FLI belongs to, presumably)
+name CODE:0BB2 setup_table3
+comment CODE:0BB2 table 3: .STT (Stall Turn)
+name DATA:8261 flipper_x
+comment DATA:8261 the flippers' x list, the same for all four tables
+name CODE:108D setup_screen
+name CODE:4B31 screen_off
+name CODE:4B3D screen_on
+name CODE:49FE set_palette
+name CODE:4B49 beep
+name CODE:4F00 load_sound_driver
+name CODE:51B1 timer_callback
+
 ; ==== carried over from PD.hints by tools/xfer.py; check, then keep or edit
 ; PD.EXE: Pinball Dreams, the four tables of the first game
 ; (Ignition, Steel Wheel, Beat Box, Nightmare), Deluxe CD (= GOG).
@@ -30,7 +59,8 @@ code CODE:2B62              ; (PD CODE:2B73, changed: clears words, not bytes)
 ; the relocation table lists the sites in DATA first, then those in CODE
 ; ---- code
 ; the main loop calls the routine of the game state [8A8A] (0..15)
-; (not mapped) words DATA:8188 10 CODE
+words DATA:81BB 10 CODE
+; (not mapped) dptr CODE:0092 DATA         ; ADD BX,state_table
 ; code addresses handed over as immediates
 ptr CODE:0068 CODE ; [845A] := routine
 ; (not mapped) ptr CODE:00C2 CODE
@@ -39,7 +69,8 @@ ptr CODE:2AAF CODE ; DS:DX for INT 21h
 dptr CODE:5052 CODE ; DS:DX = "SOUND.CFG" (CS = DS there?)
 ptr CODE:5133 CODE ; pushed as return address
 ; routines for [9776] AND 0Fh = 0..7 (8..15: none), jumped to by
-; PUSH/RET at 1EAE; what [9776] is: not known yet
+; PUSH/RET at 1EAE; [9776] is the surface the ball has just hit (all
+; eight entries are the same routine in PD.EXE)
 words DATA:81DD 8 CODE
 ; reached through pointers not found yet (object handlers etc.)
 code CODE:009B
@@ -117,3 +148,664 @@ dptr CODE:2488 DATA ; mov bx, 0x9742
 dptr CODE:3FA9 DATA ; mov word ptr [0x8cc2], 0x8aad
 dptr CODE:41C2 DATA ; add di, 0x89c7
 dptr CODE:41F3 DATA ; add di, 0x89c7
+; more of them, found while reading the engine (T4)
+dptr CODE:0495 DATA ; mov [event_sp], event_stack
+dptr CODE:049B DATA
+dptr CODE:28B6 DATA
+dptr CODE:28BC DATA
+dptr CODE:3385 DATA ; cmp bx, event_stack
+dptr CODE:1F21 DATA ; mov bx, lflipper_frame_to
+dptr CODE:20E3 DATA ; mov bx, sine_table (a far pointer)
+dptr CODE:2116 DATA ; mov bx, 9728h: the 24-bit value at 9727h, read from bx-1
+dptr CODE:2281 DATA
+dptr CODE:212A DATA ; mov bx, 972Ah (9729h, the same way)
+dptr CODE:226D DATA
+dptr CODE:2130 DATA ; mov bx, 972Ch (nudge_push, the same way)
+dptr CODE:2273 DATA
+dptr CODE:4450 DATA ; cmp di, 7CFBh: fewer than two sprites in the list
+; (not mapped) dptr CODE:0B5E DATA	; a text (Beat Box's game over)
+dptr CODE:4C4E DATA ; the same text
+dptr CODE:23BC DATA ; add bx, surface_table
+dptr CODE:23DD DATA ; mov dx, kicker_score1
+dptr CODE:23EA DATA ; mov dx, kicker_score2
+dptr CODE:5061 CODE ; the driver's name, read from SOUND.CFG into CODE
+dptr CODE:5082 CODE ; the EXEC parameter block
+dptr CODE:5085 CODE
+; word variables the per-table set-up fills with offsets (the analysis
+; only sees a pointer variable when it is loaded and used as a base)
+var DATA:84A9 DATA
+var DATA:84AD DATA
+var DATA:84AF DATA
+var DATA:84B1 DATA
+var DATA:84B3 DATA
+var DATA:84B5 DATA
+var DATA:84B7 DATA
+var DATA:84B9 DATA
+var DATA:84BB DATA
+var DATA:84D3 DATA
+var DATA:84DD DATA
+var DATA:84DF DATA
+var DATA:84E1 DATA
+var DATA:84E7 DATA
+var DATA:84E9 DATA
+var DATA:84EB DATA
+var DATA:84ED DATA
+var DATA:89D6 TDATA
+var DATA:8CFB TDATA
+; ==== the engine (T4): names and what the code shows
+; Checked by running (tools/run.py) where it says so; the rest is read
+; from the code. "Presumably" marks a guess.
+; ---- start-up and the game states
+; (not mapped) name CODE:0000 start
+; (not mapped) comment CODE:0000 start: memory, the table number from the command line, mode 13h, INT 9, options, high scores
+; (not mapped) name CODE:0089 main_loop
+; (not mapped) comment CODE:0089 calls the routine of the game state [game_state] (state_table), for ever
+name DATA:81BB state_table
+name DATA:8A9B game_state
+comment DATA:8A9B the game state, an index into state_table (checked: 1 at start, 2 idle, 3 ball start, 5 playing, 6 ball lost)
+name DATA:972B table_num
+comment DATA:972B the table, 0-3, the digit on the command line (checked)
+; (not mapped) name CODE:4F39 st_quit
+; (not mapped) comment CODE:4F39 state 0: saves the high scores, then state 10
+name CODE:009E st_load
+comment CODE:009E state 1: loads the table (files, set-up, lights, screen, palette) and the sound driver, then state 2
+name CODE:00EA st_idle
+comment CODE:00EA state 2: no game; the display and the table scroll up and down; F1-F8 start a game for 1-8 players, Esc asks to quit
+name CODE:01BC game_scroll_down
+comment CODE:01BC scrolls the table down to its end, then state 3 (also where a new game from the game over state goes on)
+name CODE:04E5 st_ball_start
+comment CODE:04E5 state 3: a new ball for the current player: the ball to the plunger, "player n" on the display for 46h frames, then plays until the ball leaves the plunger lane (x < [lane_exit_x]), then state 5
+name CODE:04ED ball_start
+name CODE:0552 ball_start_loop
+name CODE:041E st_ball_locked
+comment CODE:041E state 4: a ball was locked (lock_ball): a new ball to the plunger, the table scrolls down, then as state 3 (presumably; not seen running)
+name CODE:0652 st_play
+comment CODE:0652 state 5: the game: scroll, ball, nudge, plunger, the table's logic, drawing; ball drained: state 6; Esc: state 2
+name CODE:15E3 st_ball_lost
+comment CODE:15E3 state 6: the ball is lost: scrolls down, bonus (times the multiplier) and boosters counted into the score, then the next player (state 3), or a locked ball back into play (state 5), or game over (state 7)
+name CODE:169E ball_lost_count
+name CODE:1725 count_boosters
+comment CODE:1725 the player's boosters ([+10h], BCD), each adds [booster_value] (10000) at the player's record +4 (by the display code that is past the six bytes of the score; not checked by running)
+name CODE:1794 next_player
+name CODE:17DD release_locked_ball
+comment CODE:17DD a ball is locked: the first lock of td_locks puts its ball back into play (position and speed from the lock's object), state 5
+name CODE:1872 st_game_over
+comment CODE:1872 state 7: high score entry for each player, then the scores in turn; F1-F8 start a new game, else state 2
+name CODE:1327 st_pause
+comment CODE:1327 state 8 (key P): the music paused, "game paused"; Esc asks to quit, any other key goes on (state 5)
+name CODE:12BC st_tilt
+comment CODE:12BC state 9: tilt: flippers off, the ball's bonus cleared, "tilt" until the ball drains, then state 6
+name CODE:1A23 st_exit
+comment CODE:1A23 state 10: INT 9 back, palette black, video memory cleared, exit to DOS
+name CODE:1A1C st_restart
+comment CODE:1A1C states 11, 13-15: state 1 again
+name CODE:4C24 st_12
+comment CODE:4C24 state 12: player 1's score in a text, then state 11; nothing sets state 12 (left over, presumably)
+; (not mapped) name CODE:0FA3 fatal_error
+; (not mapped) comment CODE:0FA3 a file could not be loaded: sound off, text mode, the error text, exit
+name CODE:4C81 parse_cmdline
+comment CODE:4C81 BX = PSP: the first digit of the command line minus '0' into BL; CF when there is none
+name CODE:4CAE dos_alloc
+comment CODE:4CAE AX paragraphs -> AX = segment (CF on failure)
+name CODE:4CBB dos_free
+name CODE:4CC6 dos_resize
+comment CODE:4CC6 not called
+; (not mapped) name CODE:4E23 load_file
+; (not mapped) comment CODE:4E23 the file named at DS:DX into ES:DI, 32 KB at a time; CF on failure
+name CODE:4DB6 load_options
+comment CODE:4DB6 C:\DELUXE\DDPCOPTN.BIN into the options (9A96h), or the defaults when it is missing; opt_balls 1 becomes 3 balls, else 5
+name CODE:276D load_hiscores
+comment CODE:276D C:\DELUXE\HISCORES.PD1 into hiscores, or the defaults (hiscores_default) when it is missing
+name CODE:274D save_hiscores
+; (not mapped) name CODE:27AC write_file
+; (not mapped) comment CODE:27AC creates the file DS:DX and writes [96E3h] bytes from DI (DS = AX)
+; ---- the per-table set-up
+name CODE:0690 load_table_files
+comment CODE:0690 TBLDETLO.xxx (collision map, lower level) to BSS:0960, TBLDETHI.xxx (upper level, not for Ignition) to BSS:47E0, TABLE2M.xxx (the picture) to a new block ([table_pic_seg])
+; (not mapped) name CODE:0710 table_setup
+; (not mapped) comment CODE:0710 the ball, plunger and two unused object records, the table's own set-up, the flipper sprites' first frames
+; (not mapped) name CODE:0788 setup_ignition
+; (not mapped) comment CODE:0788 fills the table descriptor (8494h..84E0h) and the table's constants; the same for the other three
+; (not mapped) name CODE:08EC setup_steel_wheel
+; (not mapped) name CODE:0A50 setup_beat_box
+; (not mapped) name CODE:0BBA setup_nightmare
+name CODE:0D04 place_flipper_shapes
+comment CODE:0D04 each shape record of flipper_shape_data: y := [flipper_y], x from the list at SI
+name CODE:4B76 table_check
+comment CODE:4B76 does nothing (called by each table's set-up; see machine_check)
+name CODE:4B78 machine_check
+comment CODE:4B78 not called: compares machine_checksum with the one stored at 8440h (a copy protection taken out, presumably)
+name CODE:4BB9 machine_checksum
+comment CODE:4BB9 a sum of the BIOS ROM, the free space of the current drive and the first hard disk's parameters (INT 41h vector)
+name CODE:0E24 init_lights
+comment CODE:0E24 gives each light record its palette slot (+22h) and copies the lights' "off" colours into light_palette
+; (not mapped) name CODE:108F setup_screen
+; (not mapped) comment CODE:108F the screen mode (opt_screen), the table picture into video memory, FLIPPERS.SPR loaded and made into sprite shapes, the split screen for the display
+name CODE:0D2D new_game
+comment CODE:0D2D clears the eight players' records and the jackpots; player 1; balls from the options; random seed from the frame counter
+; ---- one frame of play
+name CODE:021B read_game_keys
+comment CODE:021B F1-F8: number of players - 1 into last_player; Esc: quit_request
+name CODE:02A5 ask_quit
+comment CODE:02A5 "really quit <y/n>": CF when Y
+name CODE:02D6 idle_show
+comment CODE:02D6 state 2's show: the texts of td_idle_texts, the table scrolling up and down (idle_scroll)
+name CODE:0399 scroll_toward
+comment CODE:0399 one scroll step toward the line [89BBh]/8
+name CODE:03D7 idle_scroll
+comment CODE:03D7 one scroll step down to the end, then up to the top ([89BDh] the direction)
+name CODE:05BD show_player_up
+comment CODE:05BD during the ball start: "player n" / the players and the ball number, blinking
+name CODE:0FF0 reset_ball
+comment CODE:0FF0 the ball to its start (ball_start_x/y), speed 0, gravity from opt_slope, flippers on, the table's objects for a new ball
+name CODE:2804 reset_ball_objects
+comment CODE:2804 the ball to its start, and the per-ball state: locks, bonus (unless held), multiplier 1, the event stack, the lower level's lists
+name CODE:1153 ball_frame
+comment CODE:1153 key P: state 8; three ball_step; the ball's position into its object and sprite; below line 512: ball_drained
+name CODE:1222 nudge
+comment CODE:1222 the nudge key shakes the table (nudge_phase, nudge_push); more than three nudges within 46h frames: tilt (state 9) (checked: the key; the tilt not)
+name CODE:1376 plunger
+comment CODE:1376 key held: plunger_pull counts to 20h, the plunger sprite moves down; let go: the ball in the lane gets a speed of -pull*80h (checked)
+name CODE:140A scroll_follow
+comment CODE:140A the scroll speed from the ball's height on the screen (a dead zone of 12h lines around line 37h)
+name CODE:1456 scroll_step
+comment CODE:1456 scroll += scroll_speed, kept within the table; the CRTC start address from it (nudge_phase shakes it by a line)
+name CODE:15CC set_screen_start
+comment CODE:15CC the CRTC start address [screen_start], then wait_frame
+name CODE:14E8 play_frame
+comment CODE:14E8 the table's logic for a frame: texts, timers, the hit rectangles and lanes, the map's events, the event stack, drawing, the groups of lights
+name CODE:2BB1 lights_frame
+comment CODE:2BB1 the lights for a frame: blinking, the current player's lights into the palette, Ignition's timers, the light chains
+name CODE:2BC0 idle_lights
+name CODE:158D copy_to_vram
+comment CODE:158D CX bytes of a picture (4 planes interleaved, segment AX) into video memory at DI, plane by plane
+; ---- keyboard
+name CODE:2A94 hook_int9
+name CODE:2AB9 unhook_int9
+name CODE:2ACF kbd_int
+comment CODE:2ACF INT 9: key_map bit n = scancode n down; E0-prefixed keys + 80h, the E0 shifts dropped (checked)
+; (not mapped) name CODE:2B58 wait_keys_up
+; (not mapped) comment CODE:2B58 until no key is down
+name CODE:2B47 wait_key_down
+comment CODE:2B47 until a key is down (not called)
+name DATA:96CD key_map
+comment DATA:96CD 256 bits: bit n = scancode n is down; tested as byte index + mask, the words of the options
+name DATA:82BB old_int9
+name CODE:2B2B kbd_e0
+comment CODE:2B2B an E0 prefix came
+; ---- the ball
+name CODE:1EF1 ball_step
+comment CODE:1EF1 one physics step (three a frame): the flippers swept against the ball, the ball moved through the collision map pixel by pixel (bounces), position += speed, then flippers and gravity
+name CODE:1EA7 ball_step_size
+comment CODE:1EA7 the step's pixels in x and y and their directions (977Eh..9781h)
+name CODE:1BE3 ball_collide
+comment CODE:1BE3 the ball's next pixel against the collision map (map_test) and the flippers' shapes; CF and the surface when it hits
+name CODE:1B7E map_test
+comment CODE:1B7E the collision map at x = CX, y = DX (rows run-length coded, indexed at BSS:0): AL = what is there, CF when something
+name CODE:1A57 index_map
+; (not mapped) comment CODE:1A68 the row index (512 rows, 4 bytes each) at BSS:0 for the map the far pointer at BX points to (lower_map or upper_map)
+name CODE:1A7C map_run
+name CODE:1DA2 map_special
+comment CODE:1DA2 surfaces with a high nibble: event numbers (map_event) and the codes of map_code
+name CODE:1DF1 map_code
+comment CODE:1DF1 codes in the map: FCh gravity 10h, FBh gravity 9 (seen on Beat Box), FEh up to the upper level (its map and lists, the ball drawn in front), FDh back (read, not seen); other values are event numbers
+name CODE:1E81 collision_response
+comment CODE:1E81 the hit point into hit_x/hit_y, then the routine of response_table for the surface (all: bounce_response)
+name CODE:2521 bounce_response
+name CODE:20B8 bounce
+comment CODE:20B8 the ball's speed reflected at the surface (angle [9777h]) with the surface's constants (surface_params), the flippers' and the nudge's push added
+name CODE:239E surface_params
+comment CODE:239E the five constants of the surface type from surface_table; kickers (10h, 20h) score; the flippers (types 1, 2) push with their angular speed times the distance from their pivot
+name CODE:1E61 cosine
+comment CODE:1E61 cosine = sine of AL+40h
+name CODE:1E63 sine
+comment CODE:1E63 AL = angle (80h = half a turn): the magnitude from the quarter-wave table at ES:DX (sine_table); the sign is left in CH (presumably; read, not checked)
+name CODE:1E9F load_far
+comment CODE:1E9F ES:BX := the far pointer at [BX]
+name CODE:2295 mul_fix
+comment CODE:2295 DX times the 24-bit factor at [BX] (signed), the high part into BX (presumably fixed point; read, not checked)
+name CODE:22D2 mul_u16
+name CODE:22E3 mul_s16
+name CODE:2330 clamp_speed
+comment CODE:2330 DX (with CL as its sign) kept within -0C80h..0C80h
+name CODE:2353 div_u
+name CODE:238E div_s
+name CODE:2460 flippers_gravity
+comment CODE:2460 the flipper keys (unless flippers_off) move the flippers; the flipper sprites; gravity added to the speed; table_push decays
+name CODE:24BD flipper_move
+comment CODE:24BD BX = a flipper: pressed (ZF clear) speeds it up, released drops it back; angle and frame (0-10h) from the speed
+name CODE:19E8 draw_flippers
+comment CODE:19E8 the flipper sprites' frames from the flippers' frames
+name CODE:1A34 index_flipper_shapes
+comment CODE:1A34 the 17 shape pointers (flipper_shapes) into flipper_shape_data
+name CODE:1A93 flipper_sweep
+comment CODE:1A93 BX = a flipper's frame pair: steps the drawn frame toward the wanted one, testing the ball at each step
+name CODE:1AB2 flipper_hit
+name CODE:1AEA shape_test
+name DATA:9772 ball_x
+comment DATA:9772 the ball's centre: x and y, 24 bits each, pixels * 400h; speed: pixels * 400h per step (checked against the screen)
+name DATA:9775 ball_y
+name DATA:977A ball_vx
+name DATA:977C ball_vy
+name DATA:9773 ball_x_hi
+name DATA:9776 ball_y_hi
+name DATA:977B ball_vx_hi
+name DATA:977D ball_vy_hi
+name DATA:8CF2 ball_start_x
+comment DATA:8CF2 where a new ball starts: dwords, pixels * 2000h (plus 7 pixels: the sprite's corner)
+name DATA:8CF4 ball_start_x_hi
+name DATA:8CF6 ball_start_y
+name DATA:8CF8 ball_start_y_hi
+name DATA:8D4D ball_obj
+comment DATA:8D4D records of 26h bytes: +0 flags (1 = shown), +2 x, +6 y (dwords, pixels * 2000h), +12h, +16h the speed; the ball, the plunger (8D62h); 8CF0h and 8D16h are set up and never used
+name DATA:8D73 plunger_obj
+name DATA:8D01 unused_obj1
+name DATA:8D27 unused_obj2
+name DATA:9778 plunger_pull
+name DATA:89D0 lane_exit_x
+comment DATA:89D0 the ball has left the plunger lane when its sprite's x is below this
+name DATA:975B gravity_x
+name DATA:975D gravity
+comment DATA:975D added to ball_vy every step: 9 + 2 * (opt_slope - 1); the map codes FCh/FBh set 10h/9
+name DATA:9787 surface
+comment DATA:9787 what the ball hit: low nibble the response (response_table) and surface_table's entry, high nibble 10h/20h kickers, 80h..: special
+name DATA:9788 surface_angle
+name DATA:9796 hit_x
+name DATA:9798 hit_y
+comment DATA:9796 where the ball hit (pixels): the hit rectangles and lanes are tested with it
+name DATA:81DD response_table
+name DATA:81ED surface_table
+comment DATA:81ED per surface type five words, copied to surface_params_v
+name DATA:972E surface_params_v
+name DATA:823B kicker_score1
+comment DATA:823B score records of the kicker surfaces (types 10h and 20h), as an object's (presumably)
+name DATA:8246 kicker_score2
+name DATA:975F map_flags
+name DATA:9760 map_event
+comment DATA:9760 an event number from the map (FFh: none), run by map_event_run
+name DATA:9745 table_push
+name DATA:973C nudge_push
+name DATA:9748 nudge_timer
+name DATA:9749 nudge_count
+name DATA:974A nudge_key_down
+name DATA:9782 nudge_phase
+comment DATA:9782 0 still, 1 shaken down, 2 back up (a line on the screen each)
+name DATA:89CF tilted
+name DATA:8AD0 ball_drained
+name DATA:8AA9 ball_held
+comment DATA:8AA9 not 0: the ball does not move (in a hole, or a lock)
+name DATA:8AD1 flippers_off
+name DATA:8251 flipper_shape_data
+comment DATA:8251 far pointers: the flipper shapes, the collision maps of the lower and the upper level (BSS, from TBLDETLO/TBLDETHI), the sine table (TDATA)
+name DATA:8255 lower_map
+name DATA:8259 upper_map
+name DATA:825D sine_table
+; (not mapped: DATA:8261 would be flipper_x and ign_flipper_x and flipper_x) name DATA:822E ign_flipper_x
+; (not mapped: DATA:8261 would be flipper_x and ign_flipper_x and flipper_x) name DATA:8250 flipper_x
+; ---- the flippers
+name DATA:974B lflipper
+comment DATA:974B a flipper: +0 angular speed, +2 angle, +4 frame wanted, +5 frame drawn, +6 the last angle; the right one at 9742h
+name DATA:974D lflipper_angle
+name DATA:974F lflipper_frame_to
+name DATA:9750 lflipper_frame
+name DATA:9751 lflipper_last
+name DATA:9753 rflipper
+name DATA:9755 rflipper_angle
+name DATA:9757 rflipper_frame_to
+name DATA:9758 rflipper_frame
+name DATA:9759 rflipper_last
+name DATA:8233 lflipper_pivot_x
+name DATA:8235 lflipper_pivot_y
+name DATA:8237 rflipper_pivot_x
+name DATA:8239 rflipper_pivot_y
+name DATA:976E flipper_mirror_x
+comment DATA:976E the right flipper's shapes are the left one's, mirrored at this x (presumably)
+name DATA:9770 flipper_y
+name DATA:9706 flipper_shapes
+; ---- the screen
+name DATA:96FC scroll
+comment DATA:96FC the table line at the top of the screen, a dword: line * 2000h; its speed in scroll_speed (checked)
+name DATA:96FE scroll_hi
+name DATA:9700 scroll_speed
+name DATA:9702 scroll_speed_hi
+name DATA:96F6 screen_start
+name DATA:9704 frame_count
+comment DATA:9704 counts the frames of play; seeds the random choices
+name DATA:9AA1 sprite_seg
+name DATA:9AA5 table_pic_seg
+name DATA:7D74 sprites
+comment DATA:7D74 four sprites of 20h bytes: the ball, the left and right flipper, the plunger; +0 flags, +1 the ball's level (80h lower, FFh upper), +2 x, +4 y, +6 w, +8 h, +0Ah saved background, +0Ch shape, +10h.. where it was drawn
+name DATA:7D75 ball_level
+name DATA:7D76 sprite_x
+name DATA:7D78 sprite_y
+name DATA:7DF4 sprite_frames
+name CODE:437E draw_sprites
+comment CODE:437E the four sprites: merges overlapping areas, then per area: grab the screen into a buffer (video memory BB10h), put back old backgrounds, save new ones, draw, copy back
+name CODE:4490 sprite_area
+name CODE:451D sort_sprite_list
+name CODE:4540 grab_area
+name CODE:45A8 restore_backgrounds
+name CODE:45FE save_backgrounds
+name CODE:468D draw_sprite_shapes
+name CODE:4782 put_area
+name CODE:47BD set_sprite_frame
+comment CODE:47BD BX = frame, SI = the sprite's offset in sprites: its shape, position and size from sprite_frames
+name CODE:4804 make_sprite_shapes
+name CODE:4851 make_sprite_shape
+name CODE:4956 set_mode_x
+comment CODE:4956 mode 13h unchained, 320x200 (opt_screen 1)
+name CODE:4E70 set_mode_350
+comment CODE:4E70 the tweaked mode for opt_screen 2: misc output A7h, CRTC table at 4F19h: 320x350 (checked)
+name CODE:4E2C set_mode_e3
+comment CODE:4E2C another tweaked mode (misc output E3h: 480 lines); not called
+name CODE:4E06 set_mode_other
+comment CODE:4E06 not called
+name CODE:49B5 set_split
+comment CODE:49B5 the line compare register: the display below the table as a split screen (160h, or 146h in the 350-line mode)
+name CODE:499F black_palette
+name CODE:4A20 clear_vram
+name CODE:4A40 set_planes
+comment CODE:4A40 DL = map mask, DH = read map
+name CODE:4A57 wait_frames
+comment CODE:4A57 AX frames
+name CODE:4A65 wait_frame
+comment CODE:4A65 until the sound driver's timer callback sets timer_tick, or (no driver) the next vertical retrace
+name CODE:4A92 write_mode_0
+name CODE:4A9E write_mode_1
+; (not mapped: CODE:4B31 would be screen_off and screen_off and screen_on) name CODE:4B21 screen_off
+; (not mapped: CODE:4B31 would be screen_off and screen_off and screen_on) name CODE:4B2D screen_on
+; (not mapped) name CODE:4B39 set_palette
+; (not mapped) comment CODE:4B39 the table's palette (ES:SI), the lights' colours at 40h.., the display's colours (grey variant with opt_palette 1)
+name CODE:4D1F to_grey
+comment CODE:4D1F CX RGB triples at SI into grey (30/59/11)
+name CODE:4CD5 grey_palettes
+comment CODE:4CD5 opt_palette 1: the table's and the lights' palettes made grey
+; (not mapped) name CODE:4BD8 beep
+; (not mapped) comment CODE:4BD8 not called
+name CODE:549F beep2
+comment CODE:549F not called
+; ---- the display (dot matrix below the table)
+name CODE:4AB0 draw_char
+comment CODE:4AB0 the character DL at column [display_col] of the display (font 16 bytes a character, the dots' offsets at TDATA:1900)
+name CODE:2E63 show_text
+comment CODE:2E63 the text at DI (FFh at its end) on the display from column 0; returns ZF from [6581h]
+name CODE:2CF9 message_start
+name CODE:2D01 message_step
+comment CODE:2D01 one frame of a display message (DI): scrolling, blinking, flashing as its flags say
+name CODE:2C15 display_frame
+comment CODE:2C15 the running message (message) or, after a while without score, the next idle text of td_score_texts
+name CODE:2ED1 show_score
+name CODE:2EB2 show_bonus
+name CODE:2EC3 show_bonus_count
+name CODE:3926 update_texts
+comment CODE:3926 player and ball numbers, the jackpots and the multiplier written into the table's texts
+name CODE:39DB bcd4_to_text
+name CODE:4C64 bcd6_to_text
+name CODE:0E61 format_hiscores
+name DATA:8CFD display_col
+name DATA:8CFE message
+comment DATA:8CFE the display message running (0: none); message_prio its priority
+name DATA:8ACC message_prio
+name DATA:665D idle_timer
+comment DATA:665D frames since the last score (348h at every bcd_add), then the idle texts come
+name DATA:6701 txt_paused
+name DATA:6716 txt_quit
+name DATA:672B txt_players_ball
+name DATA:6740 txt_player
+name DATA:675E txt_player2
+name DATA:6767 txt_bonus_x
+name DATA:6772 txt_blank
+name DATA:6787 txt_tilt
+name DATA:679C txt_highscore
+name DATA:6C53 txt_bonus_held
+name DATA:6C68 txt_roulette
+; ---- players and scores
+name DATA:65EF player
+comment DATA:65EF the current player, 0-7 (checked)
+name DATA:65F0 last_player
+comment DATA:65F0 players - 1 (FFh while none is chosen) (checked: F2 gives 1)
+name DATA:65F1 player_rec
+comment DATA:65F1 the current player's record (checked)
+name DATA:65F3 player_bit
+comment DATA:65F3 1 shl player: the lights and objects keep a bit per player
+name DATA:65F4 player_recs
+name DATA:84F3 player_1
+comment DATA:84F3 eight records of 98h bytes: +0 score (6 bytes BCD, low first; checked), +8 bonus, +10h boosters (BCD) and a count, +14h another count, +18h the player's lights and counters (80h bytes)
+name DATA:858B player_2
+name DATA:8623 player_3
+name DATA:86BB player_4
+name DATA:8753 player_5
+name DATA:87EB player_6
+name DATA:8883 player_7
+name DATA:891B player_8
+name DATA:972C balls_left
+name DATA:972D ball_num
+comment DATA:972D the ball being played, from 0 (checked: counts up after the last player's ball)
+name DATA:660E balls_per_game
+name DATA:8AAA extra_ball
+comment DATA:8AAA not 0: the player plays another ball (extra_ball_award)
+name DATA:8AAD bonus_mult
+name DATA:8AAB bonus_held
+name DATA:8CF1 quit_request
+name DATA:660A boosters
+name DATA:6610 booster_value
+name DATA:6620 jackpot
+comment DATA:6620 the jackpot (8 bytes BCD); jackpot_base its start value, jackpot_step what raise_jackpot adds (presumably; the names follow the texts)
+name DATA:6618 jackpot_step
+name DATA:6628 jackpot_base
+name DATA:83C1 hiscores
+comment DATA:83C1 per table four entries of 9 bytes: 3 letters, 6 bytes BCD
+name DATA:830E hiscores_default
+name CODE:4246 bcd_add
+comment CODE:4246 [DI] += [BP], 6 bytes BCD; restarts idle_timer
+name CODE:428D bcd_sub
+name CODE:42D1 add_booster
+name CODE:19B9 check_hiscores
+name CODE:2538 check_hiscore
+comment CODE:2538 SI = a player's score: into the table's high scores when high enough, with the initials entered
+name CODE:2565 insert_hiscore
+name CODE:2647 cmp_score
+name CODE:266C enter_initials
+comment CODE:266C the flipper keys choose a letter, the nudge key takes it (three), Esc leaves them blank
+name CODE:0DE8 clear_player
+name CODE:29FC clear_players_lights
+name CODE:2BA1 clear_player_lights
+name CODE:2F2A count_bonus
+comment CODE:2F2A the bonus times the multiplier ("bonus x n"), then counted into the score digit by digit
+name CODE:3F87 bonus_count_step
+comment CODE:3F87 moves one step of the bonus into the score; AX = FFFFh when it is all there
+; ---- lights, hit rectangles, objects, events
+name DATA:84A5 td_score_texts
+comment DATA:84A5 the table descriptor, filled by setup_*: pointers to the table's lists and texts (names from their use)
+name DATA:84A7 td_txt_player_ball
+name DATA:84A9 td_txt_jackpot
+name DATA:84AB td_txt_bonus_x
+name DATA:84AD td_idle_texts
+name DATA:84AF td_idle_scroll
+name DATA:84B1 td_rects_lower
+name DATA:84B3 td_rects_upper
+name DATA:84B5 td_lanes_a_lower
+name DATA:84B7 td_lanes_a_upper
+name DATA:84B9 td_lanes_b_lower
+name DATA:84BB td_lanes_b_upper
+name DATA:84BD td_lights
+name DATA:84BF td_rotating
+name DATA:84C1 td_extra_ball
+name DATA:84C3 td_ign_timers
+name DATA:84C5 td_chains
+name DATA:84C7 td_random_lights
+name DATA:84C9 td_random_event
+name DATA:84CB td_locks
+name DATA:84CD td_objects
+name DATA:84CF td_timed
+name DATA:84D1 td_counters
+name DATA:84D3 td_count_obj
+name DATA:84D5 td_count_event
+name DATA:84D7 td_count_obj2
+name DATA:84D9 td_count_texts
+name DATA:84DB td_hurry
+name DATA:84DD td_txt_hurry
+name DATA:84DF td_txt_jackpot2
+name DATA:84E1 td_txt_jackpot3
+name DATA:84E3 td_txt_jackpot4
+name DATA:84E5 td_txt_relaunch
+name DATA:84E7 td_txt_ball_lost
+name DATA:84E9 td_txt_game_over
+name DATA:84EB td_txt_countdown
+name DATA:84ED td_txt_boosters
+name DATA:84EF td_roulette
+name DATA:84F1 td_roulette_pick
+name DATA:6604 hit_rects
+comment DATA:6604 the lists of the ball's level: hit rectangles (x1,y1,x2,y2,group) and two lists of lanes
+name DATA:6606 lanes_a
+name DATA:6608 lanes_b
+name DATA:9741 hit_score
+name DATA:9743 hit_object
+name DATA:9740 hit_lane
+name DATA:6674 event_sp
+comment DATA:6674 the event stack (event_stack..): pairs (0 or FFFFh, object) pushed by run_event, run by run_events
+name DATA:8AE4 event_stack
+name DATA:8C64 event_sp_ball
+name DATA:8ACA running_object
+comment DATA:8ACA an object whose handler runs every frame until it returns ZF set
+name DATA:8A9E ball_locked
+name DATA:8A9F locks_lit
+name DATA:89D2 light_count
+name DATA:89D4 lights_off_pal
+name DATA:89D6 lights_on_pal
+name DATA:89D8 light_palette
+comment DATA:89D8 3 bytes a light: the colours uploaded to DAC 40h.. every tick (upload_lights); a light is on or off by its colours
+name DATA:8CFB table_palette
+name CODE:301E test_hit_rects
+comment CODE:301E hit_x/hit_y against the hit rectangles and their objects' rectangles: hit_object, hit_score, sounds
+name CODE:30E1 test_lanes_a
+name CODE:30D9 test_lanes_b
+name CODE:312D light_hit_object
+name CODE:3148 mark_hit_object
+name CODE:3180 add_hit_score
+comment CODE:3180 the score record's points (+4) to the score, (+0Ch) to the bonus; repeated for a while when a spinner-like object set 8A90h
+name CODE:31D2 map_event_run
+comment CODE:31D2 the map's event number: its object from the list [9754h]; holes (type 6: a lock, 5: timed) hold the ball and set its position and speed
+name CODE:3373 run_events
+comment CODE:3373 pops the event stack: per object its sounds, lights (+18h on, +1Eh off), score (score_object), counters, handler (+16h), message (+1Ah)
+name CODE:39FC run_object_event
+name CODE:3A13 run_event
+comment CODE:3A13 DI = an event record: type 2Ah a list of objects (4000h: another event, 8000h: arm); else a sequence stepped per player
+name CODE:422A score_object
+comment CODE:422A the object's points: +6 to the score, +0Eh to the bonus
+name CODE:3497 set_message
+name CODE:34AE restart_timer
+name CODE:34B5 count_object
+name CODE:351A blink_lights
+name CODE:357C update_lights
+comment CODE:357C the current player's light states into the palette, at most ten changes a frame
+name CODE:3613 idle_update_lights
+name CODE:41A6 light_on
+comment CODE:41A6 SI = a light: its palette slot gets the "on" colours
+name CODE:41D7 light_off
+name CODE:4208 upload_lights
+comment CODE:4208 light_palette to the DAC from colour 40h; the frame callback once the game runs
+name CODE:3666 ign_timers
+comment CODE:3666 Ignition only: timed lights (td_ign_timers)
+name CODE:3710 light_chains
+name CODE:3754 rect_group_done
+comment CODE:3754 all objects of a hit rectangle group lit: its event, then they go out one by one (clear_rect_group)
+name CODE:3797 light_group_done
+name CODE:37F3 clear_rect_group
+name CODE:381F blink_light_group
+name CODE:386E rotate_lights
+comment CODE:386E a flipper was pressed: the lit states of each group of td_rotating move by one (lane change)
+name CODE:38A9 object_timers7
+name CODE:38D9 hold_ball_check
+name CODE:2BC7 object_timers
+name CODE:2BFF clear_object_timers
+name CODE:28D5 reset_locks
+name CODE:28F5 lights_off_player
+name CODE:2922 lights_off_all
+name CODE:2946 reset_objects
+name CODE:29A6 reset_objects_all
+name CODE:2A41 restore_lights
+name CODE:27B9 reset_targets
+name CODE:32F6 pick_random_light
+name CODE:3322 random_light_check
+name CODE:4316 table_ball_events
+comment CODE:4316 per table at a new ball (Steel Wheel, Nightmare: an event)
+name CODE:4353 table_game_objects
+; object handlers (+16h of an object; coderanges 3C4D-3F99, 4162-41B2)
+name CODE:3C2E extra_ball_award
+name CODE:3C3F lock_jackpot
+comment CODE:3C3F the jackpot added for each locked ball (presumably; the lock test reads [td_locks+974Eh], not understood)
+name CODE:3CC6 mult_2
+name CODE:3CCC mult_3
+name CODE:3CD2 mult_4
+name CODE:3CD8 mult_5
+name CODE:3CDE mult_6
+name CODE:3CE4 mult_7
+name CODE:3CEA mult_8
+name CODE:3CF0 mult_9
+name CODE:3CF6 mult_10
+name CODE:3CFC add_hurry_value
+name CODE:3D0A score_to_best
+comment CODE:3D0A adds the current player's score to the best other player's that is not lower (as the code reads; not checked)
+name CODE:3D68 nightmare_switch
+name CODE:3D81 double_score
+name CODE:3D9C double_bonus
+name CODE:3DB9 hold_bonus
+name CODE:3DBF count_message
+name CODE:3DDA collect_jackpot
+name CODE:3E11 raise_jackpot
+name CODE:3E35 roulette
+comment CODE:3E35 "russian roulette": runs through td_roulette slowing down, lighting each; the last one's event (the start from td_roulette_pick by the frame counter)
+name CODE:3F17 countdown
+name CODE:40FA light_locks
+name CODE:412D lock_ball
+comment CODE:412D locks lit: the ball is held, a new one comes (state 4); the two after it the same with 9789h/978Bh set
+name CODE:4150 lock_ball2
+name CODE:4179 lock_ball3
+; ---- sound (INT 66h driver)
+; (not mapped) name CODE:4F50 load_sound_driver
+; (not mapped) comment CODE:4F50 drive C:, \DELUXE, SOUND.CFG names the driver, EXEC of it, back to the drive it came from
+name CODE:50BC start_music
+comment CODE:50BC the table's module (LEVELn.MOD) loaded by the driver, the callbacks timer_callback and module_callback set
+name CODE:5157 stop_sound
+name CODE:5177 module_callback
+; (not mapped) name CODE:5201 timer_callback
+; (not mapped) comment CODE:5201 each tick of the driver's timer: the sprites (sprites_in_irq), the frame callback, the music and sound requests, timer_tick
+name CODE:52A8 music_volume_step
+comment CODE:52A8 not called
+name CODE:52C5 play_tune
+name CODE:52EE music_fade
+name CODE:536E tune_request_run
+name CODE:53C0 jingle_request_run
+name CODE:545D sound_request_run
+name DATA:83BE sound_on
+name DATA:83BF timer_tick
+name DATA:8464 tune_request
+comment DATA:8464 FFh none, 80h fade out, else a position of the module's main tune (presumably)
+name DATA:8465 sound_request
+comment DATA:8465 a sound effect: FFh none, else an entry of the table's effect list (4 bytes, INT 66h AL=11h)
+name DATA:8466 jingle_request
+comment DATA:8466 a short tune: FFh none, else an entry of the table's jingle list (a module position)
+name DATA:846A sprites_in_irq
+name DATA:846B frame_callback
+comment DATA:846B called every tick: nothing (4BE4h) until the game runs, then upload_lights
+name CODE:4B77 no_callback
+name DATA:845F music_fade_dir
+; ---- options (C:\DELUXE\DDPCOPTN.BIN, written by the menu)
+name DATA:9AA7 opt_balls
+comment DATA:9AA7 the options, DDPCOPTN.BIN as it is (defaults in load_options): 1 = 3 balls a game (checked), else 5
+name DATA:9AA8 opt_music
+comment DATA:9AA8 1: the music follows the game (tunes and jingles), else presumably one tune
+name DATA:9AA9 opt_palette
+comment DATA:9AA9 1: grey palettes
+name DATA:9AAA opt_slope
+comment DATA:9AAA gravity = 9 + 2 * (opt_slope - 1) (presumably the table's slope)
+name DATA:9AAB key_lflipper
+comment DATA:9AAB the keys, as byte index and mask of key_map: LShift, RShift, Space, E0 Down (checked)
+name DATA:9AAD key_rflipper
+name DATA:9AAF key_nudge
+name DATA:9AB1 key_plunger
+name DATA:9AB3 opt_screen
+comment DATA:9AB3 1: 320x200, 2: 320x350, the table scrolls less (checked with a DDPCOPTN.BIN of these 14 bytes)
+name DATA:846F options_file
+name DATA:80EF hiscore_file

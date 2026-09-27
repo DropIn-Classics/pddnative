@@ -36,6 +36,8 @@
  *   -trace FILE N    one line per instruction for N instructions, from the
  *                    first -break/-log hit on (or from the start without one)
  *   -dump ADDR LEN   print LEN bytes at ADDR at the end (repeatable)
+ *   -dumpevery DT    print the -dump regions every DT seconds as well (from
+ *                    t=DT on): a time series of chosen variables
  *   -ram FILE        write memory 0-A0000h at the end
  *   -vram FILE       write the 256 KB of video memory (planes interleaved,
  *                    byte 4*o+p = plane p, offset o) at the end
@@ -146,6 +148,7 @@ static int have_watch = 0;
 typedef struct { Addr a; uint32_t len; } Dump;
 static Dump dumps[32];
 static int ndumps = 0;
+static double dump_every = 0.0, dump_next = 0.0;
 
 static const char *trace_file = NULL;
 static uint64_t trace_count = 0;
@@ -222,6 +225,19 @@ static void print_regs(void){
            cpu.sreg[S_CS], (unsigned)cpu.eip, REG16(R_EAX), REG16(R_EBX), REG16(R_ECX),
            REG16(R_EDX), REG16(R_ESI), REG16(R_EDI), REG16(R_EBP), REG16(R_ESP),
            cpu.sreg[S_DS], cpu.sreg[S_ES], cpu.sreg[S_SS], (unsigned)(cpu_getflags() & 0xFFFF));
+}
+static void print_dumps(void){
+    int i;
+    for(i=0;i<ndumps;i++){
+        uint32_t k, lin = dumps[i].a.lin;
+        if(lin == 0xFFFFFFFFu){ printf("dump: %s never loaded\n", dumps[i].a.prog); continue; }
+        for(k=0;k<dumps[i].len;k+=16){
+            uint32_t j;
+            printf("dump %05X:", lin + k);
+            for(j=k;j<k+16 && j<dumps[i].len;j++) printf(" %02X", mem_r8(lin + j));
+            printf("\n");
+        }
+    }
 }
 static void write_file(const char *path, const uint8_t *p, size_t n){
     FILE *f = fopen(path, "wb");
@@ -319,6 +335,8 @@ int main(int argc, char **argv){
             dumps[ndumps].a = parse_addr(argv[i+1]);
             dumps[ndumps].len = (uint32_t)strtoul(argv[i+2], NULL, 0);
             ndumps++; i += 2; }
+        else if(!strcmp(a,"-dumpevery")){ NEED(1); dump_every = atof(argv[++i]);
+            dump_next = dump_every; }
         else if(!strcmp(a,"-ram")){ NEED(1); ram_file = argv[++i]; }
         else if(!strcmp(a,"-vram")){ NEED(1); vram_file = argv[++i]; }
         else if(!strcmp(a,"-wav")){ NEED(1); wav_file = argv[++i]; }
@@ -397,12 +415,18 @@ int main(int argc, char **argv){
                 shot(path);
                 shot_next += shot_every;
             }
+            if(dump_every > 0.0 && dump_next <= now){
+                printf("at t=%.6f\n", now);
+                print_dumps();
+                dump_next += dump_every;
+            }
             /* the next of them bounds the batch */
             {
                 double next = until;
                 if(key_pos < nkeys && keys[key_pos].t < next) next = keys[key_pos].t;
                 if(shot_pos < nshots && shots[shot_pos].t < next) next = shots[shot_pos].t;
                 if(shot_every > 0.0 && shot_next < next) next = shot_next;
+                if(dump_every > 0.0 && dump_next < next) next = dump_next;
                 until_c = cpu.cycles + (uint64_t)((next - now) * emu_ips) + 1;
             }
             if(cpu.halted){
@@ -463,16 +487,7 @@ int main(int argc, char **argv){
     for(i=0;i<nbrks;i++)
         printf("%s %s lin=%05X hits=%d\n", brks[i].stop ? "break" : "log",
                addr_str(&brks[i].a), brks[i].a.lin, brks[i].hits);
-    for(i=0;i<ndumps;i++){
-        uint32_t k, lin = dumps[i].a.lin;
-        if(lin == 0xFFFFFFFFu){ printf("dump: %s never loaded\n", dumps[i].a.prog); continue; }
-        for(k=0;k<dumps[i].len;k+=16){
-            uint32_t j;
-            printf("dump %05X:", lin + k);
-            for(j=k;j<k+16 && j<dumps[i].len;j++) printf(" %02X", mem_r8(lin + j));
-            printf("\n");
-        }
-    }
+    print_dumps();
     memwatch_report();
     prof_report();
     printf("hash ram %016llx vram %016llx\n",
