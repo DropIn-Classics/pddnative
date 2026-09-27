@@ -1,0 +1,311 @@
+; DDPCINTR.EXE: the Deluxe intro (pictures, fades, CD audio through MSCDEX)
+; Hints for tools/disasm.py; numbers are hex.
+
+exe DELUXE/DDPCINTR.EXE
+
+; the segments, from the relocations, the header (SS:SP = 01AF:0800) and
+; the debug SegMap (PALSEG holds four 768-byte palettes, see its names)
+segment CODE   0000 CODE
+segment PALSEG 0097 FAR_DATA
+segment DATA   0158 DATA
+segment STACK  01AF STACK stack size=800
+
+; the relocation table lists only sites in CODE
+relocorder CODE
+
+; the bytes after the program image (CodeView NB08 debug information)
+keeptail
+
+; CODE:008F needs a word displacement where the assembler takes a byte;
+; it reads delaytable (see below) via [BX+3Ah]
+raw CODE:008F
+
+; ---- names from the CodeView debug information (tools/cv4.py --hints)
+; locals as <routine>_<local> without @@; CODE:003E is both ldfail and exit
+; (kept ldfail, exit as a comment below); screen (seg 5) and the absolute
+; _end etc. (seg 0) are not here
+; code routines and labels
+name CODE:0000 intro
+name CODE:0015 intro_ml010	; @@ml010 in intro
+name CODE:0023 intro_mlp_20	; @@mlp_20 in intro
+name CODE:003B intro_mlp_30	; @@mlp_30 in intro
+name CODE:003E ldfail
+; name CODE:003E exit	; also exit, kept ldfail (cleanup+exit via INT 21h AH=4Ch,
+; reached by fallthrough from disply_pics and by jumps on failures)
+name CODE:0049 picmem
+name CODE:004B disply_pics
+name CODE:007A disply_pics_aa	; @@aa in disply_pics
+name CODE:0093 disply_pics_bb	; @@bb in disply_pics
+name CODE:0099 disply_pics_dd	; @@dd in disply_pics
+name CODE:00DC disply_pics_dp010	; @@dp010 in disply_pics
+name CODE:00F0 disply_pics_dp020	; @@dp020 in disply_pics
+name CODE:0100 disply_pics_dp_99	; @@dp_99 in disply_pics
+name CODE:010A load_pics
+name CODE:0126 load_pics_lp05	; @@lp05 in load_pics
+name CODE:013A load_pics_lp10	; @@lp10 in load_pics
+name CODE:0158 load_pics_lp90	; @@lp90 in load_pics
+name CODE:015D scr	; @@scr
+name CODE:015F mvscr
+name CODE:016C mvscr_a	; @@a in mvscr
+name CODE:0175 mvscr_b	; @@b in mvscr
+name CODE:0187 mvscr_c	; @@c in mvscr
+name CODE:019B scrload
+name CODE:01B2 scrload_a	; @@a in scrload
+name CODE:01BC scrload_b	; @@b in scrload
+name CODE:01D5 scrload_z	; @@z in scrload
+name CODE:01DE mstart2
+name CODE:01F0 getcmdline
+name CODE:0200 getcmdline_gcl010	; @@gcl010 in getcmdline
+name CODE:0217 getcmdline_gcl100	; @@gcl100 in getcmdline
+name CODE:021A getcmdline_gcl999	; @@gcl999 in getcmdline
+name CODE:021D init320200
+name CODE:0266 dispoff
+name CODE:0275 dispoff_a	; @@a in dispoff
+name CODE:027C rasplit
+name CODE:02B9 setpal
+name CODE:02DE clvram
+name CODE:02EA cvlp
+name CODE:0306 srdwr
+name CODE:031D waitframe
+name CODE:0322 waitframe_wf010	; @@wf010 in waitframe
+name CODE:032B wblnk
+name CODE:033F wblnk_wb010	; @@wb010 in wblnk
+name CODE:034A wblnk_wb020	; @@wb020 in wblnk
+name CODE:034D wblnk_wb201	; @@wb201 in wblnk
+name CODE:0352 wblnk_wb202	; @@wb202 in wblnk
+name CODE:035B wrmd0
+name CODE:0367 wrmd1
+name CODE:0379 vdispoff
+name CODE:0385 vdispon
+name CODE:0391 fadeup
+name CODE:03A6 fadeup_fu_01	; @@fu_01 in fadeup
+name CODE:03AE fadeup_fu_10	; @@fu_10 in fadeup
+name CODE:03EA fadedn
+name CODE:03FF fadedn_fd_01	; @@fd_01 in fadedn
+name CODE:0407 fadedn_fd_10	; @@fd_10 in fadedn
+name CODE:0443 setst
+name CODE:045A init320240
+name CODE:04CC getpal
+name CODE:04E2 setkbdint
+name CODE:0507 rstkbdint
+name CODE:051D kbdint
+name CODE:0533 kbdint_a	; @@a in kbdint
+name CODE:0550 kbdint_b	; @@b in kbdint
+name CODE:056E kbdint_c	; @@c in kbdint
+name CODE:0572 kbdint_z	; @@z in kbdint
+name CODE:057C prefix	; @@prefix
+name CODE:057D wkeyend
+name CODE:0588 wke010
+name CODE:0598 wkeypress
+name CODE:05A3 wkp010
+name CODE:05B3 chkkey
+name CODE:05CD clrkey
+name CODE:05E6 fload
+name CODE:05F7 fload_a	; @@a in fload
+name CODE:05FE fload_b	; @@b in fload
+name CODE:0613 fload_z	; @@z in fload
+name CODE:061A f_save
+name CODE:0636 f_save_a	; @@a in f_save
+name CODE:0648 f_save_b	; @@b in f_save
+name CODE:0654 f_save_c	; @@c in f_save
+name CODE:066D f_save_d	; @@d in f_save
+name CODE:068C f_save_e	; @@e in f_save
+name CODE:0696 f_save_z	; @@z in f_save
+name CODE:069D fhand	; @@fhand
+name CODE:069F fhigh	; @@fhigh
+name CODE:06A1 flow	; @@flow
+name CODE:06A3 fld2vram
+name CODE:06B8 fld2vram_a	; @@a in fld2vram
+name CODE:06C5 fld2vram_b	; @@b in fld2vram
+name CODE:06CF fld2vram_c	; @@c in fld2vram
+name CODE:06EC fld2vram_w	; @@w in fld2vram
+name CODE:06F0 fld2vram_x	; @@x in fld2vram
+name CODE:06FF fld2vram_z	; @@z in fld2vram
+name CODE:0703 membuf	; @@membuf
+name CODE:0705 mv2vram
+name CODE:0713 mv2vram_a	; @@a in mv2vram
+name CODE:071C mv2vram_b	; @@b in mv2vram
+name CODE:072E mv2vram_c	; @@c in mv2vram
+name CODE:073E GetDiskInfo
+name CODE:0748 GetDiskInfo_Again	; @@Again in GetDiskInfo
+name CODE:0775 GetTrackInfo
+name CODE:079B GetStartSec
+name CODE:079E GetStartSec_Again	; @@Again in GetStartSec
+name CODE:07FD GetStartLen
+name CODE:082C DoPlayTrack
+name CODE:0844 GetSNL
+name CODE:0858 GetSNL_L10	; @@L10 in GetSNL
+name CODE:0898 GetSNL_L20	; @L20 in GetSNL
+name CODE:08B1 GetVolumeSize
+name CODE:08D7 DoStopTrack
+name CODE:08EC GetQInfo
+name CODE:0919 GetCDDrive
+name CODE:0930 mstart
+name CODE:0949 malloc
+name CODE:0956 mfree
+name CODE:0961 msize
+; palettes (four 768-byte palettes 0300 apart, plus a 16-byte table)
+name PALSEG:0000 griflogo
+name PALSEG:0300 spiderlogo
+name PALSEG:0600 presents
+name PALSEG:0900 titl
+name PALSEG:0C00 paltable
+; variables (debug calls the segment VARIABLES)
+name DATA:0000 scrst
+name DATA:0002 introfnames
+name DATA:000A n1
+name DATA:0017 n2
+name DATA:0022 n3
+name DATA:002F n4
+name DATA:0039 lum
+name DATA:003A delaytable
+name DATA:0042 musfl
+name DATA:0043 vblfl
+name DATA:0044 currentpal
+name DATA:0344 kmat
+name DATA:0364 oldint
+name DATA:0368 lastscan
+name DATA:0369 track
+name DATA:036A drivenumber
+name DATA:036C RequestBlock
+name DATA:036E ComCode
+name DATA:036F Status
+name DATA:037A Taddr
+name DATA:0386 DInfo_C
+name DATA:038D TnoInfo_C
+name DATA:038E TToFind
+name DATA:038F TStart
+name DATA:0394 PlayTrack
+name DATA:03A2 SSect
+name DATA:03AA StopTrack
+name DATA:03C4 QInfo_c
+name DATA:03CF VSize_c
+name DATA:03D0 VolSize
+name DATA:03D4 LoTrack
+name DATA:03D5 HiTrack
+name DATA:03D6 SNLTab
+
+; ---- code: every named routine is code (from the debug info)
+; intro is also the program entry (CS:IP=0000:0000)
+; called routines (reached from the entry via calls/jumps)
+code CODE:0000 ; intro
+code CODE:004B ; disply_pics
+code CODE:010A ; load_pics
+code CODE:015F ; mvscr
+code CODE:01DE ; mstart2
+code CODE:01F0 ; getcmdline
+code CODE:021D ; init320200
+code CODE:0266 ; dispoff
+code CODE:0306 ; srdwr
+code CODE:031D ; waitframe
+code CODE:032B ; wblnk
+code CODE:0391 ; fadeup
+code CODE:03EA ; fadedn
+code CODE:0443 ; setst
+code CODE:04E2 ; setkbdint
+code CODE:0507 ; rstkbdint
+code CODE:05B3 ; chkkey
+code CODE:05E6 ; fload
+code CODE:073E ; GetDiskInfo
+code CODE:079B ; GetStartSec
+code CODE:07FD ; GetStartLen
+code CODE:082C ; DoPlayTrack
+code CODE:0844 ; GetSNL
+code CODE:08B1 ; GetVolumeSize
+code CODE:08D7 ; DoStopTrack
+code CODE:08EC ; GetQInfo
+; ddpcmem.obj (no AlignSym, only publics): malloc/mfree/msize are called,
+; mstart is not (see uncalled group below)
+code CODE:0949 ; malloc
+code CODE:0956 ; mfree
+code CODE:0961 ; msize
+; kbdint is reached through a pointer (not called): the INT 9 vector set in
+; setkbdint via MOV DX at CODE:04FD for INT 21h AH=25h
+ptr CODE:04FD CODE
+; not called in this program (library routines linked in)
+code CODE:019B ; scrload
+code CODE:027C ; rasplit
+code CODE:02B9 ; setpal
+code CODE:02DE ; clvram
+code CODE:035B ; wrmd0
+code CODE:0367 ; wrmd1
+code CODE:0379 ; vdispoff
+code CODE:0385 ; vdispon
+code CODE:045A ; init320240
+code CODE:04CC ; getpal
+code CODE:057D ; wkeyend
+code CODE:0598 ; wkeypress
+code CODE:05CD ; clrkey
+code CODE:061A ; f_save
+code CODE:06A3 ; fld2vram
+code CODE:0705 ; mv2vram
+code CODE:0775 ; GetTrackInfo
+code CODE:0930 ; mstart (ddpcmem.obj, like malloc/mfree/msize above)
+
+; ---- fallthrough labels from the debug info: nothing in the generated
+; source jumps to them, they are reached by falling through, and the code
+; hint only makes the label appear (0099/0100 in disply_pics, 0158 in
+; load_pics after its LOOP, 0654 in f_save)
+code CODE:0099 ; disply_pics_dd
+code CODE:0100 ; disply_pics_dp_99
+code CODE:0158 ; load_pics_lp90
+code CODE:0654 ; f_save_c
+
+; ---- data pointers
+; intro file names at DATA:0002 (a table of four offsets into DATA, loaded
+; via LEA SI at CODE:0122); makes n1-n4 appear
+words DATA:0002 4 DATA
+; palette offsets at PALSEG:0C00 (disply_pics loads SI with its offset via
+; LEA SI at CODE:006C and reads MOV DI,ES:[SI] with ES=PALSEG, then passes
+; ES:DI to fadeup/fadedn); makes griflogo, spiderlogo, presents, titl appear
+words PALSEG:0C00 4 PALSEG
+
+; ---- what the routines do (one line each, presumably where noted)
+comment CODE:0000 main: mstart2, get PSP via AH=62h, getcmdline, malloc 0FA1h, init320200, setkbdint, load_pics, mfree, disply_pics, then fall through into ldfail
+comment CODE:004B show pictures with fades and CD audio via GetSNL, DoPlayTrack, fadedn/fadeup and waitframe (presumably)
+comment CODE:010A load the four VGA files from introfnames via fload into picmem, then copy each into VRAM with mvscr
+comment CODE:015F copy memory to VGA Mode X planes via srdwr, SI+=4 (presumably)
+comment CODE:019B load 64000-byte VGA file via DOS open (AH=3Dh) and read (presumably)
+comment CODE:01DE shrink memory via msize with ES=CS-10h DX=0500h (INT 21h AH=4Ah)
+comment CODE:01F0 get digit from PSP cmdline: BX is the PSP segment (from INT 21h AH=62h in intro), reads ES:0080h with ES=BX; BL is the first non-blank character minus 30h; only characters below 30h are rejected (JNS); empty tail (length byte 0) sets CF
+comment CODE:021D set VGA mode 13h then Mode X 320x200 via ports 3CE/3C4
+comment CODE:0266 clear palette to black via 3C8/3C9 after wblnk (presumably)
+comment CODE:027C set CRTC split screen via port 3D4 (presumably)
+comment CODE:02B9 set VGA palette via 3C8/3C9 REP OUTSB from ES:SI, CX colours (presumably)
+comment CODE:02DE clear 64KB VGA memory via REP STOSW with ES=A000h
+comment CODE:0306 set VGA planes from DX via ports 3C4/3CE
+comment CODE:031D wait AX frames via wblnk loop
+comment CODE:032B wait for vertical blank: clears [vblfl] then polls it, [musfl] never written here, so presumably always polls port 3DAh (see code)
+comment CODE:035B set graphics controller via 3CE AX=0005h (write mode 0, presumably)
+comment CODE:0367 set graphics controller via 3CE AX=0105h after srdwr DX=000Fh (write mode 1, presumably)
+comment CODE:0379 video display off via INT 10h AX=1201h BL=36h (presumably)
+comment CODE:0385 video display on via INT 10h AX=1200h BL=36h (presumably)
+comment CODE:0391 fade palette up from black in 20h steps via currentpal (presumably)
+comment CODE:03EA fade palette down to black (lum 1Fh, presumably)
+comment CODE:0443 set CRTC display start from [scrst] via port 3D4
+comment CODE:045A set VGA 320x240 Mode X via 3CE/3C4 (like init320200, presumably)
+comment CODE:04CC read VGA palette via 3C7/3C9 REP INSB into ES:DI (presumably)
+comment CODE:04E2 install kbdint as INT 9, saving old vector in [oldint]
+comment CODE:0507 restore INT 9 from [oldint]
+comment CODE:051D INT 9 handler: IN 60h, store scan code in [lastscan] (E0-prefixed codes with bit 7 set, fake shifts 2Ah/36h after E0 dropped), set or clear its bit in [kmat], EOI and IRET
+comment CODE:057D wait until keys released by scanning [kmat] for zeros (presumably)
+comment CODE:0598 wait for key press by scanning [kmat] (presumably)
+comment CODE:05B3 check [kmat] via REPE SCASW, ZF set if none (presumably)
+comment CODE:05CD clear [kmat] 32 bytes via REP STOSW
+comment CODE:05E6 load file via DOS open/read into picmem segment (presumably)
+comment CODE:061A save file via DOS create/write using [fhand], [fhigh], [flow] (presumably)
+comment CODE:06A3 alloc 0FA1h via malloc into [membuf], open/read file, call mv2vram; the 2 and 3 put into AX before JMP ldfail are lost, because ldfail loads AX=4C00h
+comment CODE:0705 copy memory to VGA planes via srdwr like mvscr (presumably)
+comment CODE:073E get CD disk info via MSCDEX using [DInfo_C], [RequestBlock] and GetCDDrive (presumably)
+comment CODE:0775 get CD track info via MSCDEX AX=1510h using [TnoInfo_C] (presumably)
+comment CODE:079B get track start sector via MSCDEX using [TnoInfo_C], track in AL (presumably)
+comment CODE:07FD get start/len from [SNLTab] by index AX into [SSect] (presumably)
+comment CODE:082C play CD track via MSCDEX INT 2Fh using [PlayTrack] (presumably)
+comment CODE:0844 fill [SNLTab] with track starts via GetStartSec for LoTrack..HiTrack (presumably)
+comment CODE:08B1 get CD volume size via MSCDEX using [VSize_c] (presumably)
+comment CODE:08D7 stop CD track via MSCDEX INT 2Fh using [StopTrack] (presumably)
+comment CODE:08EC get CD Q-channel info via MSCDEX using [QInfo_c]; returns AL as bit 1 of DATA:0370 (high byte of [Status], bit 9 of the request status word; busy per device driver spec, not checked by running)
+comment CODE:0930 resize memory via INT 21h AH=4Ah ES=CS-10h BX=SS+41h-ES (initial shrink, presumably)
+comment CODE:0949 alloc memory via INT 21h AH=48h AX paragraphs (on failure AX holds the largest block DOS offers, from BX)
+comment CODE:0956 free memory via INT 21h AH=49h ES block
+comment CODE:0961 resize memory via INT 21h AH=4Ah ES block to DX paragraphs
