@@ -29,7 +29,9 @@ Hints syntax (one per line, ';' starts a comment, numbers are hex):
                                        (TARGETSEG CODE also seeds code)
     name       SEG:OFF NAME            a label's name
     ptr        SEG:OFF TARGETSEG       the immediate of the instruction at
-                                       SEG:OFF is an offset in TARGETSEG
+                                       SEG:OFF is an offset in TARGETSEG (without
+                                       an immediate: its address operand, as for
+                                       a LEA of what is read with another DS)
     dptr       SEG:OFF TARGETSEG       the same for an offset of data (no code
                                        is looked for there)
     var        SEG:OFF SEG|num         what a word variable holds (offsets in
@@ -38,6 +40,7 @@ Hints syntax (one per line, ';' starts a comment, numbers are hex):
     num        SEG:OFF                 the instruction's address operand
                                        stays a number
     ds         SEG:OFF-END DSSEG       what DS holds in that code range
+    es         SEG:OFF-END ESSEG       the same for ES
     comment    SEG:OFF TEXT            a comment line before the address
     raw        SEG:OFF                 write the instruction as DB (the
                                        assembler would pick other bytes)
@@ -131,6 +134,7 @@ class Hints:
         self.vars = {}            # (seg, off) -> what a word variable holds
         self.num = set()
         self.ds = []              # (seg, start, end, dsseg)
+        self.es = []              # (seg, start, end, esseg)
         self.comments = {}        # (seg, off) -> [text]
         self.raw = set()
         self.relocorder = []
@@ -169,10 +173,10 @@ class Hints:
                     sg, rng = f[1].split(':')
                     a_, b_ = rng.split('-')
                     self.coderanges.append((sg, int(a_, 16), int(b_, 16)))
-                elif k == 'ds':
+                elif k in ('ds', 'es'):
                     s, rng = f[1].split(':')
                     a, b = rng.split('-')
-                    self.ds.append((s, int(a, 16), int(b, 16), f[2]))
+                    getattr(self, k).append((s, int(a, 16), int(b, 16), f[2]))
                 elif k == 'comment':
                     text = line.split(None, 2)[2] if len(f) > 2 else ''
                     self.comments.setdefault(self.addr(f[1]), []).append(text)
@@ -230,6 +234,7 @@ class Analysis:
         self.farptrs = {}         # image offset of offset word -> (seg, off)
         self.warnings = []
         self.dsmap = [(s, a, b, d) for s, a, b, d in hints.ds]
+        self.esmap = [(s, a, b, d) for s, a, b, d in hints.es]
 
     # ---- helpers
     def seg_at(self, a):
@@ -378,8 +383,8 @@ class Analysis:
                 self.label(t, v)
         return seeds
 
-    def ds_override(self, seg, off):
-        for s, a, b, d in self.dsmap:
+    def ds_override(self, seg, off, which='dsmap'):
+        for s, a, b, d in getattr(self, which):
             if s == seg and a <= off < b:
                 return d
         return None
@@ -406,7 +411,8 @@ class Analysis:
                 self.warnings.append(f'{seg}:{off:04X}: decoding ran into a relocated word')
                 return
             dsh = self.ds_override(seg, off)
-            ins = Insn(seg, off, ci, dsh or ds, es)
+            esh = self.ds_override(seg, off, 'esmap')
+            ins = Insn(seg, off, ci, dsh or ds, esh or es)
             self.insns[key] = ins
             self.collect(ins, work)
             m = ci.mnemonic
@@ -432,6 +438,8 @@ class Analysis:
             elif m == 'push' and ops and ops[0].type == x86.X86_OP_REG:
                 rn = ci.reg_name(ops[0].reg).upper()
                 stack.append({'DS': ds, 'ES': es, 'CS': seg}.get(rn, regs.get(rn)))
+            elif m == 'push':
+                stack.append(None)         # an immediate or memory: keeps the stack in step
             elif m == 'pop' and ops and ops[0].type == x86.X86_OP_REG:
                 rn = ci.reg_name(ops[0].reg).upper()
                 v = stack.pop() if stack else None
@@ -508,6 +516,8 @@ class Analysis:
             if op.type == x86.X86_OP_MEM and ci.disp_size == 2 and key not in self.h.num:
                 has_reg = op.mem.base != 0 or op.mem.index != 0
                 sn = self.mem_seg(ins, op)
+                if key in self.h.ptr and not (ci.imm_offset and ci.imm_size == 2):
+                    sn = self.h.ptr[key]        # LEA of an address used with another DS
                 if sn is None or sn not in self.byname:
                     continue
                 d = op.mem.disp & 0xFFFF
@@ -569,6 +579,7 @@ class Unformattable(Exception):
 class Formatter:
     def __init__(self, an):
         self.an = an
+        self.assumed_ds = 'DATA'     # what the source's last ASSUME gives DS
 
     def sym(self, ref):
         if isinstance(ref, str):
@@ -624,7 +635,7 @@ class Formatter:
         # not produce is caught by the byte comparison
         if ref and not isinstance(ref, str) and seg is None:
             want = self.an.mem_seg(ins, op)
-            if ref[0] != 'DATA' and want == ref[0] and ins.seg != ref[0]:
+            if ref[0] != self.assumed_ds and want == ref[0] and ins.seg != ref[0]:
                 raise Unformattable('label outside DS without override')
         t = f'[{parts_s}]'
         if seg:
@@ -816,11 +827,17 @@ class Emitter:
         tables = set(o for s, o, cnt, t in an.h.words if s == S.name)
         import bisect
         off = 0
+        self.f.assumed_ds = 'DATA'          # as the ASSUME at the segment's start says
         while off < S.size:
             key = (S.name, off)
             ins = an.insns.get(key)
             if ins and off + ins.size <= S.size:
                 self.label_lines(S, off)
+                # where DS holds another segment of the program (tracked, or a
+                # ds hint) the source says so; unknown DS makes no labels
+                if ins.ds in an.byname and ins.ds != self.f.assumed_ds:
+                    self.out(f'	ASSUME DS:{ins.ds}')
+                    self.f.assumed_ds = ins.ds
                 self.inner_labels(S, off, ins.size)
                 text = None
                 if not ins.raw and key not in an.h.raw:
