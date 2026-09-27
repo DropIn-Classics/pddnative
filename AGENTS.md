@@ -9,7 +9,7 @@ first; this file is the rules.
 | | checkout | branches | does |
 |---|---|---|---|
 | Claude (lead) | `C:\Users\xbox\source\pddnative` (main) | `master` | the engine's core, reviews, merges into `master` |
-| Muse | `C:\Users\xbox\source\pddnative-muse` (git worktree) | `muse/<task>` | the tasks in docs/TASKS.md marked for Muse |
+| Sol | `C:\Users\xbox\source\pddnative-muse` (git worktree) | `sol/<task>` (older: `muse/<task>`) | the tasks in docs/TASKS.md marked for Sol |
 
 Both checkouts share one `.git`. Every change reaches `master` by a merge
 in the main checkout after review, never otherwise.
@@ -20,7 +20,8 @@ in the main checkout after review, never otherwise.
    the other one (the tools reading the unpacked CD from the main
    checkout's `game/` is fine). To bring master's newer state into your
    branch, `git merge master` on your branch.
-2. Muse: commit on `muse/<task>` branches only. Never `git push`,
+2. Sol: commit on `sol/<task>` branches only (a task begun on a
+   `muse/<task>` branch stays there). Never `git push`,
    `git reset --hard`, `git rebase` of anything but your own unmerged
    branch, `--force` of any kind, `git worktree remove`, deleting branches
    you did not make, or `git stash` in a way that throws work away. When
@@ -44,6 +45,34 @@ in the main checkout after review, never otherwise.
 7. When unsure what is wanted, write the question into your notes, set
    your status to `question` and stop working on that point.
 
+## Provenance (permanent)
+
+pddnative is a native compatibility implementation requiring an
+installed copy of Pinball Dreams: it contains only our code, and the
+player's installed GOG release supplies the game data at run time. Say it
+so; never call it a "completely native" or "standalone" version, or
+anything that implies it contains or replaces the game's data.
+
+1. Pinball Fantasies, pfemu and pfnative may serve as references only for
+   independently written, generic platform infrastructure: platform
+   abstraction, files, display output, palettes, audio output and mixing,
+   MOD playback, input, timing, the build system.
+2. Nothing of Pinball Fantasies' game logic, or of code that came from or
+   was derived from its original source, is used, translated, adapted,
+   copied, inspected or taken as a model: no gameplay, physics, table
+   logic, state machines, scoring, game data structures or algorithms,
+   function decomposition or names, constants or tables, and no
+   structurally equivalent routines.
+3. Everything Pinball Dreams does is found from PD.EXE, PD2.EXE and the
+   other Dreams programs, their data files, and runs of Dreams itself
+   (tools/run). That Fantasies does something alike is never evidence for
+   how Dreams does it.
+4. No references to Pinball Fantasies, pfemu or pfnative in the tree:
+   sources, documentation, comments, identifiers, user-facing text.
+5. Version-control history is never rewritten. Code and documents are
+   left in their natural final form, without comments about why
+   something was removed or changed.
+
 ## Where things are written
 
 | file | written by | on | holds |
@@ -56,11 +85,11 @@ So no two agents edit the same file on different branches. Read master's
 files from your worktree with `git show master:docs/TASKS.md` (your
 branch may be older).
 
-## A task, start to end (Muse)
+## A task, start to end (Sol)
 
 1. Look in `git show master:docs/TASKS.md` for the first task with status
-   `open` marked for Muse. Make its branch from the current master:
-   `git switch -c muse/<id>-<word> master`.
+   `open` marked for Sol. Make its branch from the current master:
+   `git switch -c sol/<id>-<word> master`.
 2. Create `docs/tasks/<id>.md` with a first line `Status: working`, commit
    it as the branch's first commit.
 3. Work; commit in small steps with messages like the ones in `git log`
