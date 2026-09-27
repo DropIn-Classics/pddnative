@@ -94,9 +94,11 @@ def segnames(tail, base, lfo, cb):
 
 
 def parse_alignsym(data):
-    """Yield (kind, off, seg, name, routine) with kind proc/data/label/end.
+    """Parse an sstAlignSym subsection.
 
-    Returns (events, skipped) where skipped counts records of other types.
+    Returns (events, skipped): events is a list of
+    (kind, off, seg, name, routine) with kind proc/data/label/block/end
+    (block/end carry no address); skipped counts records of other types.
     Scopes nest: PROC and BLOCK push, END pops, so a BLOCK's END does not
     end the enclosing routine."""
     # first 4 bytes are the subsection header
