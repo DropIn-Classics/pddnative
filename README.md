@@ -31,6 +31,18 @@ installed at `C:\GOG Games\Pinball Dreams Deluxe`. Python 3 with
 `capstone` (`pip install capstone`). `$PDD_GAME` names another folder
 for the unpacked CD.
 
+The original programs can be run headless, on an emulated clock, to
+check what the hints claim:
+
+    python tools/run.py -sound sb -until 16 -key 3 f1 -key 11 down+ -key 12 down- ^
+        -shotevery 0.5 build/run/shot -watch DATA:8A8A DREAMS1/PD.EXE 1
+
+(the Steel Wheel table, a game started and the ball launched, a picture
+every half second, every write to the game state printed). The runner is
+C and needs MSVC (the Visual Studio 2019 Build Tools, as pfemu and
+pfnative); `run.py` builds it when needed. Its options are at the top of
+`tools/run/main.c`.
+
 ## Layout
 
 - `src/*.hints`: what is known about each program (the real work).
@@ -50,6 +62,11 @@ for the unpacked CD.
     share the engine; about 97 % of the instructions align).
   - `tasm.py`, `x86enc.py`, `tlink.py`: from pfnative (commit 35cb5ee),
     with MASM switches and one fix, see their comments.
+  - `run/`: `pddrun`, a headless PC that runs the shipped programs (386
+    real-mode CPU, VGA, timer, keyboard, Sound Blaster, a small DOS whose
+    `C:` is the CD with a writable layer in `build/run/state`). The core
+    is pfemu's (`../pfemu`, commit f7c3ab9), see `run/pddrun.h`.
+    `run.py`: its front end, takes addresses by their names in the hints.
 - `docs/HANDOFF.md`: state, what was learned, what is next.
 - `AGENTS.md`: rules for the agents working on this (two at a time, each
   in its own git worktree); `docs/TASKS.md`: who does what.

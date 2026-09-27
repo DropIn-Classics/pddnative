@@ -1,7 +1,8 @@
 # Handoff
 
 State of 2026-09-27: stage 1 (source from the programs) done for the two
-table programs; nothing understood in depth yet.
+table programs; a headless runner (T3) runs them; nothing understood in
+depth yet.
 
 ## Start here (next session)
 
@@ -11,8 +12,9 @@ table programs; nothing understood in depth yet.
   `muse/T1-ddpcintr`. Do not touch that checkout. When the user says
   "Review T1", follow CLAUDE.md (review steps) and AGENTS.md (who writes
   what where).
-- Claude's next task is open: T4 (PD.EXE's engine core into the hints)
-  or T3 (a headless 8086 runner). The user has not chosen yet; ask.
+- T3 (the runner) is done, see "Running the originals" below. Claude's
+  next task is T4 (PD.EXE's engine core into the hints), now with the
+  runner to check each claim against.
 - Before any change to `tools/` or the hints: `python tools/check.py`
   must stay `all ok` (the hook enforces it on commit). `game/` holds the
   unpacked CD (`python tools/gogx.py` if it is missing).
@@ -93,7 +95,35 @@ What is known of the engine so far (addresses PD.EXE):
   parameter block and file names are in CODE at `4F71..`), INT 66h calls
   as in Pinball Fantasies (see pfnative's docs/sound-driver.md).
 
-Nothing of this is checked by running anything yet.
+Checked by running (tools/run.py, 2026-09-27):
+
+- The digit on the command line picks the table, from 0: PD.EXE 0-3 load
+  `TABLE2M.IGN`, `.STW`, `.BBX`, `.NTM` (Ignition, Steel Wheel, Beat Box,
+  Nightmare); PD2.EXE 0-3 load `.UND` (the underwater table, presumably
+  Neptune), `.SFR` (Safari), `.MNG` (presumably the one REVENGE.FLI
+  belongs to), `.STT` (Stall Turn).
+- `[8A8A]` is the game state: 1 at start, 2 once the sound driver is in,
+  3 after F1 (a game started).
+- Keys: INT 9 (`CODE:2AFB`) keeps a 256-bit map at `DATA:96BC`, bit =
+  scancode, E0-prefixed keys + 80h (the shifts' E0 fake codes dropped).
+  Tested as byte index + mask words: Esc (1), F1-F8, P (pause, state 8)
+  directly; four configurable words at `DATA:9A9A..9AA1`: left flipper
+  (LShift), right flipper (RShift), nudge (Space; `CODE:1251`: shakes the
+  table through `[972B]`, counts in `[9738]`), plunger (E0 Down;
+  `CODE:1387`: held, `[9767]` counts up to 20h, released: launch). These
+  are the values when `C:\DELUXE\DDPCOPTN.BIN` (written by the menu,
+  presumably) is missing, as it is on the CD.
+- Start-up: `C:\DELUXE\HISCORES.PD1` and `DDPCOPTN.BIN`, the table's
+  `TBLDETLO`, `TBLDETHI`, `TABLE2M`, `FLIPPERS.SPR` (current directory),
+  then drive C:, `\DELUXE`, SOUND.CFG, EXEC of the driver named there,
+  back to the drive it started on; the driver then loads `LEVELn.MOD`
+  from the current directory of that drive. So the programs must start on
+  another drive than C: (the CD's).
+- With `-sound sb` SBLASTER.SDR plays the table's music (12 kHz at
+  quality 0); with NOSOUND.SDR the frame timer runs as well.
+- The picture the runner shows is 320x200 (plain Mode X timing); the
+  tweaked modes at `CODE:4E7D`/`4EC1` are not used in these runs, perhaps
+  a detail option from DDPCOPTN.BIN (not checked).
 
 ## The tools and the hints
 
@@ -116,6 +146,39 @@ the next ten instructions look the same at the new place; what cannot be
 carried is left as a comment. Run it again after changing PD.hints (it
 replaces its own block in PD2.hints, keeps the lines above it).
 
+## Running the originals (tools/run)
+
+`build/pddrun.exe` (C, MSVC; `tools/run/build.bat`, or let `run.py`
+build it) is pfemu's emulation core without its Fantasies parts: a 386
+real-mode CPU, VGA (planar, Mode X, the retrace latch of the start
+address), PIT/PIC/keyboard, BIOS, the 8237 DMA and the Sound Blaster
+DSP, so the real .SDR drivers run. The DOS layer is pfemu's for memory,
+PSPs, EXEC and resident drivers (released with the program that loaded
+them); the file side is new: every drive letter is the same tree, the CD
+(`game/`) with a writable layer (`build/run/state`) over it, each drive
+with its own current directory; programs start on D:. `-sound none|sb`
+writes `C:\DELUXE\SOUND.CFG` into the layer (the CD has none).
+
+Everything runs on the emulated clock (6 M instructions a second by
+default); nothing reads the host's clock (DOS date fixed at 1994-10-01),
+so a run repeats exactly: the report ends with hashes of RAM and video
+memory, the same for the same arguments. On this machine a run goes at
+about 30 M instructions a second, five times real time.
+
+`run.py` passes everything on and translates addresses of `-break`,
+`-log`, `-watch`, `-dump` from the hints' names (`CODE:1387`, `DATA:9AA0`,
+`L13B2`, `D9AA0`, `name`s, `+N`) into the runner's `PD.EXE+08BD:9AA0`
+(frame relative to the program's load segment). Useful: `-dos` (every
+INT 21h call with its file name), `-watch` (who writes a byte, with the
+time), `-log ADDR` (registers at each pass), `-trace FILE N` (N
+instructions from the first -break/-log hit), `-shotevery DT PREFIX`
+(picture n is at n*DT), `-wav`. A key script: `-key T KEY` (tap),
+`KEY+`/`KEY-` (down/up), or `-keys FILE`.
+
+Not done: savestates, a window, the menu programs (DDPCMAIN, DDPCINTR:
+untried; DDPCINTR wants MSCDEX for CD audio, which the DOS layer does not
+have). The runner is not part of `check.py` (it needs MSVC and the CD).
+
 ## Working with a second agent
 
 Muse (in OpenCode) works in the worktree `../pddnative-muse` on
@@ -130,8 +193,7 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    structures (table descriptor, objects, hit rectangles, lights), the
    formats (TBLDET*, FLIPPERS.SPR, DDPCICON.SPR, HISTORY *.HOP/*.IDX,
    HISCORES.PD*). A `struct`/`dw` hint kind will be needed for data.
-3. A way to run the original headless (a small 8086 interpreter with
-   the few DOS/BIOS calls, the VGA from pfnative and a stand-in INT 66h)
-   to check assumptions and, later, to compare the C port with the
-   original frame by frame.
+3. The runner (done, T3) for comparing the C port with the original
+   frame by frame will want savestates (start both at the same moment)
+   and a way to dump chosen variables every frame.
 4. The port, on pfnative's platform code.
