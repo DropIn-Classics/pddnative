@@ -24,6 +24,8 @@ HISCORE_TABLES = 4
 HISCORES_PER_TABLE = 4
 HISCORE_SIZE = 9
 
+# The shipped initials confirm this order: IGN/STW/BBX/NTM and
+# NPT/SFR/RRW/STT respectively.
 TABLE_NAMES = {
     'HISCORES.PD1': ('Ignition', 'Steel Wheel', 'Beat Box', 'Nightmare'),
     'HISCORES.PD2': ('Neptune', 'Safari',
