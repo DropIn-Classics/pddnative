@@ -15,8 +15,8 @@ the end of the file).  The format is Microsoft's CodeView 4
 ("Microsoft Symbol and Type Information"): a directory of subsections
 (sstModule, sstAlignSym, sstSrcModule, sstGlobalPub, sstSegMap,
 sstSegName and others); symbols are length-prefixed records
-(S_LPROC/S_GPROC 0105, S_LDATA/S_GDATA 0101, code labels 0109, publics
-0103, S_END 0006).
+(S_LPROC16 0104, S_GPROC16 0105, S_LDATA16 0101, S_GDATA16 0102, code
+labels 0109, publics 0103, blocks 0107, S_END 0006).
 """
 import argparse
 import os
@@ -34,16 +34,19 @@ SST_GLOBALPUB = 0x12A
 SST_SEGMAP = 0x12D
 SST_SEGNAME = 0x12E
 
-# symbol record types we care about
-S_PROC = 0x0105
-S_DATA = 0x0101
+# symbol record types we care about (16-bit, CV4 OMF)
+S_LDATA16 = 0x0101
+S_GDATA16 = 0x0102
+S_LPROC16 = 0x0104
+S_GPROC16 = 0x0105
 S_LABEL = 0x0109
 S_PUB = 0x0103
+S_BLOCK16 = 0x0107
 S_END = 0x0006
 
 
 def find_cv(tail):
-    """(base, ) where base is the tail offset of the first NB08."""
+    """base, the tail offset of the first NB08."""
     if len(tail) < 8 or tail[-8:-4] != b'NB08':
         raise SystemExit('no NB08 signature at the end of the program')
     (size,) = struct.unpack_from('<I', tail, len(tail) - 4)
@@ -71,7 +74,7 @@ def directory(tail, base):
 
 
 def segmap(tail, base, lfo, cb):
-    """([descs], [names]) with descs as (frame, segName, className, cb)."""
+    """[descs] with descs as (frame, segName, className, cb)."""
     start = base + lfo
     data = tail[start:start + cb]
     cseg, csegl = struct.unpack_from('<HH', data, 0)
@@ -91,40 +94,55 @@ def segnames(tail, base, lfo, cb):
 
 
 def parse_alignsym(data):
-    """Yield (kind, off, seg, name, raw) with kind proc/data/label/end."""
+    """Yield (kind, off, seg, name, routine) with kind proc/data/label/end.
+
+    Returns (events, skipped) where skipped counts records of other types.
+    Scopes nest: PROC and BLOCK push, END pops, so a BLOCK's END does not
+    end the enclosing routine."""
     # first 4 bytes are the subsection header
     pos = 4
-    cur = None
+    stack = []
+    skipped = {}
+    events = []
     while pos + 4 <= len(data):
         ln, typ = struct.unpack_from('<HH', data, pos)
         if ln < 2 or pos + 2 + ln > len(data):
             raise SystemExit(f'bad symbol record at {pos:04X}')
         rec = data[pos + 4:pos + 2 + ln]
-        if typ == S_PROC:
+        cur = stack[-1] if stack else None
+        if typ in (S_LPROC16, S_GPROC16):
             if len(rec) < 26:
                 raise SystemExit(f'short proc record at {pos:04X}')
             off, seg = struct.unpack_from('<HH', rec, 18)
             namelen = rec[25]
             name = rec[26:26 + namelen].decode('ascii')
-            cur = name
-            yield ('proc', off, seg, name, cur)
-        elif typ == S_DATA:
+            stack.append(name)
+            events.append(('proc', off, seg, name, name))
+        elif typ in (S_LDATA16, S_GDATA16):
             off, seg, _tidx = struct.unpack_from('<HHH', rec, 0)
             namelen = rec[6]
             name = rec[7:7 + namelen].decode('ascii')
-            yield ('data', off, seg, name, cur)
+            events.append(('data', off, seg, name, cur))
         elif typ == S_LABEL:
             off, seg = struct.unpack_from('<HH', rec, 0)
             namelen = rec[5]
             name = rec[6:6 + namelen].decode('ascii')
-            yield ('label', off, seg, name, cur)
+            events.append(('label', off, seg, name, cur))
+        elif typ == S_BLOCK16:
+            # a block opens a scope like a proc (its locals belong to it);
+            # its name, if any, is not a routine, so push a marker keeping
+            # the enclosing routine for @@ prefixing
+            stack.append(cur)
+            events.append(('block', None, None, None, cur))
         elif typ == S_END:
-            cur = None
-            yield ('end', None, None, None, cur)
-        # other types (compiler, object name, etc.): skipped, but an
-        # S_END still ends the current routine only when seen above;
-        # other records leave `cur` alone
+            if stack:
+                stack.pop()
+            events.append(('end', None, None, None,
+                            stack[-1] if stack else None))
+        else:
+            skipped[typ] = skipped.get(typ, 0) + 1
         pos += 2 + ln
+    return events, skipped
 
 
 def parse_pubs(data):
@@ -202,10 +220,14 @@ def main():
 
     # collect symbols: (dbgseg, off, raw, kind, routine)
     syms = []
+    skipped = {}
     for imod, lfo, cb in by.get(SST_ALIGNSYM, []):
         data = tail[base + lfo:base + lfo + cb]
-        for kind, off, seg, name, cur in parse_alignsym(data):
-            if kind == 'end':
+        events, skip = parse_alignsym(data)
+        for typ, n in skip.items():
+            skipped[typ] = skipped.get(typ, 0) + n
+        for kind, off, seg, name, cur in events:
+            if kind in ('end', 'block'):
                 continue
             syms.append((seg, off, name, kind, cur))
     pubs = []
@@ -223,6 +245,9 @@ def main():
             print(f'  {i}: frame {frame:04X} size {cbs:04X} '
                   f'segname {tab(sname)!r} class {tab(cname)!r} -> hints {hs}')
         print(f'{len(syms)} symbols, {len(pubs)} publics:')
+        if skipped:
+            kinds = ', '.join(f'{n}x {t:04X}' for t, n in sorted(skipped.items()))
+            print(f'skipped records of other types: {kinds}')
         for seg, off, name, kind, cur in syms:
             hs = hints_seg(seg) or f'<seg {seg}>'
             extra = f' in {cur}' if cur and name.startswith('@@') else ''
