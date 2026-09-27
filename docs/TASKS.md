@@ -9,7 +9,7 @@ task's branch (see AGENTS.md).
 | id | for | status | what |
 |---|---|---|---|
 | T1 | Muse | done | DDPCINTR.EXE: stage 1 with the names from its debug information |
-| T2 | Muse | open | DDPCMAIN.EXE: stage 1 |
+| T2 | Muse | changes | DDPCMAIN.EXE: stage 1 |
 | T3 | Claude | done | a headless runner for the original programs (C, from pfemu's core) |
 | T4 | Claude | working | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
 
