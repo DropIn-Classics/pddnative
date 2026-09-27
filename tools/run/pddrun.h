@@ -1,10 +1,8 @@
 /* pddrun - a headless PC for running the shipped programs of Pinball Dreams
- * Deluxe.  The emulation core (cpu.c, vga.c, dev.c, bios.c, sound.c,
- * vgafont.c, png.c) comes from pfemu (../pfemu, commit f7c3ab9), the same
- * author's Pinball Fantasies emulator, without its Fantasies fixes, replay,
- * snapshots and host windows; dos.c keeps pfemu's memory and EXEC logic with
- * a new file layer (see there).  main.c is the session: options, the loop,
- * what is written out.
+ * Deluxe.  The emulation core: cpu.c (386 real mode), vga.c, dev.c (PIC,
+ * PIT, keyboard controller), bios.c, sound.c (DMA, Sound Blaster),
+ * vgafont.c, png.c; dos.c is the DOS layer (memory, EXEC, files).  main.c
+ * is the session: options, the loop, what is written out.
  */
 #ifndef PDDRUN_H
 #define PDDRUN_H

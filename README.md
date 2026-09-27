@@ -1,20 +1,23 @@
 # pddnative
 
 Pinball Dreams Deluxe (DOS, CD-ROM 1994, 21st Century / Spidersoft; the
-GOG.com release) taken apart, with the aim of a native program like
-`../pfnative` did for Pinball Fantasies. Unlike Pinball Fantasies there is
-no published source: the programs are reverse engineered.
+GOG.com release) taken apart, with the aim of a native compatibility
+implementation requiring an installed copy of Pinball Dreams: our own C
+code, which runs the game with the data of the player's GOG release.
+There is no published source: the programs are reverse engineered.
 
 1. **Source from the programs.** `tools/disasm.py` turns a shipped program
    into assembly source that assembles and links back to the same bytes
-   (with `tasm.py`/`tlink.py` from pfnative, taught MASM's encodings). What
+   (with `tasm.py`/`tlink.py`, work-alikes of the assembler and linker). What
    the analysis cannot see by itself (entry points reached only through
    pointers, tables, names, comments) goes into a hints file. Done for
    both table programs, PD.EXE and PD2.EXE: byte for byte identical.
 2. **Understanding** (next): names, structures, the rules of the tables,
    written into the hints.
-3. **Port** (later): readable C on pfnative's platform layer (VGA planes,
-   the INT 66h sound driver on micromod, GOG import, launcher).
+3. **The implementation** (started, `port/`): readable C translated from
+   the programs, running over their memory image loaded from the player's
+   PD.EXE/PD2.EXE, on a platform layer (window, VGA, sound with MOD
+   playback, input).
 
 No game files go into this repository, and no bytes of them: the hints
 hold addresses, names and comments only, and the source is made from the
@@ -39,8 +42,8 @@ check what the hints claim:
 
 (the Steel Wheel table, a game started and the ball launched, a picture
 every half second, every write to the game state printed). The runner is
-C and needs MSVC (the Visual Studio 2019 Build Tools, as pfemu and
-pfnative); `run.py` builds it when needed. Its options are at the top of
+C and needs MSVC (the Visual Studio 2019 Build Tools); `run.py` builds
+it when needed. Its options are at the top of
 `tools/run/main.c`.
 
 ## Layout
@@ -60,12 +63,12 @@ pfnative); `run.py` builds it when needed. Its options are at the top of
     (`git config core.hooksPath tools/hooks` once per clone).
   - `xfer.py`: carries hints from PD.hints to PD2.hints (the two programs
     share the engine; about 97 % of the instructions align).
-  - `tasm.py`, `x86enc.py`, `tlink.py`: from pfnative (commit 35cb5ee),
-    with MASM switches and one fix, see their comments.
+  - `tasm.py`, `x86enc.py`, `tlink.py`: assembler and linker work-alikes,
+    with switches for the original's encodings (see their comments).
   - `run/`: `pddrun`, a headless PC that runs the shipped programs (386
     real-mode CPU, VGA, timer, keyboard, Sound Blaster, a small DOS whose
-    `C:` is the CD with a writable layer in `build/run/state`). The core
-    is pfemu's (`../pfemu`, commit f7c3ab9), see `run/pddrun.h`.
+    `C:` is the CD with a writable layer in `build/run/state`), see
+    `run/pddrun.h`.
     `run.py`: its front end, takes addresses by their names in the hints.
 - `docs/HANDOFF.md`: state, what was learned, what is next.
 - `AGENTS.md`: rules for the agents working on this (two at a time, each

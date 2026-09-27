@@ -1,6 +1,5 @@
-/* 8259 PIC, 8253 PIT, keyboard controller, port dispatch, display timing.
- * pfemu's (see pddrun.h), without its keyboard repairs for Fantasies'
- * flippers, the replay log and the timing statistics. */
+/* 8259 PIC, 8253 PIT, keyboard controller, port dispatch, display timing
+ * (see pddrun.h). */
 #include "pddrun.h"
 #include <math.h>
 
@@ -117,8 +116,8 @@ static uint16_t pit_count(int c){
      * and past terminal count it keeps decrementing through FFFF, so a read
      * after the interrupt fired is a small negative count.  The Sound
      * Blaster drivers' timer ISR reads it to take the interrupt latency out
-     * of the next delay (pfemu's dev.c tells how a free-running reading
-     * there lost every second timer interrupt). */
+     * of the next delay (a free-running reading there loses every second
+     * timer interrupt). */
     if(c == 0 && pit[0].mode == 0){
         double left = (pit[0].next_irq - emu_now()) * PIT_HZ;
         if(left >= (double)rel) return (uint16_t)rel;   /* written, not started */
@@ -221,8 +220,8 @@ uint8_t vga_status1(void){
     frac = line - (int)line;
     if(line >= vrs && line < vre) st |= 0x08;              /* vertical retrace */
     /* Bit 0 pulses once per scan line for the whole frame, vertical blanking
-     * included: pfemu found the sound driver's calibration uses it as a
-     * scan-line clock and only settles if it never stops (dev.c there). */
+     * included: the sound driver's calibration uses it as a scan-line
+     * clock and only settles if it never stops. */
     if(frac >= hde_frac) st |= 0x01;
     { int v = (st>>3)&1; if(v && !prev) vsync_edges++; prev = v; }
     return st;
@@ -301,7 +300,7 @@ void dev_tick(void){
     sb_tick();
     /* PIT channel 0 -> IRQ0.  Mode 0 is one interrupt per count written;
      * treating it as periodic gives a calibrating driver interrupts it has
-     * not asked for (pfemu: a run off the end of its event list). */
+     * not asked for (and it runs off the end of its event list). */
     if(pit[0].mode == 0){
         if(pit[0].armed && emu_time >= pit[0].next_irq){
             pit[0].armed = 0;

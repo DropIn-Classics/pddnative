@@ -1,7 +1,7 @@
 @echo off
 rem Builds build\pddrun.exe (the headless runner, see main.c) with MSVC.
-rem If cl.exe is not on PATH, vcvars64.bat is looked for as pfemu's and
-rem pfnative's build.bat do: the VS2019 Build Tools first, then vswhere.
+rem If cl.exe is not on PATH, vcvars64.bat is looked for: the VS2019 Build
+rem Tools first, then whatever vswhere finds.
 setlocal
 cd /d "%~dp0\..\.."
 

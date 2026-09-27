@@ -1,24 +1,15 @@
 /* The VGA text-mode font, as data.
  *
- * src/vga.c renders text mode through these two tables.  They used to be
- * rasterised at startup by asking GDI for Consolas and reading the pixels back
- * (build_fonts(), src/main.c), which had three problems: it tied a core
- * rendering path to a Win32 API, it made text-mode output depend on which
- * Consolas the host happened to ship, and it left a build with no GDI - the
- * headless one - with no font at all.  Two machines could disagree about the
- * contents of a captured frame for a reason the emulated machine knew nothing
- * about, which is exactly what docs/VERIFY.md's golden vectors cannot have.
- *
- * These are the CP437 glyph shapes instead, in the order DOS expects, so both
- * builds draw the same pixels - and they are the pixels the hardware would
- * have drawn, which Consolas never was.  Assembled from the kbd project's
+ * vga.c renders text mode through these two tables: the CP437 glyph
+ * shapes, in the order DOS expects, the same pixels on every host and the
+ * ones the hardware would have drawn.  Assembled from the kbd project's
  * console fonts (Uni2-VGA16 first, Lat15-VGA16 second), which carry the IBM
  * VGA ROM shapes, reordered from Unicode into CP437.
  *
  * Three notes on the contents:
  *
- *   - 0x00-0x1F are blank.  The GDI path skipped them the same way.  DOS puts
- *     smiley faces and arrows there; nothing here has ever asked for one.
+ *   - 0x00-0x1F are blank.  DOS puts smiley faces and arrows there;
+ *     nothing here has ever asked for one.
  *   - 0xB2 and 0xDC-0xDF are the shade and half-block cells.  Neither source
  *     font carries them and they are geometric by definition, so they are
  *     constructed rather than copied.
@@ -27,10 +18,10 @@
  *     plausible-looking wrong glyph would be worse than an obvious gap, and
  *     nothing in this game prints it.
  *
- * The 8x8 table is every other row of the 8x16 one, which is what the GDI path
- * did.  Real VGA hardware has a separate 8x8 ROM font rather than a decimation
- * of the 8x16 one; matching that needs the actual 8x8 shapes, and no mode this
- * emulator renders uses them yet.
+ * The 8x8 table is every other row of the 8x16 one.  Real VGA hardware
+ * has a separate 8x8 ROM font rather than a decimation of the 8x16 one;
+ * matching that needs the actual 8x8 shapes, and no mode this emulator
+ * renders uses them yet.
  */
 #include <stdint.h>
 
@@ -306,8 +297,7 @@ void vga_font_init(void){
 
 /* The system BIOS's 8x8 font for characters 0-127, as a real PC has it at
  * F000:FA6E (8 bytes a character, bit 7 the leftmost pixel).  bios_init()
- * copies it there: INTRO reads its side-bar texts straight from that
- * address (WRITEROMCHAR), and INT 10h AX=1130h already points at it.
+ * copies it there, and INT 10h AX=1130h points at it.
  * Shapes: Daniel Hepper's font8x8_basic (public domain, from IBM's public
  * domain VGA fonts; https://github.com/dhepper/font8x8, commit 8e279d2),
  * bits reversed to the ROM's order.  0x00-0x1F are blank, as in that font. */

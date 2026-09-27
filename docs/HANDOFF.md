@@ -9,9 +9,9 @@ PD.EXE's engine named, commented and its records described (T4, done).
 - `master` has the remote `origin` (GitHub, mindphluxnet/pddnative); the
   user pushes, push only when the user asks.
 - T1 (DDPCINTR.EXE, by Muse) is merged, see "DDPCINTR.EXE" below. T2
-  (DDPCMAIN.EXE) is open for Muse, with a starting point that builds
-  IDENTICAL. Muse works in `../pddnative-muse` on `muse/*`; do not touch
-  that checkout. When the user says "Review Tn", follow CLAUDE.md (review
+  (DDPCMAIN.EXE), begun by Muse and finished by Sol, waits for review.
+  Sol, the second agent now, works in `../pddnative-muse` on `sol/*`
+  (older branches `muse/*`); do not touch that checkout. When the user says "Review Tn", follow CLAUDE.md (review
   steps) and AGENTS.md (who writes what where).
 - T3 (the runner) and T4 (PD.EXE's engine into the hints) are done; see
   "Running the originals" and "The engine" below. The next big step is
@@ -42,7 +42,7 @@ PD.EXE's engine named, commented and its records described (T4, done).
 | `*/TBLDETLO.xxx`, `TBLDETHI.xxx` | the collision maps of the table's lower and upper level (ramps); only the surface pixels, see "The engine"; Ignition has no HI file |
 | `*/LEVELn.MOD`, `INTRO.MOD` | ProTracker modules (M.K.) |
 | `HISTORY/*.256`, `*.016` | 640x480 pictures: 256 colours + 768-byte palette / 16 colours |
-| `DELUXE/*.SDR`, `SETSOUND.EXE` | the INT 66h sound drivers (Frontline Design), mostly the same files as Pinball Fantasies' |
+| `DELUXE/*.SDR`, `SETSOUND.EXE` | the INT 66h sound drivers (Frontline Design) and their set-up program |
 | MUSIC tracks 2, 3 | CD audio (ogg in the GOG release) |
 
 DELUXE.BAT runs `INSTALL.COM` and then `DDPCMAIN.EXE`, which names PD.EXE
@@ -93,8 +93,13 @@ What is known of the engine so far (addresses PD.EXE):
   latch copies through the graphics controller. The sound driver's timer
   callback sets `[83AE]`, which the frame wait polls.
 - Sound: reads SOUND.CFG, loads the .SDR driver itself (INT 21h 4Bh; the
-  parameter block and file names are in CODE at `4F71..`), INT 66h calls
-  as in Pinball Fantasies (see pfnative's docs/sound-driver.md).
+  parameter block and file names are in CODE at `4F71..`). The INT 66h
+  calls PD.EXE makes, read from its code (what the driver does with them
+  is presumed from the arguments, not checked): AL=0 stop (`stop_sound`),
+  4 play, 6 volume (CX), 8 once a tick (`timer_callback`), 0Bh the tick
+  callback (ES:DX), 10h a module position (BX), 11h an effect (BL, BH,
+  CL, DL from the table's effect list), 12h load a module (DS:DX), 13h a
+  second callback (ES:DX, `module_callback`).
 
 Checked by running (tools/run.py, 2026-09-27):
 
@@ -291,12 +296,11 @@ whose text has an address that cannot be mapped is left out (write
 ## Running the originals (tools/run)
 
 `build/pddrun.exe` (C, MSVC; `tools/run/build.bat`, or let `run.py`
-build it) is pfemu's emulation core without its Fantasies parts: a 386
-real-mode CPU, VGA (planar, Mode X, the retrace latch of the start
-address), PIT/PIC/keyboard, BIOS, the 8237 DMA and the Sound Blaster
-DSP, so the real .SDR drivers run. The DOS layer is pfemu's for memory,
-PSPs, EXEC and resident drivers (released with the program that loaded
-them); the file side is new: every drive letter is the same tree, the CD
+build it) is a headless PC: a 386 real-mode CPU, VGA (planar, Mode X,
+the retrace latch of the start address), PIT/PIC/keyboard, BIOS, the 8237
+DMA and the Sound Blaster DSP, so the real .SDR drivers run. The DOS layer
+keeps memory, PSPs, EXEC and resident drivers (released with the program
+that loaded them); every drive letter is the same tree, the CD
 (`game/`) with a writable layer (`build/run/state`) over it, each drive
 with its own current directory; programs start on D:. `-sound none|sb`
 writes `C:\DELUXE\SOUND.CFG` into the layer (the CD has none).
@@ -331,13 +335,13 @@ have). The runner is not part of `check.py` (it needs MSVC and the CD).
 
 ## Working with a second agent
 
-Muse (in OpenCode) works in the worktree `../pddnative-muse` on
-`muse/*` branches; the rules are in AGENTS.md, the tasks in
+Sol works in the worktree `../pddnative-muse` on `sol/*` branches
+(earlier tasks: `muse/*`); the rules are in AGENTS.md, the tasks in
 docs/TASKS.md. `tools/check.py` guards every commit through the hook.
 
 ## Next
 
-1. The menu program DDPCMAIN the same way (T2, Muse); DDPCINTR is done
+1. The menu program DDPCMAIN the same way (T2, Sol); DDPCINTR is done
    (T1). The FLI player needs no disassembly (FLI is documented).
 2. Understanding, into the hints: PD.EXE's engine is done (T4, "Not
    understood" above lists what is left); the formats FLIPPERS.SPR,
@@ -347,4 +351,4 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
 3. The runner (done, T3) for comparing the C port with the original
    frame by frame will want savestates (start both at the same moment)
    (`-dumpevery` dumps chosen variables at a fixed interval).
-4. The port, on pfnative's platform code.
+4. The implementation in C (`port/`).

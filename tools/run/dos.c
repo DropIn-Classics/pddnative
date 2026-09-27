@@ -1,7 +1,6 @@
 /* A small MS-DOS 5 work-alike: MCB memory chain, PSPs, EXEC, file handles.
  *
- * Memory, PSPs, EXEC and the resident-driver handling are pfemu's (see
- * pddrun.h).  The file side is this runner's own: the guest has one drive,
+ * The guest has one drive,
  * C:, whose root is the unpacked CD (game_dir) with a writable layer above
  * it (state_dir).  A path is looked up in the layer first, then on the CD;
  * a file opened for writing (or created) lives in the layer, copied up from
@@ -199,7 +198,7 @@ static int mcb_resize(uint16_t seg, uint16_t paras, uint16_t *avail){
 
 /* Resident children (the sound driver a program EXECs and leaves resident
  * with AH=31h) are released with the program that loaded them, and their
- * interrupt hooks undone, as pfemu does: the programs never unload their
+ * interrupt hooks undone: the programs never unload their
  * driver themselves, and the next program would otherwise find its memory
  * split and the vectors pointing into whatever is loaded over the driver. */
 static uint32_t ivt_snap[256];
@@ -448,8 +447,8 @@ static int alloc_handle(void){
 typedef struct {
     uint16_t psp, parent_psp, parent_ss, parent_sp, env;
     /* The caller's registers across EXEC: DOS hands them back when the child
-     * ends, and programs rely on it (pfemu: TABLE1.PRG uses DS after
-     * EXECing its driver without reloading it). */
+     * ends, and programs rely on it (DS used after EXECing a driver
+     * without reloading it). */
     uint16_t r_ax, r_bx, r_cx, r_dx, r_si, r_di, r_bp, r_ds, r_es;
 } Proc;
 static Proc procs[8];

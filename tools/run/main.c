@@ -269,11 +269,11 @@ static void write_sound_cfg(const char *mode){
     memset(cfg, 0, sizeof(cfg));
     if(!strcmp(mode, "keep")) return;
     if(!strcmp(mode, "none")){
-        /* what SETSOUND writes for NOSOUND.SDR (pfemu's cfg.c) */
+        /* what SETSOUND writes for NOSOUND.SDR */
         memcpy(cfg, "NOSOUND.SDR", 11); cfg[0x0E] = 0x64; n = 16;
     } else if(!strcmp(mode, "sb")){
         /* SBLASTER.SDR: base index 1 (220h), IRQ index 3 (IRQ 7), quality 0
-         * (pfemu's cfg.c, from the driver's parse of the file) */
+         * (as the driver parses the file) */
         memcpy(cfg, "SBLASTER.SDR", 12); cfg[0x0E] = 1; cfg[0x11] = 3; cfg[0x14] = 0; n = 25;
     } else { die("-sound takes none, sb or keep"); return; }
     if(!dos_host_path("\\DELUXE\\SOUND.CFG", host, sizeof(host), 1) || !(f = fopen(host, "wb")))

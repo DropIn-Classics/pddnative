@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""A Turbo Assembler (MASM mode) work-alike, just big enough for the
-Pinball Fantasies sources, that reproduces TASM's byte choices.
+"""A Turbo Assembler (MASM mode) work-alike, big enough for the generated
+sources of tools/disasm.py, that reproduces TASM's byte choices (and, with
+the switches build.py sets, those of the programs examined here).
 
 TASM is a one-pass assembler: an instruction's size is fixed when TASM first
 reads it, knowing only the symbols defined above it.  A forward jump gets the

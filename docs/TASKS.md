@@ -9,10 +9,10 @@ task's branch (see AGENTS.md).
 | id | for | status | what |
 |---|---|---|---|
 | T1 | Muse | done | DDPCINTR.EXE: stage 1 with the names from its debug information |
-| T2 | Muse | changes | DDPCMAIN.EXE: stage 1 |
-| T3 | Claude | done | a headless runner for the original programs (C, from pfemu's core) |
+| T2 | Muse, Sol | review | DDPCMAIN.EXE: stage 1 |
+| T3 | Claude | done | a headless runner for the original programs (C) |
 | T4 | Claude | done | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
-| T5 | Muse | open | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
+| T5 | Sol | open | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
@@ -122,11 +122,10 @@ calls PD.EXE/PD2.EXE (command line, files written before).
 ## T3: a headless runner (Claude)
 
 Runs the shipped programs without a window to check what the hints claim
-and, later, to compare the C port with the original. C, built with MSVC,
-from pfemu's emulation core (`../pfemu`, the same author's Pinball
-Fantasies emulator: 386 real-mode CPU, VGA, PIT/PIC/keyboard, BIOS, Sound
-Blaster and DMA) without its Fantasies, replay and launcher parts; a DOS
-layer whose `C:\` is the unpacked CD with a writable layer in `build/`.
+and, later, to compare the C port with the original. C, built with MSVC:
+a 386 real-mode CPU, VGA, PIT/PIC/keyboard, BIOS, Sound Blaster and DMA,
+and a DOS layer whose `C:\` is the unpacked CD with a writable layer in
+`build/`.
 
 Files: `tools/run/*` (new), `tools/run.py` (new), README.md and
 docs/HANDOFF.md (a section each).
@@ -180,14 +179,14 @@ Done when:
 - docs/HANDOFF.md says in a page how the engine works, with the
   addresses, and what is still not understood.
 
-## T5: tools/pdfiles.py, the table programs' data files (Muse)
+## T5: tools/pdfiles.py, the table programs' data files (Sol)
 
 A tool that reads the data files of PD.EXE/PD2.EXE by the formats the
 hints describe, so the port can use them and the descriptions get
 checked against the files.
 
 Files: `tools/pdfiles.py` (new), `docs/tasks/T5.md`. Branch
-`muse/T5-pdfiles`.
+`sol/T5-pdfiles`.
 
 Formats (read them in `src/PD.hints`; the comments are the reference):
 

@@ -1,4 +1,4 @@
-/* 386 real-mode CPU interpreter (pfemu's, see pddrun.h) */
+/* 386 real-mode CPU interpreter (see pddrun.h) */
 #include "pddrun.h"
 
 CPU cpu;

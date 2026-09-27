@@ -1,14 +1,12 @@
-/* Sound: 8237 DMA controller and Sound Blaster DSP, pfemu's (see pddrun.h;
- * its sound.c tells what SBLASTER.SDR does with them, re-derived there from
- * the driver's code).  The samples the card would play go to a WAV file
- * (-wav) or nowhere.
+/* Sound: 8237 DMA controller and Sound Blaster DSP (see pddrun.h).  The
+ * samples the card would play go to a WAV file (-wav) or nowhere.
  */
 #include "pddrun.h"
 
 int sound_debug = 0;
 
-/* -dmairq in pfemu: interrupt on the DMA controller's wrap instead of the
- * DSP's own transfer count.  Kept at pfemu's default (off). */
+/* 1: interrupt on the DMA controller's wrap instead of the DSP's own
+ * transfer count (off). */
 int sb_dmairq = 0;
 
 /* ------------------------------------------------------------ WAV sink */
