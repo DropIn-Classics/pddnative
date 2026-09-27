@@ -1197,7 +1197,7 @@ name DATA:9A9C key_rflipper
 name DATA:9A9E key_nudge
 name DATA:9AA0 key_plunger
 name DATA:9AA2 opt_screen
-comment DATA:9AA2 1: 320x200, 2: 320x350, the table scrolls less (checked with a DDPCOPTN.BIN of these 14 bytes)
+comment DATA:9AA2 1: 320x200, 2: 320x350, the table scrolls less (checked with a DDPCOPTN.BIN of 14 bytes); a byte, the file's last: the menu writes 13 bytes and takes no other size (DDPCMAIN's save_options and load_options), load_file here reads any length, load_options' defaults write a word (9AA3h = 0)
 name DATA:845E options_file
 name DATA:80BC hiscore_file
 
