@@ -3,11 +3,12 @@
 
 exe DELUXE/DDPCINTR.EXE
 
-; the segments, from the relocations and the header (SS:SP = 01AF:0800)
-segment CODE  0000 CODE
-segment XSEG  0097 FAR_DATA
-segment DATA  0158 DATA
-segment STACK 01AF STACK stack size=800
+; the segments, from the relocations, the header (SS:SP = 01AF:0800) and
+; the debug SegMap (PALSEG holds four 768-byte palettes, see its names)
+segment CODE   0000 CODE
+segment PALSEG 0097 FAR_DATA
+segment DATA   0158 DATA
+segment STACK  01AF STACK stack size=800
 
 ; the relocation table lists only sites in CODE
 relocorder CODE
