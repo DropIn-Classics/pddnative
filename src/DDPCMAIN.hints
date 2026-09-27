@@ -13,3 +13,17 @@ segment STACK 0E41 STACK stack size=800
 
 ; the relocation table lists the sites in DATA first, then those in CODE
 relocorder DATA CODE
+
+; ---- code reached through pointers (comment says where each comes from)
+; INT 9 handler set via AH=25h (MOV DX at CODE:1344, DS=CS)
+ptr CODE:1344 CODE
+; pointer variables DATA:31C7/31C5/31C9 holding code addresses, set to
+; 0DD9/0DD2/04E5 at startup (MOVs at CODE:020F/0215/021B), to 0DE0 (a RET
+; that disables them) at CODE:0C0C/0C12/0C18, and back at CODE:0E54/0E5A/0E60
+ptr CODE:020F CODE
+ptr CODE:0215 CODE
+ptr CODE:021B CODE
+ptr CODE:0C18 CODE
+
+; CMP r/m8,r8 (38h) where MASM writes 3Ah (like PD.hints raw entries)
+raw CODE:05B1
