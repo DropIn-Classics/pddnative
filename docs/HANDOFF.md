@@ -1,21 +1,26 @@
 # Handoff
 
 State of 2026-09-27: stage 1 (source from the programs) done for the two
-table programs and the intro (T1); a headless runner (T3) runs them;
-PD.EXE's engine named, commented and its records described (T4, done).
+table programs, the intro (T1) and the menu (T2); a headless runner (T3)
+runs them; PD.EXE's engine named, commented and its records described
+(T4); the implementation in C begun (T6, `port/`: loading a table
+matches the original for both programs).
 
 ## Start here (next session)
 
 - `master` has the remote `origin` (GitHub, mindphluxnet/pddnative); the
   user pushes, push only when the user asks.
-- T1 (DDPCINTR.EXE, by Muse) is merged, see "DDPCINTR.EXE" below. T2
-  (DDPCMAIN.EXE), begun by Muse and finished by Sol, waits for review.
-  Sol, the second agent now, works in `../pddnative-muse` on `sol/*`
-  (older branches `muse/*`); do not touch that checkout. When the user says "Review Tn", follow CLAUDE.md (review
-  steps) and AGENTS.md (who writes what where).
+- AGENTS.md has permanent provenance rules: read them before anything
+  else.
+- T1 (DDPCINTR.EXE, by Muse) and T2 (DDPCMAIN.EXE, begun by Muse and
+  finished by Sol) are merged, see below. Sol, the second agent now,
+  works in `../pddnative-muse` on `sol/*` (older branches `muse/*`); do
+  not touch that checkout. T5 is open for Sol. When the user says
+  "Review Tn", follow CLAUDE.md (review steps) and AGENTS.md (who writes
+  what where).
 - T3 (the runner) and T4 (PD.EXE's engine into the hints) are done; see
-  "Running the originals" and "The engine" below. The next big step is
-  the port (stage 3) from the hints and the generated source.
+  "Running the originals" and "The engine" below. T6, the implementation
+  in C, is under way: port/README.md and "Next" below.
 - Before any change to `tools/` or the hints: `python tools/check.py`
   must stay `all ok` (the hook enforces it on commit). `game/` holds the
   unpacked CD (`python tools/gogx.py` if it is missing).
@@ -127,7 +132,8 @@ Checked by running (tools/run.py, 2026-09-27):
   another drive than C: (the CD's).
 - With `-sound sb` SBLASTER.SDR plays the table's music (12 kHz at
   quality 0); with NOSOUND.SDR the frame timer runs as well.
-- The option word `DATA:9AA2` (the last of DDPCOPTN.BIN's 14 bytes)
+- The option byte `DATA:9AA2` (the last of DDPCOPTN.BIN's 13 bytes; the
+  menu insists on 13, PD.EXE's defaults write a word there)
   picks the screen: 1 is 320x200 Mode X, 2 the tweaked mode at
   `CODE:4EC1` (misc output A7h), 320x350, where the table scrolls less.
   Checked with an options file written into a state layer. `CODE:4E7D`
@@ -240,6 +246,29 @@ from `play_tune` on run with DS = XDATA: `music_files`, `main_tunes`,
   pattern), 9782h (the largest step count), byte 7CE6h.
 - Not seen running: locks, the hurry-up, the roulette, tilt, jackpots,
   the high score entry.
+
+## DDPCMAIN.EXE (T2)
+
+Built IDENTICAL from `src/DDPCMAIN.hints` (5338 instructions); the gaps
+left are data (docs/tasks/T2.md lists them). Segments: CODE, DATA, FONTS
+(the menu's glyphs), OPTIONS (the F10 screen and DDPCOPTN.BIN), HISTORY
+(the F9 viewer: file names, the 53 table records with manufacturer, year,
+designer, the filters), STACK. From the code, not run:
+
+- At start: its INT 9 handler, DDPCINTR.EXE with `2` or `3` (bit 0 of
+  the PIT's channel 1: presumably a random choice of the CD track),
+  DDFLIPLY.EXE once with `0`, then the menu (`select.vga`, both
+  HISCORES files, INT 33h mouse).
+- F1-F8 (`run_selection`, `run_table` at CODE:0B59): INT 9 back to the
+  old handler, DDFLIPLY.EXE with the key's digit, 46h frames, then CHDIR
+  `..\DREAMS1` and EXEC PD.EXE for F1-F4, `..\DREAMS2` and PD2.EXE for
+  F5-F8, with a command tail of one digit `0`-`3` (the table), then
+  CHDIR `..\deluxe`. So the table programs' digit is the table.
+- F10: the options screen; `save_options` writes the 13-byte
+  `C:\DELUXE\DDPCOPTN.BIN` (four choice bytes, four key words, one
+  resolution byte) when options are saved, not before every EXEC.
+- The menu loads the sound driver itself (SOUND.CFG, EXEC of the .SDR)
+  and gives it a tick callback (INT 66h AL=0Bh, CODE:4421).
 
 ## DDPCINTR.EXE (T1)
 
