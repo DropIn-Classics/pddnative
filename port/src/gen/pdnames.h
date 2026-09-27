@@ -310,8 +310,10 @@
     X(DATA, hurry_base, 0x6565, 0x6638) \
     X(DATA, hurry_value, 0x656D, 0x6640) \
     X(DATA, hurry_step, 0x6575, 0x6648) \
+    X(DATA, tour_lamps, 0x657D, 0x6650) \
     X(DATA, always_ff, 0x6581, 0x6654) \
     X(DATA, idle_timer, 0x658A, 0x665D) \
+    X(DATA, msg_count_buf, 0x658C, 0x665F) \
     X(DATA, event_sp, 0x65A1, 0x6674) \
     X(DATA, lamp_stack, 0x65A7, 0x667A) \
     X(DATA, roulette_on, 0x6627, 0x66FA) \
@@ -436,6 +438,10 @@
     X(DATA, booster_col, 0x89B5, 0x89C6) \
     X(DATA, always_0, 0x89B7, 0x89C8) \
     X(DATA, attract_mode, 0x89B8, 0x89C9) \
+    X(DATA, tour_on, 0x89B9, 0x89CA) \
+    X(DATA, tour_wait, 0x89BA, 0x89CB) \
+    X(DATA, tour_line, 0x89BB, 0x89CC) \
+    X(DATA, idle_dir, 0x89BD, 0x89CE) \
     X(DATA, tilted, 0x89BE, 0x89CF) \
     X(DATA, lane_exit_x, 0x89BF, 0x89D0) \
     X(DATA, light_count, 0x89C1, 0x89D2) \
@@ -465,10 +471,23 @@
     X(DATA, flipper_pressed, 0x8ABE, 0x8ACF) \
     X(DATA, ball_drained, 0x8ABF, 0x8AD0) \
     X(DATA, flippers_off, 0x8AC0, 0x8AD1) \
+    X(DATA, idle_text, 0x8AC3, 0x8AD4) \
+    X(DATA, tour_step, 0x8AC5, 0x8AD6) \
+    X(DATA, msg_starting, 0x8AC7, 0x8AD8) \
+    X(DATA, msg_period, 0x8AC8, 0x8AD9) \
+    X(DATA, msg_timer, 0x8AC9, 0x8ADA) \
+    X(DATA, msg_blank, 0x8ACA, 0x8ADB) \
+    X(DATA, msg_flashes, 0x8ACB, 0x8ADC) \
     X(DATA, message_busy, 0x8ACC, 0x8ADD) \
+    X(DATA, msg_frame, 0x8ACD, 0x8ADE) \
+    X(DATA, msg_length, 0x8ACF, 0x8AE0) \
     X(DATA, event_stack, 0x8AD3, 0x8AE4) \
     X(DATA, event_sp_ball, 0x8C53, 0x8C64) \
+    X(DATA, msg_count_max, 0x8CB5, 0x8CC6) \
+    X(DATA, msg_count_src, 0x8CB6, 0x8CC7) \
     X(DATA, event_arm, 0x8CCE, 0x8CDF) \
+    X(DATA, msg_counting, 0x8CD2, 0x8CE3) \
+    X(DATA, msg_cols, 0x8CD6, 0x8CE7) \
     X(DATA, event_player_bit, 0x8CDA, 0x8CEB) \
     X(DATA, quit_request, 0x8CE0, 0x8CF1) \
     X(DATA, ball_start_x, 0x8CE1, 0x8CF2) \
@@ -503,6 +522,7 @@
     X(DATA, surface_vx, 0x9727, 0x9738) \
     X(DATA, surface_vy, 0x9729, 0x973A) \
     X(DATA, nudge_push, 0x972B, 0x973C) \
+    X(DATA, kick_speed, 0x972D, 0x973E) \
     X(DATA, hit_lane, 0x972F, 0x9740) \
     X(DATA, hit_score, 0x9730, 0x9741) \
     X(DATA, hit_object, 0x9732, 0x9743) \
@@ -538,8 +558,20 @@
     X(DATA, ball_vy, 0x976B, 0x977C) \
     X(DATA, ball_vy_hi, 0x976C, 0x977D) \
     X(DATA, nudge_phase, 0x9771, 0x9782) \
+    X(DATA, phys_a, 0x9772, 0x9783) \
+    X(DATA, phys_b, 0x9774, 0x9785) \
     X(DATA, surface, 0x9776, 0x9787) \
     X(DATA, surface_angle, 0x9777, 0x9788) \
+    X(DATA, phys_c, 0x9778, 0x9789) \
+    X(DATA, phys_c_sign, 0x977A, 0x978B) \
+    X(DATA, bounce_along, 0x977C, 0x978D) \
+    X(DATA, step_dx, 0x977E, 0x978F) \
+    X(DATA, step_dy, 0x977F, 0x9790) \
+    X(DATA, step_sx, 0x9780, 0x9791) \
+    X(DATA, step_sy, 0x9781, 0x9792) \
+    X(DATA, step_count, 0x9782, 0x9793) \
+    X(DATA, step_err, 0x9783, 0x9794) \
+    X(DATA, div_count, 0x9784, 0x9795) \
     X(DATA, hit_x, 0x9785, 0x9796) \
     X(DATA, hit_y, 0x9787, 0x9798) \
     X(DATA, lock2_used, 0x9789, 0x979A) \

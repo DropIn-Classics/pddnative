@@ -722,6 +722,20 @@ name CODE:0399 scroll_toward
 comment CODE:0399 one scroll step toward the line [89BBh]/8
 name CODE:03D7 idle_scroll
 comment CODE:03D7 one scroll step down to the end, then up to the top ([89BDh] the direction)
+name DATA:89CE idle_dir
+comment DATA:89CE idle_scroll's direction: 0 down, FFh up
+name DATA:8AD4 idle_text
+comment DATA:8AD4 idle_show: the entry of td_idle_texts (a list of messages, a negative word at its end) shown now
+name DATA:89CA tour_on
+comment DATA:89CA Ignition's idle show: FFh while it goes through td_idle_scroll (after the idle texts), 0 while the texts run
+name DATA:8AD6 tour_step
+comment DATA:8AD6 the entry of td_idle_scroll shown now: 6 bytes, a message, a light group (into tour_lamps), the line to scroll to (tour_line); a negative word after the last
+name DATA:89CB tour_wait
+comment DATA:89CB frames (10h) the table scrolls toward the next step's line before its message starts
+name DATA:89CC tour_line
+comment DATA:89CC the line idle_show scrolls toward (scroll_toward: the scroll's high word is this / 8)
+name DATA:6650 tour_lamps
+comment DATA:6650 a list of one light group (and FFFFh), the tour step's: idle_update_lights shows its lamps' blink phases
 name CODE:05BD show_player_up
 comment CODE:05BD during the ball start: "player n" / the players and the ball number, blinking
 name CODE:0FF0 reset_ball
@@ -783,7 +797,7 @@ comment CODE:1DF1 AL = the angle byte of a 1Fh pixel: FCh gravity 10h, FBh gravi
 name CODE:1E81 collision_response
 comment CODE:1E81 the hit point into hit_x/hit_y, then the routine of response_table for the surface (all: bounce_response)
 name CODE:2521 bounce_response
-comment CODE:2521 the response of every surface: bounce, then the step sizes again; 9782h keeps the largest step count
+comment CODE:2521 the response of every surface: bounce, then the step sizes again; step_count becomes the smaller of what was left and the new sum
 name CODE:20B8 bounce
 comment CODE:20B8 the ball's speed reflected at the surface (angle [9777h]) with the surface's constants (surface_params), the flippers' and the nudge's push added
 name CODE:239E surface_params
@@ -864,6 +878,26 @@ name DATA:975F map_flags
 comment DATA:975F FFh again whenever the ball's next pixel has no surface: bit 0 arms the one-way passages, bit 1 the 1Fh lines, so a line acts once per crossing (map_special)
 name DATA:9760 map_event
 comment DATA:9760 an event number from the map (FFh: none), run by map_event_run: the hole map_events[map_event]
+name DATA:978F step_dx
+comment DATA:978F ball_step_size: the pixels to go this step in x and y (977Fh), without sign, and their directions (+1 or FFh) at 9780h and 9781h; step_count their sum, what is left of it
+name DATA:9790 step_dy
+name DATA:9791 step_sx
+name DATA:9792 step_sy
+name DATA:9793 step_count
+name DATA:9794 step_err
+comment DATA:9794 ball_step's line through the pixels: the next pixel is in x or y by which keeps this nearer to 0 (+step_dx for an x pixel, -step_dy for a y pixel)
+name DATA:9783 phys_a
+comment DATA:9783 scratch of the physics: flipper_sweep's hit (byte 1, the shape's angle byte at 9773h), ball_collide's next pixel (x here, y at 9774h), bounce's cosine (a word and a sign byte at 9774h, for mul_fix)
+name DATA:9785 phys_b
+name DATA:9789 phys_c
+comment DATA:9789 scratch of the physics: ball_collide's count of flipper shapes missed (a byte), bounce's sine (a word and a sign byte at 977Ah)
+name DATA:978B phys_c_sign
+name DATA:978D bounce_along
+comment DATA:978D bounce: the ball's speed along the surface (the one across it stays in DX)
+name DATA:973E kick_speed
+comment DATA:973E bounce: added to the speed across the surface; E4A8h at a kicker (hit_lane), F63Ch for a type 3 kicker unless the speed is already beyond FC18h, else 0
+name DATA:9795 div_count
+comment DATA:9795 div_u's loop counter (ends at 1)
 name DATA:9745 table_push
 name DATA:9738 surface_vx
 comment DATA:9738 the speed of the surface hit: 0, or a flipper's at the hit point (its angular speed times the distance from the pivot; surface_params)
@@ -1153,6 +1187,29 @@ name DATA:8C64 event_sp_ball
 name DATA:8ACA running_object
 name DATA:8ADD message_busy
 comment DATA:8ADD FFh while a message runs (message_step), 0 after it and when the running object is done (end_running)
+name DATA:8AD8 msg_starting
+comment DATA:8AD8 FFh when message_start runs the message (it does not end the running object at the message's end), 0 for message_step
+name DATA:8AD9 msg_period
+comment DATA:8AD9 the running message's flash period (its +3), frames
+name DATA:8ADA msg_timer
+comment DATA:8ADA frames until the next flash change or count-up step
+name DATA:8ADB msg_blank
+comment DATA:8ADB FFh while a flashing message shows blanks
+name DATA:8ADC msg_flashes
+comment DATA:8ADC flashes left (the message's +2)
+name DATA:8ADE msg_frame
+comment DATA:8ADE frames the scrolling message has run (it moves a column every 8)
+name DATA:8AE0 msg_length
+comment DATA:8AE0 the message's +6: where a scrolling message stops, the frames a counted-up message stays
+name DATA:8CC6 msg_count_max
+comment DATA:8CC6 the count-up: every character shown is at most this (from '0', one more each step, until 5Ah)
+name DATA:8CC7 msg_count_src
+name DATA:8CE3 msg_counting
+comment DATA:8CE3 FFFFh while a character of the count-up has not reached its own yet
+name DATA:8CE7 msg_cols
+comment DATA:8CE7 the columns left to draw (13h: the display's 20 less one)
+name DATA:665F msg_count_buf
+comment DATA:665F the count-up's text as far as it has counted (20 characters and FFh)
 name CODE:348B end_running
 comment CODE:348B running_object and message_busy cleared
 name DATA:8CEB event_player_bit
