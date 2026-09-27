@@ -403,8 +403,9 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    write variables and give an options file; port/README.md says where
    and how). A run confirmed that a locked ball never ends state 4 in the
    320x200 mode (the default) in the original: its scroll loop cannot
-   reach its end (see the hints at `st_ball_locked`). Not checked by a
-   run yet: a ball locked by play, longer games on the other tables.
+   reach its end (see the hints at `st_ball_locked`). A ball locked by
+   play is equal too (Nightmare, with locks_lit written). Not checked by a
+   run yet: longer games on the other tables.
    Next: longer key scripts (locks, jackpots, the roulette, the upper
    levels); then the sound: the driver's tick is 70.09 a second in the
    320x200 mode (measured, SBLASTER.SDR); what AL=11h (effects) and

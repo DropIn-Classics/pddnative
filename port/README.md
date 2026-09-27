@@ -68,7 +68,10 @@ space of the driver's EXEC in CODE, the stack)
   DDPCOPTN.BIN) it ends after 73 passes, and the next ball is equal at
   its plunger and at the 1st and 300th frame of play. The attract show in
   the 350-line mode is equal at its 200th and 700th frame. A ball locked
-  by play (lock_ball) is not checked yet.
+  by play, on Nightmare (locks_lit set at the first frame of play, then
+  129 random flipper taps; the ball goes into the lock at the 500th
+  frame): equal at the 250th and 499th frame of play, at state 4's entry
+  and at its loop's 100th pass.
 - the flippers: 91 random taps of the Shift keys (4 to 14 pictures each,
   3 to 25 apart, from picture 900; the runner's times as above, given
   with -keys): equal at the 200th, 500th and 992nd frame of play (the ball

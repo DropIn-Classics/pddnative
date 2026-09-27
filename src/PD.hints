@@ -389,7 +389,7 @@ comment CODE:04E6 state 3: a new ball for the current player: the ball to the pl
 name CODE:04EE ball_start
 name CODE:0553 ball_start_loop
 name CODE:041F st_ball_locked
-comment CODE:041F state 4: a ball was locked (lock_ball): a new ball to the plunger, the table scrolls down, then as state 3 (seen running in the 350-line mode, entered by writing game_state; a lock by play not seen)
+comment CODE:041F state 4: a ball was locked (lock_ball): a new ball to the plunger, the table scrolls down, then as state 3 (seen running: in the 350-line mode entered by writing game_state; a lock by play on Nightmare, with locks_lit written)
 comment CODE:041F its scroll loop (from CODE:04B4) tests the 320x200 mode's end (29E000h) and then falls into the 350-line mode's test (a JMP presumably missing, as game_scroll_down has one), which subtracts 172000h from what is left: with scroll_step keeping the scroll at 29E000h at most that is always below 0, so in the 320x200 mode the loop does not end (checked by running with game_state set to 4 at st_play: scroll stays at 29E000h, a pass a picture, since set_screen_start waits for the retrace)
 name CODE:04B4 ball_locked_loop
 name CODE:0653 st_play
