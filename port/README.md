@@ -24,10 +24,10 @@ bounce), the event objects' handlers (the tables' own code: multipliers,
 jackpots, locks, the roulette, the hurry-up ...), state 6 (the ball lost:
 the bonus times the multiplier counted, the boosters, the next player, a
 locked ball back into play). The program stops at the first routine not
-translated yet, with its name (now `st_ball_locked`, `st_pause`, `st_tilt`
-for states 4, 8, 9), and leaves its last picture on the screen. State 7
-(game over: the high scores with the initials entered, the players'
-scores in turn) is translated too.
+translated yet, with its name, and leaves its last picture on the screen.
+All the states are translated: also 7 (game over: the high scores with
+the initials entered, the players' scores in turn), 4 (a ball locked),
+8 (pause), 9 (tilt) and 12 (set nowhere).
 
 Checked: the port's memory equals the original's in tools/run (DATA, BSS,
 TDATA, XDATA and all of video memory byte for byte; different only where
@@ -56,6 +56,12 @@ space of the driver's EXEC in CODE, the stack)
   score (1,052,000) in the high scores' fourth place. The ball's bounces
   on the table and the kickers are thus checked; the flippers' are not
   yet.
+- the pause (P at picture 926, A at 1000; runner times 13.869301 +
+  (picture - 827.5) / 70.09 s): equal at the 100th, 101st and 300th frame
+  of play; tilt (Space tapped at play frames 230, 240, 250, 260, 270, in
+  one window of nudge_timer): equal at state 9's entry, the drain and the
+  next ball's start. State 4 is not checked by a run (no ball locked yet),
+  nor state 12.
 - XDATA's `music_pos` can differ from the original's: INT 66h AL=10h
   returns the position the driver's player has reached in the module, and
   the port's player does not advance in the headless build (no audio
@@ -77,8 +83,8 @@ Comparing with the original: stop both at the same place and compare
 their memory by the names of the hints. The port stops at the first routine
 not translated yet or, with `PD_STOP=where#N`, the Nth time it passes `checkpoint(where)`
 (`idle_loop`: the head of state 2's loop, `ball_start_loop`: state 3's,
-`play`: the entry of `st_play`, `ball_lost`, `ball_start`, `game_over`:
-of states 6, 3 and 7;
+`play`: the entry of `st_play`, `ball_lost`, `ball_start`, `game_over`,
+`tilt`, `ball_locked`: of states 6, 3, 7, 9 and 4;
 `PD_TRACE` prints each with the pictures shown so far), the runner with
 `-break ADDR#N`.
 

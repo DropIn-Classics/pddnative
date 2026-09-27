@@ -80,14 +80,17 @@ void read_game_keys(void);
 int ask_quit(void);
 void idle_scroll(void);
 
-/* ---- pd_over.c: state 7 */
+/* ---- pd_over.c: state 7, state 12 */
 void st_game_over(void);
+void st_12(void);
 
 /* ---- pd_game.c: a new game, a new ball */
 void new_game(void);
 void reset_ball(void);
 void clear_object_timers(void);
 void lights_off_player(void);
+/* the ball at its start (ball_start_x/y) */
+void ball_to_start(void);
 
 void reset_locks(void);
 
@@ -100,8 +103,11 @@ int bonus_count_step(void);
 /* ---- pd_events.c: DI = a sequence, its objects pushed on the event stack */
 void run_event(uint16_t di);
 
-/* ---- pd_rules.c: state 5, a frame of play */
+/* ---- pd_rules.c: state 5, a frame of play; states 8 and 9 */
 void st_play(void);
+void st_pause(void);
+void st_tilt(void);
+void display_frame(void);
 
 /* ---- pd_bcd.c: decimal arithmetic as the CPU's DAA and DAS do it */
 uint8_t daa(uint8_t al, int *cf, int af);
@@ -134,6 +140,7 @@ int lock_ball2(uint16_t di), lock_ball3(uint16_t di);
 
 /* ---- pd_play.c: state 3, the nudge, the plunger, the scroll */
 void ball_start(void);
+void st_ball_locked(void);
 void scroll_follow(void);
 void nudge(void);
 void plunger(void);

@@ -324,6 +324,7 @@
     X(DATA, msg_count_buf, 0x658C, 0x665F) \
     X(DATA, event_sp, 0x65A1, 0x6674) \
     X(DATA, lamp_stack, 0x65A7, 0x667A) \
+    X(DATA, msg_player1_score, 0x661F, 0x66F2) \
     X(DATA, roulette_on, 0x6627, 0x66FA) \
     X(DATA, roulette_pos, 0x6628, 0x66FB) \
     X(DATA, roulette_delay, 0x662A, 0x66FD) \
@@ -346,6 +347,7 @@
     X(DATA, txt_bonus_held, 0x6B80, 0x6C53) \
     X(DATA, txt_roulette, 0x6B95, 0x6C68) \
     X(DATA, txt_count2, 0x6DBF, 0x6E92) \
+    X(DATA, txt_game_over2, 0x78D4, 0x795B) \
     X(DATA, sprites_scroll, 0x7CE6, 0x7D5A) \
     X(DATA, area_col, 0x7CE8, 0x7D5C) \
     X(DATA, area_y, 0x7CEA, 0x7D5E) \

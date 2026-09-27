@@ -3,8 +3,8 @@
 State of 2026-09-27: stage 1 (source from the programs) done for the two
 table programs, the intro (T1) and the menu (T2); a headless runner (T3)
 runs them; PD.EXE's engine named, commented and its records described
-(T4); the implementation in C begun (T6, `port/`: loading a table
-matches the original for both programs).
+(T4); the implementation in C (T6, `port/`) has every game state
+translated and matches the original through a whole game on Steel Wheel.
 
 ## Start here (next session)
 
@@ -393,11 +393,16 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
 3. The runner (done, T3) for comparing the C port with the original
    frame by frame will want savestates (start both at the same moment)
    (`-dumpevery` dumps chosen variables at a fixed interval).
-4. The implementation in C (`port/`, T6): started 2026-09-27; state 1
-   (loading) runs for both programs and matches the original's memory at
-   the entry of `st_idle` (port/README.md). Next: state 2 (`st_idle` and
-   what it calls), then the ball and play, each state checked with
-   `tools/memcmp.py` against a run of the original stopped at the same
-   routine. The driver's tick is 70.09 a second in the 320x200 mode
-   (measured, SBLASTER.SDR); what AL=11h (effects) and AL=13h
-   (`module_callback`) do for the driver is still to be found.
+4. The implementation in C (`port/`, T6): started 2026-09-27; every
+   game state and the event objects' handlers are translated, and checked
+   against runs of the original stopped at the same place (the idle show
+   on all eight tables; on Steel Wheel a whole game: three balls, the
+   bonus count, the initials, pause and tilt; port/README.md says where
+   and how). Not checked by a run yet: the flippers hitting the ball, a
+   locked ball (state 4; the hints say why it presumably never ends in the
+   320x200 mode), the other tables in play, PD2.EXE in play. Next: key
+   scripts with the flippers, the other tables; then the sound: the
+   driver's tick is 70.09 a second in the 320x200 mode (measured,
+   SBLASTER.SDR); what AL=11h (effects) and AL=13h (`module_callback`) do
+   for the driver is still to be found, and the port's player does not
+   advance in the headless build (XDATA's music_pos differs).

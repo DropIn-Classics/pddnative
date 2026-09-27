@@ -218,3 +218,42 @@ void ball_start(void)
     ww(V(game_state), 5);
     wb(V(flippers_off), 0);
 }
+
+/* state 4: a ball was locked (lock_ball): a new ball to the plunger, the
+ * table scrolls down, then ball_start.  In the 320x200 mode the scroll
+ * loop does not end (the original's two tests run one after the other;
+ * see the hints at st_ball_locked). */
+void st_ball_locked(void)
+{
+    int32_t s;
+
+    checkpoint("ball_locked");
+    ww(V(ball_obj), rw(V(ball_obj)) & 0xFFFE);
+    wb(V(sprites), (uint8_t)((rb(V(sprites)) & 0xFE) | 2));
+    ball_to_start();
+    ww(V(message), 0);
+    wb(V(message_prio), 0);
+    ww(V(running_object), 0);
+    ww(V(ball_vx), 0);
+    ww(V(ball_vy), 0);
+    wb(V(ball_held), 0);
+    wb(V(ball_in_hole), 0);
+    wb(V(lock_pending), 0);
+    ww(V(event_sp), V(event_stack));
+    ww(V(event_sp_ball), V(event_stack));
+    ww(V(lanes_a), rw(V(td_lanes_a_lower)));
+    ww(V(lanes_b), rw(V(td_lanes_b_lower)));
+    ww(V(hit_rects), rw(V(td_rects_lower)));
+    do {
+        lights_frame();
+        wd(V(scroll_speed), 0x4000);
+        scroll_step();
+        s = (int32_t)rd(V(scroll));
+        if (rb(V(opt_screen)) != 2) {
+            if (s < 0x29E000)
+                continue;
+            s -= 0x29E000;
+        }
+    } while (s - 0x172000 < 0);
+    ball_start();
+}

@@ -7,6 +7,7 @@
  * and group and target at test_hit_rects, lane at test_lanes_a, hole at
  * map_event_run, event object at run_events. */
 #include "pd.h"
+#include "sound.h"
 
 /* the object's points: +0Eh to the bonus, +6 to the score */
 static void score_object(uint16_t di)
@@ -51,7 +52,7 @@ static void run_object_event(uint16_t g)
 /* the hurry-up counting (up; down on table 3, its end at 0), else the
  * running message, else after a while without score the texts of
  * td_score_texts, else "player n" and the score */
-static void display_frame(void)
+void display_frame(void)
 {
     uint16_t hurry = rw(V(td_hurry)), msg, bx, t;
 
@@ -709,4 +710,63 @@ void st_play(void)
         wb(V(tune_request), 0);
         ww(V(game_state), 2);
     }
+}
+
+/* state 8 (key P): the music at volume 1, "game paused" until a key (Esc
+ * asks to quit); then state 5.  The original polls the keys in a loop;
+ * here each round is a picture. */
+void st_pause(void)
+{
+    int i, any;
+
+    wait_keys_up();
+    snd_volume(1);
+    for (;;) {
+        show_text(V(txt_paused));
+        if (key_down(0x01) && ask_quit()) {
+            stop_sound();
+            ww(V(game_state), 0);
+            return;
+        }
+        for (i = 0, any = 0; i < 0x10; i++)
+            any |= rb((uint16_t)(V(key_map) + i));
+        if (any)
+            break;
+        pump_frame();
+    }
+    wait_keys_up();
+    ww(V(game_state), 5);
+    snd_volume(0x100);
+}
+
+/* state 9: tilt: flippers off, the ball's bonus and counts cleared,
+ * "tilt" until the ball drains (only the lanes still tested), state 6 */
+void st_tilt(void)
+{
+    uint16_t bx = rw(V(player_rec));
+    int i;
+
+    checkpoint("tilt");
+    wb(V(jingle_request), 6);
+    wb(V(nudge_phase), 0);
+    ww(V(nudge_push), 0);
+    wb(V(flippers_off), 0xFF);
+    wb(V(ball_held), 0);
+    wb(V(tilted), 0xFF);
+    lights_off_all();
+    for (i = 0x0C; i <= 0x12; i += 2)
+        ww((uint16_t)(bx + i), 0);
+    do {
+        ww(V(frame_count), (uint16_t)(rw(V(frame_count)) + 1));
+        scroll_follow();
+        ball_frame();
+        plunger();
+        scroll_step();
+        test_lanes(rw(V(lanes_a)), 2);
+        test_lanes(rw(V(lanes_b)), 6);
+        show_text(V(txt_tilt));
+        lights_frame();
+        object_timers7();
+    } while (!rb(V(ball_drained)));
+    ww(V(game_state), 6);
 }

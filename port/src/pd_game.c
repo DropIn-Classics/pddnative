@@ -8,7 +8,7 @@
 
 /* the ball at its start: the 32-bit ball_start_x/y (pixels * 2000h) / 8
  * into the 24-bit position */
-static void ball_to_start(void)
+void ball_to_start(void)
 {
     uint32_t x = (uint32_t)((int32_t)rd(V(ball_start_x)) >> 3);
     uint32_t y = (uint32_t)((int32_t)rd(V(ball_start_y)) >> 3);

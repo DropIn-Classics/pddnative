@@ -633,6 +633,7 @@ name CODE:04ED ball_start
 name CODE:0552 ball_start_loop
 name CODE:041E st_ball_locked
 comment CODE:041E state 4: a ball was locked (lock_ball): a new ball to the plunger, the table scrolls down, then as state 3 (presumably; not seen running)
+comment CODE:041E its scroll loop (from CODE:04B4) tests the 320x200 mode's end (29E000h) and then falls into the 350-line mode's test (a JMP presumably missing, as game_scroll_down has one), which subtracts 172000h from what is left: with scroll_step keeping the scroll at 29E000h at most that is always below 0, so in the 320x200 mode the loop does not end (read, not checked by running; the port does the same)
 name CODE:0652 st_play
 comment CODE:0652 state 5: the game: scroll, ball, nudge, plunger, the table's logic, drawing; ball drained: state 6; Esc: state 2
 name CODE:15E3 st_ball_lost
@@ -662,6 +663,9 @@ comment CODE:1A23 state 10: INT 9 back, palette black, video memory cleared, exi
 name CODE:1A1C st_restart
 comment CODE:1A1C states 11, 13-15: state 1 again
 name CODE:4C24 st_12
+name DATA:66F2 msg_player1_score
+comment DATA:66F2 st_12: a message whose text gets player 1's score at +24h
+name DATA:795B txt_game_over2
 comment CODE:4C24 state 12: player 1's score in a text, then state 11; nothing sets state 12 (left over, presumably)
 ; (not mapped) name CODE:0FA3 fatal_error
 ; (not mapped) comment CODE:0FA3 a file could not be loaded: sound off, text mode, the error text, exit

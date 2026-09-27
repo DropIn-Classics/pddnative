@@ -196,3 +196,33 @@ new_game:
     wb(V(attract_mode), 0);
     game_scroll_down();
 }
+
+/* 6 BCD bytes at si (low first) as 12 digits at di, the highest first */
+static void bcd6_to_text(uint16_t si, uint16_t di)
+{
+    int i;
+
+    for (i = 5; i >= 0; i--, di = (uint16_t)(di + 2)) {
+        uint8_t v = rb((uint16_t)(si + i));
+        wb(di, (uint8_t)((v >> 4) + '0'));
+        wb((uint16_t)(di + 1), (uint8_t)((v & 0x0F) + '0'));
+    }
+}
+
+/* state 12: player 1's score in a message shown to its end, "game over",
+ * then state 11.  Nothing sets state 12 (left over, presumably). */
+void st_12(void)
+{
+    uint16_t msg = V(msg_player1_score);
+
+    bcd6_to_text(V(player_1), (uint16_t)(rw((uint16_t)(msg + 4)) + 0x24));
+    ww(V(message), msg);
+    do {
+        wait_frames(1);
+        display_frame();
+    } while (rw(V(message)));
+    show_text(V(txt_game_over2));
+    wait_frames(0xD2);
+    stop_sound();
+    ww(V(game_state), 0x0B);
+}
