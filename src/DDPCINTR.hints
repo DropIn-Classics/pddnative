@@ -18,3 +18,168 @@ keeptail
 
 ; a word displacement 3Ah where the assembler takes a byte (not checked)
 raw CODE:008F
+
+; ---- names from the CodeView debug information (tools/cv4.py --hints)
+; locals as <routine>_<local> without @@; CODE:003E is both ldfail and exit
+; (kept ldfail, exit as a comment below); screen (seg 5) and the absolute
+; _end etc. (seg 0) are not here
+; code routines and labels
+name CODE:0000 intro
+name CODE:0015 intro_ml010	; @@ml010 in intro
+name CODE:0023 intro_mlp_20	; @@mlp_20 in intro
+name CODE:003B intro_mlp_30	; @@mlp_30 in intro
+name CODE:003E ldfail
+; name CODE:003E exit	; also exit, kept ldfail (cleanup+exit via INT 21h AH=4Ch,
+; reached by fallthrough from disply_pics and by jumps on failures)
+name CODE:0049 picmem
+name CODE:004B disply_pics
+name CODE:007A disply_pics_aa	; @@aa in disply_pics
+name CODE:0093 disply_pics_bb	; @@bb in disply_pics
+name CODE:0099 disply_pics_dd	; @@dd in disply_pics
+name CODE:00DC disply_pics_dp010	; @@dp010 in disply_pics
+name CODE:00F0 disply_pics_dp020	; @@dp020 in disply_pics
+name CODE:0100 disply_pics_dp_99	; @@dp_99 in disply_pics
+name CODE:010A load_pics
+name CODE:0126 load_pics_lp05	; @@lp05 in load_pics
+name CODE:013A load_pics_lp10	; @@lp10 in load_pics
+name CODE:0158 load_pics_lp90	; @@lp90 in load_pics
+name CODE:015D scr	; @@scr
+name CODE:015F mvscr
+name CODE:016C mvscr_a	; @@a in mvscr
+name CODE:0175 mvscr_b	; @@b in mvscr
+name CODE:0187 mvscr_c	; @@c in mvscr
+name CODE:019B scrload
+name CODE:01B2 scrload_a	; @@a in scrload
+name CODE:01BC scrload_b	; @@b in scrload
+name CODE:01D5 scrload_z	; @@z in scrload
+name CODE:01DE mstart2
+name CODE:01F0 getcmdline
+name CODE:0200 getcmdline_gcl010	; @@gcl010 in getcmdline
+name CODE:0217 getcmdline_gcl100	; @@gcl100 in getcmdline
+name CODE:021A getcmdline_gcl999	; @@gcl999 in getcmdline
+name CODE:021D init320200
+name CODE:0266 dispoff
+name CODE:0275 dispoff_a	; @@a in dispoff
+name CODE:027C rasplit
+name CODE:02B9 setpal
+name CODE:02DE clvram
+name CODE:02EA cvlp
+name CODE:0306 srdwr
+name CODE:031D waitframe
+name CODE:0322 waitframe_wf010	; @@wf010 in waitframe
+name CODE:032B wblnk
+name CODE:033F wblnk_wb010	; @@wb010 in wblnk
+name CODE:034A wblnk_wb020	; @@wb020 in wblnk
+name CODE:034D wblnk_wb201	; @@wb201 in wblnk
+name CODE:0352 wblnk_wb202	; @@wb202 in wblnk
+name CODE:035B wrmd0
+name CODE:0367 wrmd1
+name CODE:0379 vdispoff
+name CODE:0385 vdispon
+name CODE:0391 fadeup
+name CODE:03A6 fadeup_fu_01	; @@fu_01 in fadeup
+name CODE:03AE fadeup_fu_10	; @@fu_10 in fadeup
+name CODE:03EA fadedn
+name CODE:03FF fadedn_fd_01	; @@fd_01 in fadedn
+name CODE:0407 fadedn_fd_10	; @@fd_10 in fadedn
+name CODE:0443 setst
+name CODE:045A init320240
+name CODE:04CC getpal
+name CODE:04E2 setkbdint
+name CODE:0507 rstkbdint
+name CODE:051D kbdint
+name CODE:0533 kbdint_a	; @@a in kbdint
+name CODE:0550 kbdint_b	; @@b in kbdint
+name CODE:056E kbdint_c	; @@c in kbdint
+name CODE:0572 kbdint_z	; @@z in kbdint
+name CODE:057C prefix	; @@prefix
+name CODE:057D wkeyend
+name CODE:0588 wke010
+name CODE:0598 wkeypress
+name CODE:05A3 wkp010
+name CODE:05B3 chkkey
+name CODE:05CD clrkey
+name CODE:05E6 fload
+name CODE:05F7 fload_a	; @@a in fload
+name CODE:05FE fload_b	; @@b in fload
+name CODE:0613 fload_z	; @@z in fload
+name CODE:061A f_save
+name CODE:0636 f_save_a	; @@a in f_save
+name CODE:0648 f_save_b	; @@b in f_save
+name CODE:0654 f_save_c	; @@c in f_save
+name CODE:066D f_save_d	; @@d in f_save
+name CODE:068C f_save_e	; @@e in f_save
+name CODE:0696 f_save_z	; @@z in f_save
+name CODE:069D fhand	; @@fhand
+name CODE:069F fhigh	; @@fhigh
+name CODE:06A1 flow	; @@flow
+name CODE:06A3 fld2vram
+name CODE:06B8 fld2vram_a	; @@a in fld2vram
+name CODE:06C5 fld2vram_b	; @@b in fld2vram
+name CODE:06CF fld2vram_c	; @@c in fld2vram
+name CODE:06EC fld2vram_w	; @@w in fld2vram
+name CODE:06F0 fld2vram_x	; @@x in fld2vram
+name CODE:06FF fld2vram_z	; @@z in fld2vram
+name CODE:0703 membuf	; @@membuf
+name CODE:0705 mv2vram
+name CODE:0713 mv2vram_a	; @@a in mv2vram
+name CODE:071C mv2vram_b	; @@b in mv2vram
+name CODE:072E mv2vram_c	; @@c in mv2vram
+name CODE:073E GetDiskInfo
+name CODE:0748 GetDiskInfo_Again	; @@Again in GetDiskInfo
+name CODE:0775 GetTrackInfo
+name CODE:079B GetStartSec
+name CODE:079E GetStartSec_Again	; @@Again in GetStartSec
+name CODE:07FD GetStartLen
+name CODE:082C DoPlayTrack
+name CODE:0844 GetSNL
+name CODE:0858 GetSNL_L10	; @@L10 in GetSNL
+name CODE:0898 GetSNL_L20	; @L20 in GetSNL
+name CODE:08B1 GetVolumeSize
+name CODE:08D7 DoStopTrack
+name CODE:08EC GetQInfo
+name CODE:0919 GetCDDrive
+name CODE:0930 mstart
+name CODE:0949 malloc
+name CODE:0956 mfree
+name CODE:0961 msize
+; palettes (four 768-byte palettes 0300 apart, plus a 16-byte table)
+name PALSEG:0000 griflogo
+name PALSEG:0300 spiderlogo
+name PALSEG:0600 presents
+name PALSEG:0900 titl
+name PALSEG:0C00 paltable
+; variables (debug calls the segment VARIABLES)
+name DATA:0000 scrst
+name DATA:0002 introfnames
+name DATA:000A n1
+name DATA:0017 n2
+name DATA:0022 n3
+name DATA:002F n4
+name DATA:0039 lum
+name DATA:003A delaytable
+name DATA:0042 musfl
+name DATA:0043 vblfl
+name DATA:0044 currentpal
+name DATA:0344 kmat
+name DATA:0364 oldint
+name DATA:0368 lastscan
+name DATA:0369 track
+name DATA:036A drivenumber
+name DATA:036C RequestBlock
+name DATA:036E ComCode
+name DATA:036F Status
+name DATA:037A Taddr
+name DATA:0386 DInfo_C
+name DATA:038D TnoInfo_C
+name DATA:038E TToFind
+name DATA:038F TStart
+name DATA:0394 PlayTrack
+name DATA:03A2 SSect
+name DATA:03AA StopTrack
+name DATA:03C4 QInfo_c
+name DATA:03CF VSize_c
+name DATA:03D0 VolSize
+name DATA:03D4 LoTrack
+name DATA:03D5 HiTrack
+name DATA:03D6 SNLTab
