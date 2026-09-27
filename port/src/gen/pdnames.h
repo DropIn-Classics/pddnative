@@ -338,6 +338,7 @@
     X(DATA, txt_blank, 0x669F, 0x6772) \
     X(DATA, txt_tilt, 0x66B4, 0x6787) \
     X(DATA, txt_highscore, 0x66C9, 0x679C) \
+    X(DATA, txt_hiscore_player, 0x66D6, 0x67A9) \
     X(DATA, txt_hiscore1, 0x6735, 0x6808) \
     X(DATA, txt_hiscore2, 0x674A, 0x681D) \
     X(DATA, txt_hiscore3, 0x675F, 0x6832) \
@@ -380,6 +381,7 @@
     X(DATA, sine_table, 0x822A, 0x825D) \
     X(DATA, ign_flipper_ys, 0x822E, 0xFFFF) \
     X(DATA, flipper_ys, 0x8250, 0x8261) \
+    X(DATA, initial_letters, 0x8285, 0x8296) \
     X(DATA, old_int9, 0x82AA, 0x82BB) \
     X(DATA, hiscores_default, 0x82FD, 0x830E) \
     X(DATA, sound_on, 0x83AD, 0x83BE) \
@@ -445,6 +447,9 @@
     X(DATA, player_7, 0x8872, 0x8883) \
     X(DATA, player_8, 0x890A, 0x891B) \
     X(DATA, score_msb, 0x89A2, 0x89B3) \
+    X(DATA, initials, 0x89A8, 0x89B9) \
+    X(DATA, initial_index, 0x89AB, 0x89BC) \
+    X(DATA, hiscore_jingled, 0x89AC, 0x89BD) \
     X(DATA, bonus_saved, 0x89AD, 0x89BE) \
     X(DATA, booster_col, 0x89B5, 0x89C6) \
     X(DATA, always_0, 0x89B7, 0x89C8) \
@@ -461,6 +466,9 @@
     X(DATA, light_palette, 0x89C7, 0x89D8) \
     X(DATA, light_group_timer, 0x8A81, 0x8A92) \
     X(DATA, done_light_group, 0x8A83, 0x8A94) \
+    X(DATA, over_rounds, 0x8A85, 0x8A96) \
+    X(DATA, over_player, 0x8A87, 0x8A98) \
+    X(DATA, over_last, 0x8A89, 0x8A9A) \
     X(DATA, game_state, 0x8A8A, 0x8A9B) \
     X(DATA, lock_pending, 0x8A8C, 0x8A9D) \
     X(DATA, ball_locked, 0x8A8D, 0x8A9E) \

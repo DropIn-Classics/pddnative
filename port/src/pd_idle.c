@@ -10,7 +10,7 @@ static uint16_t first_message(uint16_t list_entry)
 }
 
 /* F1-F8: the number of players - 1 into last_player; Esc: quit_request */
-static void read_game_keys(void)
+void read_game_keys(void)
 {
     int i;
 
@@ -27,7 +27,7 @@ static void read_game_keys(void)
 
 /* "really quit <y/n>": 1 for Y.  The original polls the keys in a loop
  * the keyboard interrupt updates; here each round is a picture. */
-static int ask_quit(void)
+int ask_quit(void)
 {
     show_text(V(txt_quit));
     for (;;) {
@@ -64,7 +64,7 @@ static void scroll_toward(void)
 }
 
 /* one scroll step down to the table's end, then up to its top (idle_dir) */
-static void idle_scroll(void)
+void idle_scroll(void)
 {
     uint16_t hi = rw(V(scroll_hi));
 

@@ -24,9 +24,10 @@ bounce), the event objects' handlers (the tables' own code: multipliers,
 jackpots, locks, the roulette, the hurry-up ...), state 6 (the ball lost:
 the bonus times the multiplier counted, the boosters, the next player, a
 locked ball back into play). The program stops at the first routine not
-translated yet, with its name (now `st_game_over`, state 7, after the last
-ball; `st_ball_locked`, `st_pause`, `st_tilt` for states 4, 8, 9), and
-leaves its last picture on the screen.
+translated yet, with its name (now `st_ball_locked`, `st_pause`, `st_tilt`
+for states 4, 8, 9), and leaves its last picture on the screen. State 7
+(game over: the high scores with the initials entered, the players'
+scores in turn) is translated too.
 
 Checked: the port's memory equals the original's in tools/run (DATA, BSS,
 TDATA, XDATA and all of video memory byte for byte; different only where
@@ -47,8 +48,14 @@ space of the driver's EXEC in CODE, the stack)
   state 6 and of the next ball's state 3 (the bonus count between); ball 2
   (plunger: port pictures 2208 to 2238, runner 33.80946 to 34.23749 s) at
   its 1st, 185th and 461st frame of play (event handlers run on the way),
-  the third ball's state 3. The ball's bounces on the table and the kickers
-  are thus checked; the flippers' are not yet.
+  the third ball (plunger: pictures 3518 to 3548, 52.74323 to 53.17125 s)
+  to the drain; state 7 at its entry and, after three taps of Space for
+  the initials (pictures 4700, 4760, 4820, 8 pictures each; the runner's
+  times from state 7's entry, t = 68.472871 s at picture 4621), the
+  attract show again at the 261st and 700th idle frame: a whole game, the
+  score (1,052,000) in the high scores' fourth place. The ball's bounces
+  on the table and the kickers are thus checked; the flippers' are not
+  yet.
 - XDATA's `music_pos` can differ from the original's: INT 66h AL=10h
   returns the position the driver's player has reached in the module, and
   the port's player does not advance in the headless build (no audio
@@ -70,8 +77,8 @@ Comparing with the original: stop both at the same place and compare
 their memory by the names of the hints. The port stops at the first routine
 not translated yet or, with `PD_STOP=where#N`, the Nth time it passes `checkpoint(where)`
 (`idle_loop`: the head of state 2's loop, `ball_start_loop`: state 3's,
-`play`: the entry of `st_play`, `ball_lost`, `ball_start`: of states 6
-and 3;
+`play`: the entry of `st_play`, `ball_lost`, `ball_start`, `game_over`:
+of states 6, 3 and 7;
 `PD_TRACE` prints each with the pictures shown so far), the runner with
 `-break ADDR#N`.
 

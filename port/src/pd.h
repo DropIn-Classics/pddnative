@@ -75,6 +75,13 @@ void no_callback(void);
 
 /* ---- pd_idle.c: state 2 */
 void game_scroll_down(void);
+void read_game_keys(void);
+/* "really quit <y/n>": 1 for Y */
+int ask_quit(void);
+void idle_scroll(void);
+
+/* ---- pd_over.c: state 7 */
+void st_game_over(void);
 
 /* ---- pd_game.c: a new game, a new ball */
 void new_game(void);

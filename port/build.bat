@@ -23,7 +23,7 @@ if %errorlevel% neq 0 (
 
 if not exist build\obj\headless mkdir build\obj\headless
 set CFLAGS=/nologo /W4 /O2 /D_CRT_SECURE_NO_WARNINGS
-set ENGINE=src\pd_main.c src\pd1.c src\pd2.c src\pd_video.c src\pd_sprite.c src\pd_text.c src\pd_keys.c src\pd_files.c src\pd_sound.c src\pd_idle.c src\pd_ball.c src\pd_lights.c src\pd_game.c src\pd_events.c src\pd_play.c src\pd_rules.c src\pd_bcd.c src\pd_lost.c src\pd_handlers.c src\code.c src\mem.c
+set ENGINE=src\pd_main.c src\pd1.c src\pd2.c src\pd_video.c src\pd_sprite.c src\pd_text.c src\pd_keys.c src\pd_files.c src\pd_sound.c src\pd_idle.c src\pd_ball.c src\pd_lights.c src\pd_game.c src\pd_events.c src\pd_play.c src\pd_rules.c src\pd_bcd.c src\pd_lost.c src\pd_handlers.c src\pd_over.c src\code.c src\mem.c
 set CORE=src\main.c src\frame.c src\sound.c src\modplay.c src\vga.c src\sys.c src\sha256.c
 
 cl %CFLAGS% /Fobuild\obj\ /Fe:build\pdd.exe %ENGINE% %CORE% src\plat_win32.c user32.lib gdi32.lib winmm.lib advapi32.lib shell32.lib /link /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup

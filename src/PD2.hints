@@ -647,6 +647,12 @@ name CODE:17DD release_locked_ball
 comment CODE:17DD a ball is locked: the first lock of td_locks puts its ball back into play (position and speed from the lock's object), state 5
 name CODE:1872 st_game_over
 comment CODE:1872 state 7: high score entry for each player, then the scores in turn; F1-F8 start a new game, else state 2
+name DATA:8A9A over_last
+comment DATA:8A9A st_game_over: last_player as the game ended; over_player (8A87h) counts the players down from it + 1, over_rounds (8A85h) the four rounds of showing their scores
+name DATA:8A98 over_player
+name DATA:8A96 over_rounds
+name DATA:89BD hiscore_jingled
+comment DATA:89BD FFh once the high score jingle (28h) has played in this game over
 name CODE:1327 st_pause
 comment CODE:1327 state 8 (key P): the music paused, "game paused"; Esc asks to quit, any other key goes on (state 5)
 name CODE:12BC st_tilt
@@ -1131,6 +1137,14 @@ comment CODE:19B9 each player's score through check_hiscore
 name CODE:2538 check_hiscore
 comment CODE:2538 SI = a player's score: into the table's high scores when high enough, with the initials entered
 name CODE:2565 insert_hiscore
+comment CODE:2565 score_msb into the table's four high scores (9 bytes each: initials, 6 bytes BCD from the highest) where it is higher (cmp_score), the lower ones moved down, the initials entered; a score between the second and the third takes BX = 3 with SI still at the third entry, so it overwrites the third without moving it down (a bug, presumably; read, not checked by running)
+name DATA:89B9 initials
+comment DATA:89B9 enter_initials: the three letters entered (blanks after Esc)
+name DATA:89BC initial_index
+comment DATA:89BC enter_initials: the letter shown, an index into initial_letters (0..24h)
+name DATA:8296 initial_letters
+name DATA:67A9 txt_hiscore_player
+comment DATA:67A9 check_hiscores writes the player's digit here, in the high score entry's text
 name CODE:2647 cmp_score
 name CODE:266C enter_initials
 comment CODE:266C the flipper keys choose a letter, the nudge key takes it (three), Esc leaves them blank
