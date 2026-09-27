@@ -2,6 +2,7 @@
  * set-up (PD.ASM from `start` to `st_exit`).  See pd.h. */
 #include <setjmp.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "frame.h"
 #include "pd.h"
@@ -27,6 +28,30 @@ void pd_fatal(const char *what)
 void pump_frame(void)
 {
     if (!frame_wait())
+        pd_exit();
+}
+
+/* PD_STOP=where#N: the program ends the Nth time it passes the checkpoint
+ * `where` (for comparing its memory with a run of the original stopped at
+ * the same place with tools/run's -break ADDR#N) */
+void checkpoint(const char *where)
+{
+    static const char *stop;
+    static unsigned long count, want;
+    static size_t len;
+    static int parsed;
+
+    if (!parsed) {
+        const char *hash;
+        parsed = 1;
+        stop = getenv("PD_STOP");
+        if (stop) {
+            hash = strchr(stop, '#');
+            len = hash ? (size_t)(hash - stop) : strlen(stop);
+            want = hash ? strtoul(hash + 1, NULL, 10) : 1;
+        }
+    }
+    if (stop && strlen(where) == len && !strncmp(where, stop, len) && ++count == want)
         pd_exit();
 }
 
@@ -125,7 +150,7 @@ void st_exit(void)
 /* ---- the table's files and set-up */
 
 /* TBLDETLO.xxx (collision map, lower level) to BSS:0960, TBLDETHI.xxx
- * (upper level, not for Ignition) to BSS:47E0, TABLE2M.xxx (the picture)
+ * (upper level; PD.EXE has none for Ignition) to BSS:47E0, TABLE2M.xxx (the picture)
  * to a new block ([table_pic_seg]) */
 void load_table_files(void)
 {
@@ -139,7 +164,7 @@ void load_table_files(void)
     }
     if (load_file(V(name_tbldetlo), seg_bss, 0x0960))
         pd_fatal("TBLDETLO could not be loaded.");
-    if (rb(V(table_num)) != 0 && load_file(V(name_tbldethi), seg_bss, 0x47E0))
+    if ((prog_id == 2 || rb(V(table_num)) != 0) && load_file(V(name_tbldethi), seg_bss, 0x47E0))
         pd_fatal("TBLDETHI could not be loaded.");
     seg = dos_alloc(0x2801);
     if (!seg)

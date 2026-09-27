@@ -30,6 +30,8 @@ void pd_exit(void);
 void pd_fatal(const char *what);
 /* a routine not translated yet: ends the program with its name */
 void not_ported(const char *name);
+/* PD_STOP=where#N ends the program the Nth time it gets here */
+void checkpoint(const char *where);
 /* one picture (frame_wait); the program ends when the window was closed */
 void pump_frame(void);
 
@@ -67,6 +69,25 @@ void index_flipper_shapes(void);
 void grey_palettes(void);
 void table_check(void);
 void no_callback(void);
+
+/* ---- pd_idle.c: state 2 */
+void game_scroll_down(void);
+void new_game(void);
+void reset_ball(void);
+
+/* ---- pd_ball.c: the ball and the flippers */
+void ball_frame(void);
+void ball_step(void);
+void draw_flippers(void);
+/* the row index at BSS:0 for the map the far pointer at `map` points to */
+void index_map(uint16_t map);
+
+/* ---- pd_lights.c */
+void light_on(uint16_t light);
+void light_off(uint16_t light);
+void lights_off_all(void);
+void lights_frame(void);
+void idle_lights(void);
 
 /* ---- pd1.c / pd2.c: each program's own set-up of its four tables */
 void pd1_setup_table(int table);
@@ -123,5 +144,10 @@ void timer_callback(void);
 /* ---- pd_text.c: the display */
 void show_text(uint16_t text);
 void draw_char(uint8_t c);
+void end_running(void);
+/* a frame of the display message at msg: 1 while it runs (message_start
+ * also begins it; message_step ends the running object with it) */
+int message_start(uint16_t msg);
+int message_step(uint16_t msg);
 
 #endif

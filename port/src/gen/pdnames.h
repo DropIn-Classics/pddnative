@@ -489,6 +489,8 @@
     X(DATA, msg_counting, 0x8CD2, 0x8CE3) \
     X(DATA, msg_cols, 0x8CD6, 0x8CE7) \
     X(DATA, event_player_bit, 0x8CDA, 0x8CEB) \
+    X(DATA, player_blink, 0x8CDE, 0x8CEF) \
+    X(DATA, player_blink_timer, 0x8CDF, 0x8CF0) \
     X(DATA, quit_request, 0x8CE0, 0x8CF1) \
     X(DATA, ball_start_x, 0x8CE1, 0x8CF2) \
     X(DATA, ball_start_x_hi, 0x8CE3, 0x8CF4) \

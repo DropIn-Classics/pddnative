@@ -11,16 +11,23 @@ in this repository.
 
 Started 2026-09-27. Translated: start-up, the main loop, state 1 (loading
 the table: files, the table's set-up for all eight tables, lights, screen
-mode, the table picture, the flipper sprites, the palette, the music).
-The program stops at the first routine not translated yet, with its name
-(now `st_idle`, state 2), and leaves its last picture on the screen.
+mode, the table picture, the flipper sprites, the palette, the music),
+state 2 (the attract show with the idle texts and Ignition's tour, the
+lamps, the display messages, Esc to quit) and the ball's physics it runs
+every frame (`ball_step`: the flippers' shapes, the collision map, the
+bounce). The program stops at the first routine not translated yet, with
+its name (now `new_game`, after F1-F8), and leaves its last picture on the
+screen.
 
 Checked: at the entry of `st_idle` the port's memory equals the
-original's in tools/run for Steel Wheel (PD.EXE) and Safari (PD2.EXE)
-(DATA, BSS, TDATA, XDATA and all
-of video memory byte for byte; different only where the port has no reason
-to be the same: the saved INT 9 vector, the scratch space of the driver's
-EXEC in CODE, the stack).
+original's in tools/run for Steel Wheel (PD.EXE) and Safari (PD2.EXE),
+and at the 3000th frame of state 2 (the idle loop's head, CODE:016A in
+PD.EXE, CODE:0169 in PD2.EXE) for all eight tables; Ignition also at the
+6000th and 9000th, through its tour (t = 44 s to 120 s). DATA, BSS,
+TDATA, XDATA and all of video memory byte for byte; different only where
+the port has no reason to be the same: the saved INT 9 vector, the scratch
+space of the driver's EXEC in CODE, the stack. The ball lies still in
+state 2, so the physics' bounces are not checked yet.
 
 ## Build and run
 
@@ -34,8 +41,11 @@ vswhere finds) and builds `build\pdd.exe` (a window) and
 unpacked CD (`python tools/gogx.py`), `-prog 1` PD.EXE's tables, `-prog 2`
 PD2.EXE's, `-table` 0-3.
 
-Comparing with the original: stop both at the same routine and compare
-their memory by the names of the hints.
+Comparing with the original: stop both at the same place and compare
+their memory by the names of the hints. The port stops at the first routine
+not translated yet or, with `PD_STOP=where#N`, the Nth time it passes `checkpoint(where)`
+(`idle_loop`: the head of state 2's loop), the runner with
+`-break ADDR#N`.
 
     set PD_RAM=build\port_ram.bin& set PD_VRAM=build\port_vram.bin
     port\build\pdd-headless.exe -game game -prog 1 -table 1

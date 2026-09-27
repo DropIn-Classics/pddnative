@@ -14,7 +14,7 @@ typedef struct {
 
 #define FN(name) {offsetof(PdNames, name), name}
 static const CodeFn ported[] = {
-    FN(st_load), FN(st_restart), FN(st_quit), FN(st_exit),
+    FN(st_load), FN(st_idle), FN(st_restart), FN(st_quit), FN(st_exit),
     FN(no_callback), FN(upload_lights),
 };
 

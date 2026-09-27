@@ -738,6 +738,9 @@ name DATA:6650 tour_lamps
 comment DATA:6650 a list of one light group (and FFFFh), the tour step's: idle_update_lights shows its lamps' blink phases
 name CODE:05BD show_player_up
 comment CODE:05BD during the ball start: "player n" / the players and the ball number, blinking
+name DATA:8CF0 player_blink_timer
+comment DATA:8CF0 show_player_up: frames (14h) until the current player's digit changes (player_blink); st_idle sets 1
+name DATA:8CEF player_blink
 name CODE:0FF0 reset_ball
 comment CODE:0FF0 the ball to its start (ball_start_x/y), speed 0, gravity from opt_slope, flippers on, the table's objects for a new ball
 name CODE:2804 reset_ball_objects
@@ -885,7 +888,7 @@ name DATA:9791 step_sx
 name DATA:9792 step_sy
 name DATA:9793 step_count
 name DATA:9794 step_err
-comment DATA:9794 ball_step's line through the pixels: the next pixel is in x or y by which keeps this nearer to 0 (+step_dx for an x pixel, -step_dy for a y pixel)
+comment DATA:9794 ball_step's line through the pixels: the next pixel is in x or y by which keeps this nearer to 0 (-step_dy after an x pixel, +step_dx after a y pixel)
 name DATA:9783 phys_a
 comment DATA:9783 scratch of the physics: flipper_sweep's hit (byte 1, the shape's angle byte at 9773h), ball_collide's next pixel (x here, y at 9774h), bounce's cosine (a word and a sign byte at 9774h, for mul_fix)
 name DATA:9785 phys_b
