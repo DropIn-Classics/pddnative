@@ -695,7 +695,7 @@ static void play_frame(void)
 /* state 5: a frame of the game; the ball drained: state 6; Esc: state 2 */
 void st_play(void)
 {
-    checkpoint("play");
+    checkpoint("st_play");
     ww(V(frame_count), (uint16_t)(rw(V(frame_count)) + 1));
     scroll_follow();
     ball_frame();
@@ -746,7 +746,7 @@ void st_tilt(void)
     uint16_t bx = rw(V(player_rec));
     int i;
 
-    checkpoint("tilt");
+    checkpoint("st_tilt");
     wb(V(jingle_request), 6);
     wb(V(nudge_phase), 0);
     ww(V(nudge_push), 0);

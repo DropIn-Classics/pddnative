@@ -625,6 +625,8 @@ name CODE:009E st_load
 comment CODE:009E state 1: loads the table (files, set-up, lights, screen, palette) and the sound driver, then state 2
 name CODE:00EA st_idle
 comment CODE:00EA state 2: no game; the display and the table scroll up and down; F1-F8 start a game for 1-8 players, Esc asks to quit
+name CODE:0169 idle_loop
+comment CODE:0169 state 2's loop, a frame each (read_game_keys to idle_show)
 name CODE:01BC game_scroll_down
 comment CODE:01BC scrolls the table down to its end, then state 3 (also where a new game from the game over state goes on)
 name CODE:04E5 st_ball_start

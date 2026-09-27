@@ -65,6 +65,9 @@ space of the driver's EXEC in CODE, the stack)
   3 to 25 apart, from picture 900; the runner's times as above, given
   with -keys): equal at the 200th, 500th and 992nd frame of play (the ball
   drains after it) and at the next ball's start.
+- all eight tables (PD.EXE's and PD2.EXE's) with `tools/portcmp.py` and
+  one key script (F1, the plunger, 60 random flipper taps in play): equal
+  at the 200th frame of play, the drain and the next ball's start.
 - XDATA's `music_pos` can differ from the original's: INT 66h AL=10h
   returns the position the driver's player has reached in the module, and
   the port's player does not advance in the headless build (no audio
@@ -84,19 +87,22 @@ PD2.EXE's, `-table` 0-3.
 
 Comparing with the original: stop both at the same place and compare
 their memory by the names of the hints. The port stops at the first routine
-not translated yet or, with `PD_STOP=where#N`, the Nth time it passes `checkpoint(where)`
-(`idle_loop`: the head of state 2's loop, `ball_start_loop`: state 3's,
-`play`: the entry of `st_play`, `ball_lost`, `ball_start`, `game_over`,
-`tilt`, `ball_locked`: of states 6, 3, 7, 9 and 4;
-`PD_TRACE` prints each with the pictures shown so far), the runner with
-`-break ADDR#N`.
+not translated yet or, with `PD_STOP=where#N`, the Nth time it passes
+`checkpoint(where)`; `where` is a name of the hints, so the runner's
+`-break where#N` stops the original at the same place: `idle_loop` (state
+2's loop), `ball_start_loop` (state 3's), `st_play`, `st_ball_lost`,
+`st_ball_start`, `st_game_over`, `st_tilt`, `st_ball_locked`. `PD_TRACE`
+prints each checkpoint passed with the pictures shown so far.
 
-    set PD_RAM=build\port_ram.bin& set PD_VRAM=build\port_vram.bin
-    port\build\pdd-headless.exe -game game -prog 1 -table 1
-    python tools\run.py -sound sb -until 5 -break st_idle -ram build\orig_ram.bin ^
-        -vram build\orig_vram.bin DREAMS1/PD.EXE 1
-    python tools\memcmp.py src\PD.hints build\orig_ram.bin build\port_ram.bin ^
-        --vram build\orig_vram.bin build\port_vram.bin
+`tools/portcmp.py` does all of it: it takes key events tied to a
+checkpoint's pass (`st_play#20 2A+`: left Shift down, seen first by the
+20th frame of play), places them in both programs (the port's picture,
+the runner's time), runs both to the stops given and compares:
+
+    python tools\portcmp.py --table 1 --keys keys.txt st_play#615 st_ball_start#2
+
+The results listed under "State" were found by hand this way before the
+tool; it reproduces them.
 
 ## How it works
 

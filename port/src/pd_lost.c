@@ -262,7 +262,7 @@ void st_ball_lost(void)
 {
     int i;
 
-    checkpoint("ball_lost");
+    checkpoint("st_ball_lost");
     wb(V(jingle_request), 0x80);
     ww(V(ball_obj), rw(V(ball_obj)) & 0xFFFE);
     wb(V(sprites), (uint8_t)((rb(V(sprites)) & 0xFE) | 2));

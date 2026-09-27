@@ -31,6 +31,7 @@
     X(CODE, exit_jump, 0x009C, 0x009B) \
     X(CODE, st_load, 0x009F, 0x009E) \
     X(CODE, st_idle, 0x00EB, 0x00EA) \
+    X(CODE, idle_loop, 0x016A, 0x0169) \
     X(CODE, game_scroll_down, 0x01BD, 0x01BC) \
     X(CODE, read_game_keys, 0x021C, 0x021B) \
     X(CODE, ask_quit, 0x02A6, 0x02A5) \

@@ -164,7 +164,7 @@ void st_idle(void)
     wb(V(flippers_off), 0xFF);
     hide_ball();
     for (;;) {
-        checkpoint("idle_loop");        /* CODE:016A */
+        checkpoint("idle_loop");
         read_game_keys();
         ball_frame();
         draw_flippers();

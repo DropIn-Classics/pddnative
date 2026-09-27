@@ -393,15 +393,18 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
 3. The runner (done, T3) for comparing the C port with the original
    frame by frame will want savestates (start both at the same moment)
    (`-dumpevery` dumps chosen variables at a fixed interval).
-4. The implementation in C (`port/`, T6): started 2026-09-27; every
-   game state and the event objects' handlers are translated, and checked
+4. The implementation in C (`port/`, T6): started 2026-09-27; every game
+   state and the event objects' handlers are translated, and checked
    against runs of the original stopped at the same place (the idle show
-   on all eight tables; on Steel Wheel a whole game: three balls, the
-   bonus count, the initials, pause and tilt, the flippers; port/README.md says where
-   and how). Not checked by a run yet: a locked ball (state 4; the hints say why it presumably never ends in the
-   320x200 mode), the other tables in play, PD2.EXE in play. Next: key
-   scripts for the other tables (a tool for the picture/time mapping); then the sound: the
-   driver's tick is 70.09 a second in the 320x200 mode (measured,
-   SBLASTER.SDR); what AL=11h (effects) and AL=13h (`module_callback`) do
-   for the driver is still to be found, and the port's player does not
-   advance in the headless build (XDATA's music_pos differs).
+   and a ball with the flippers on all eight tables; on Steel Wheel a
+   whole game: three balls, the bonus count, the initials, pause and
+   tilt; `tools/portcmp.py` runs such comparisons from a key script;
+   port/README.md says where and how). Not checked by a run yet: a
+   locked ball (state 4; the hints say why it presumably never ends in
+   the 320x200 mode), longer games on the other tables. Next: longer key
+   scripts (locks, jackpots, the roulette, the upper levels); then the
+   sound: the driver's tick is 70.09 a second in the 320x200 mode
+   (measured, SBLASTER.SDR); what AL=11h (effects) and AL=13h
+   (`module_callback`) do for the driver is still to be found, and the
+   port's player does not advance in the headless build (XDATA's
+   music_pos differs).

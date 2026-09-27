@@ -144,7 +144,7 @@ void st_game_over(void)
     uint16_t n;
     int r;
 
-    checkpoint("game_over");
+    checkpoint("st_game_over");
     check_hiscores();
     format_hiscores();
     if (!rb(V(hiscore_jingled)))

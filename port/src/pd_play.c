@@ -161,7 +161,7 @@ void plunger(void)
 /* state 3: a new ball for the current player, then ball_start */
 void st_ball_start(void)
 {
-    checkpoint("ball_start");
+    checkpoint("st_ball_start");
     wb(V(sprites_in_irq), 0xFF);
     reset_ball();
     ball_start();
@@ -192,7 +192,7 @@ void ball_start(void)
     wb(V(flippers_off), 0xFF);
     ball_frame();
     for (;;) {
-        checkpoint("ball_start_loop");  /* CODE:0553 */
+        checkpoint("ball_start_loop");
         ww(V(frame_count), (uint16_t)(rw(V(frame_count)) + 1));
         scroll_follow();
         ball_frame();
@@ -227,7 +227,7 @@ void st_ball_locked(void)
 {
     int32_t s;
 
-    checkpoint("ball_locked");
+    checkpoint("st_ball_locked");
     ww(V(ball_obj), rw(V(ball_obj)) & 0xFFFE);
     wb(V(sprites), (uint8_t)((rb(V(sprites)) & 0xFE) | 2));
     ball_to_start();
