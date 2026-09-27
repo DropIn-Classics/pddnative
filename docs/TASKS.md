@@ -11,7 +11,8 @@ task's branch (see AGENTS.md).
 | T1 | Muse | done | DDPCINTR.EXE: stage 1 with the names from its debug information |
 | T2 | Muse | changes | DDPCMAIN.EXE: stage 1 |
 | T3 | Claude | done | a headless runner for the original programs (C, from pfemu's core) |
-| T4 | Claude | working | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
+| T4 | Claude | done | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
+| T5 | Muse | open | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
@@ -151,9 +152,12 @@ each claim checked with the runner where it can be, so that the port
 Files: `src/PD.hints`, `src/PD2.hints` (own part and the carried block),
 `tools/` where the tools need it, docs/HANDOFF.md.
 
-First pass done (998468c): names for about 430 routines and variables,
-comments on the main ones, `var`/`dptr` hints for the table descriptor
-and address immediates.
+Done (998468c, 92c0422, 531ea8f, c0c88b5): every called routine named,
+the records described at their users, the collision map format (checked
+against all fifteen files) and the level switch seen in runs, the XDATA
+and TDATA code with labels (disasm.py: `es` hints, ASSUME following DS),
+the objects' handler pointers as `words` hints (PD 183, PD2 188). What
+is still not understood: docs/HANDOFF.md, "The engine".
 
 Done when:
 
@@ -175,3 +179,41 @@ Done when:
   hand where they matter; `tools/check.py` says `all ok`.
 - docs/HANDOFF.md says in a page how the engine works, with the
   addresses, and what is still not understood.
+
+## T5: tools/pdfiles.py, the table programs' data files (Muse)
+
+A tool that reads the data files of PD.EXE/PD2.EXE by the formats the
+hints describe, so the port can use them and the descriptions get
+checked against the files.
+
+Files: `tools/pdfiles.py` (new), `docs/tasks/T5.md`. Branch
+`muse/T5-pdfiles`.
+
+Formats (read them in `src/PD.hints`; the comments are the reference):
+
+- collision maps `TBLDETLO.xxx`, `TBLDETHI.xxx` (DREAMS1 and DREAMS2):
+  the comments at `map_test`, `index_map`, `map_special`, `map_code`;
+- `DELUXE/HISCORES.PD1`, `HISCORES.PD2`: the comments at `hiscores`,
+  `check_hiscore`, `load_hiscores`;
+- `C:\DELUXE\DDPCOPTN.BIN` (not on the CD; the menu writes it): the
+  `opt_*` and `key_*` names and `load_options`.
+
+Steps:
+
+1. `pdfiles.py map FILE`: parse a collision map, print per surface value
+   the number of pixels, and the 1Fh pixels' angle bytes (codes and event
+   numbers) with a count each; `--png OUT` writes the map as a 320x512
+   picture in false colours (one colour per surface value; standard
+   library only: zlib and struct) into `build/`.
+2. An encoder for the same format; the tool checks that parsing and
+   encoding again gives the file's bytes.
+3. `pdfiles.py hiscores FILE` and `pdfiles.py options FILE`: print the
+   entries (table, letters, score) and the options by their names.
+
+Done when: `pdfiles.py map` parses every TBLDET file of DREAMS1 and
+DREAMS2 to its last byte and re-encodes each to identical bytes (say
+the counts in the notes); the pictures of two maps (one LO, one HI) look
+like tables (describe them in the notes, do not commit them); both
+HISCORES files print sensible names and scores; `tools/check.py` says
+`all ok`; the notes list every place where a file disagreed with a
+comment in PD.hints (or say that none did).

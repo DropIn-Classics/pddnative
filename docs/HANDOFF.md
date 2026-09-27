@@ -2,7 +2,7 @@
 
 State of 2026-09-27: stage 1 (source from the programs) done for the two
 table programs and the intro (T1); a headless runner (T3) runs them;
-PD.EXE's engine named and commented in a first pass (T4, working).
+PD.EXE's engine named, commented and its records described (T4, done).
 
 ## Start here (next session)
 
@@ -13,10 +13,9 @@ PD.EXE's engine named and commented in a first pass (T4, working).
   IDENTICAL. Muse works in `../pddnative-muse` on `muse/*`; do not touch
   that checkout. When the user says "Review Tn", follow CLAUDE.md (review
   steps) and AGENTS.md (who writes what where).
-- T3 (the runner) is done, see "Running the originals" below. Claude
-  works on T4 (PD.EXE's engine core into the hints): the first pass is
-  in (998468c), what is left is listed under T4 in docs/TASKS.md. See
-  "The engine" below.
+- T3 (the runner) and T4 (PD.EXE's engine into the hints) are done; see
+  "Running the originals" and "The engine" below. The next big step is
+  the port (stage 3) from the hints and the generated source.
 - Before any change to `tools/` or the hints: `python tools/check.py`
   must stay `all ok` (the hook enforces it on commit). `game/` holds the
   unpacked CD (`python tools/gogx.py` if it is missing).
@@ -40,7 +39,7 @@ PD.EXE's engine named and commented in a first pass (T4, working).
 | `DREAMS1/PD.EXE` | the four tables of Pinball Dreams (Ignition, Steel Wheel, Beat Box, Nightmare), Spidersoft's PC version |
 | `DREAMS2/PD2.EXE` | Spidersoft's own four (Neptune, Safari, Stall Turn, and a fourth: REVENGE.FLI, files `.MNG`) |
 | `*/TABLE2M.xxx` | a table's picture: 320x512, 8 bits a pixel, raw |
-| `*/TBLDETLO.xxx`, `TBLDETHI.xxx` | the collision maps of the table's lower and upper level (ramps); rows run-length coded; Ignition has no HI file |
+| `*/TBLDETLO.xxx`, `TBLDETHI.xxx` | the collision maps of the table's lower and upper level (ramps); only the surface pixels, see "The engine"; Ignition has no HI file |
 | `*/LEVELn.MOD`, `INTRO.MOD` | ProTracker modules (M.K.) |
 | `HISTORY/*.256`, `*.016` | 640x480 pictures: 256 colours + 768-byte palette / 16 colours |
 | `DELUXE/*.SDR`, `SETSOUND.EXE` | the INT 66h sound drivers (Frontline Design), mostly the same files as Pinball Fantasies' |
@@ -87,10 +86,8 @@ What is known of the engine so far (addresses PD.EXE):
 - Per-table set-up routines (e.g. before `CODE:08EC`) fill some forty
   word variables `[8494]..[84E0]` with offsets of the table's data in
   DATA, `[8CEA]` with the palette's offset in TDATA.
-- Table objects: records with a handler at +16h, light pointers at +18h
-  and +1Eh, flags at +23h (dispatch at `CODE:3443..349C`). Hit rectangles:
-  list at `[6531]`, entries x1,y1,x2,y2,record (`CODE:3044`). The ball's
-  position is compared from `[9785]`/`[9787]`.
+- The table's records (objects, lights, hit rectangles ...): see "The
+  engine" below.
 - Screen: mode 13h unchained (Mode X), with CRTC tables for tweaked
   modes at `CODE:4F05` and `CODE:4F19` (misc output E3h and A7h),
   latch copies through the graphics controller. The sound driver's timer
@@ -131,37 +128,113 @@ Checked by running (tools/run.py, 2026-09-27):
   Checked with an options file written into a state layer. `CODE:4E7D`
   (misc E3h, 480 lines) is not called.
 
-### The engine (T4, first pass; names are those of PD.hints)
+### The engine (T4; names are those of PD.hints)
 
-- States (`state_table`, `game_state`): 0 quit (save high scores), 1
-  load, 2 idle (F1-F8 = 1-8 players), 3 ball start (plunger lane), 4 a
-  ball was locked, 5 play, 6 ball lost (bonus, next player), 7 game
-  over (high score entry), 8 pause, 9 tilt, 10 exit, 11/13-15 back to
-  1; 12 is set nowhere.
-- A frame of play (`st_play`): `scroll_follow`, `ball_frame` (three
-  `ball_step`s: flippers swept against the ball, the ball moved pixel by
-  pixel through the collision map, `bounce` at the surface, then
-  gravity), `nudge`, `plunger`, `play_frame` (hit rectangles and lanes
-  tested at the hit point, map events, the event stack run by
-  `run_events`, lights, display), `scroll_step`, which waits for the
-  frame. The sprites (ball, flippers, plunger) are drawn by
-  `timer_callback`, the sound driver's tick.
-- The ball: `ball_x`/`ball_y` 24 bits, pixels * 400h; `ball_vx`/`ball_vy`
-  per step; gravity 9 + 2 * (option `opt_slope` - 1). Checked against
-  screenshots and a time series of the plunger launch.
-- Lights are palette slots (colour 40h on): `light_on`/`light_off` copy
-  the on or off colours, `upload_lights` sends them every tick. Each
-  light and object keeps a bit per player (`player_bit`).
-- Tables differ by data: `setup_*` fill the table descriptor
-  (`td_*`, 8494h..84E0h) with the table's lists and texts; the objects'
-  handlers (+16h) are the few table-specific routines (3C40h..41B2h).
-- Scores are 6 bytes BCD (low byte first) at +0 of the eight player
-  records (`player_1`.. , 98h bytes each); the display is a split screen
-  below the table, drawn character by character (`draw_char`).
-- Not understood yet: the collision map's values beyond the codes FBh-
-  FEh, the event records' sequences, the lock test in `lock_jackpot`,
-  why the boosters are added at +4 of the player record. The level
-  switch (FEh/FDh) is read from the code, not seen in a run.
+What the hints say, in one place. Read from the code unless it says
+"checked" (by a run with tools/run.py). The comments in PD.hints have
+the details and the field lists; PD2.EXE is the same engine (its names
+are carried, its own differences are in PD2.hints' own part).
+
+**States** (`main_loop` calls `state_table[game_state]`): 0 quit (save
+the high scores), 1 load, 2 idle (F1-F8 = 1-8 players), 3 ball start
+(plunger lane), 4 a ball was locked, 5 play, 6 ball lost (bonus,
+boosters, next player), 7 game over (high score entry), 8 pause, 9 tilt,
+10 exit, 11/13-15 back to 1; 12 is set nowhere.
+
+**A frame of play** (`st_play`): `scroll_follow`, `ball_frame` (three
+`ball_step`s), `nudge`, `plunger`, `play_frame`, `scroll_step` (waits for
+the frame: the driver's timer tick sets `timer_tick`). The sprites
+(ball, flippers, plunger) are drawn by `timer_callback` in the tick,
+`upload_lights` sends the lights' palette there too.
+
+**The ball** (`ball_step`, 3 a frame): the flippers are swept from the
+drawn frame to the wanted one and tested against the ball
+(`flipper_sweep`, `shape_test`); then the ball moves pixel by pixel
+(`ball_step_size`, `ball_collide`) through the collision map
+(`map_test`); a surface pixel gives the surface type and angle,
+`collision_response` sets `hit_x`/`hit_y` and `bounce` reflects the
+speed with the surface's five constants (`surface_table`), in the frame
+of the moving flipper (`surface_vx`/`vy`) and the nudge. Position 24
+bits, pixels * 400h; gravity 9 + 2 * (`opt_slope` - 1), 10h/9 from the
+map codes FCh/FBh (checked: position and launch speed against the
+screen).
+
+**The collision map** (TBLDETLO lower level, TBLDETHI upper, loaded to
+BSS:0960 and BSS:47E0; `index_map` builds a row index at BSS:0): only
+the pixels where there is a surface. Per row (512) two halves, x < 256
+and x >= 256; a half is the byte FFh (empty) or n pixels as three arrays
+of n bytes: surface (bit 7 set on the last one), angle (100h a turn),
+x (low 8 bits). Checked: all fifteen files (DREAMS1 and DREAMS2) parse to their last
+byte this way. Surface: low nibble the response and `surface_table` entry (3, 5,
+6, 7 in the maps), 10h/20h kickers (score); 0Fh a one-way passage (a
+wall from one side), 1Fh a line whose angle byte is a code (FBh/FCh
+gravity, FEh to the upper level, FDh back) or an event number (0-0Fh,
+the hole `map_events[n]`). `map_flags` makes a line act once per
+crossing. The level switch changes the map, the hit rectangles and
+lanes (`td_*_upper`), and `ball_level` (80h/FFh: the ball is drawn only
+over colours below it, so it passes behind the upper level's pixels).
+Checked: runs with random flipper keys went up and down on Steel Wheel
+(t=24.3 s to 26.4 s: `ball_level` FFh, `hit_rects` = the upper list)
+and Nightmare.
+
+**Tables are data.** `setup_*` fill the table descriptor (`td_*`,
+DATA:8494..84E0) with the table's lists; the lists end with a negative
+word. The records (DATA, below 4Cxxh), each described at its user:
+
+| record | size | fields (short) | described at |
+|---|---|---|---|
+| lamp | 8 | flags, lit bit per player, blink phase, state for flag 2, light (palette slot), next | `update_lights` |
+| light group | 1Ah | a group + blink counter, period, chase phase | `blink_lights` |
+| group | 16h | first member, sound/jingle, points (BCD 8), bonus points (BCD 8), sequence | `test_hit_rects` |
+| target | 0Eh | type (1/8 lit by a hit, 7 debounced), hit bits, lamp, next, x1 y1 x2 y2 | `test_hit_rects` |
+| hit rectangle | 0Ah | x1 y1 x2 y2, group | `test_hit_rects` |
+| lane | 0Ah | x1 y1 x2 y2 (exclusive), object | `test_lanes_a` |
+| hole | 8 or 12h | type (5 timed, 6 lock, 14h sequence), busy, lamp, group, repeat, count, ball speed and place | `map_event_run` |
+| lock | 6 | hole, lamp, full | `td_locks` |
+| event object | 2Ah/2Eh | type 1Eh/1Fh, what arming and firing do (sounds, lamps, points, messages, a handler at +16h), armed bits, flags, timer | `run_events` |
+| sequence | var. | type 2Ah (a list) or 28h/29h (a step per player through a list of objects) | `run_event` |
+| message | 8 | flags (scroll, flash, count-up), state, text | `message_step` |
+
+Hits and holes push event objects onto the event stack (`run_event`,
+directly or through a group's sequence); `run_events` pops them each
+frame: an object is armed (FFFFh on the stack) or fired (0). The
+table-specific code is the handlers (+16h), 183 objects in PD's DATA
+point at them (found as words, now `words` hints): multipliers, jackpot,
+extra ball, locks, roulette, bonus countdown, hurry-up, `advance_object`
+(steps a type 29h sequence and a lamp chain).
+
+**Players**: eight records of 98h bytes (`player_1`..): score (6 bytes
+BCD, low first; checked), bonus, two hit counts (td_count_obj,
+td_count_obj2 = boosters), what each lamp shows (+18h..). Lights are
+palette slots from colour 40h: `light_on`/`light_off` copy the table's
+on or off colours (TDATA) into `light_palette`.
+
+**The screen**: Mode X 320x200 (or 320x350 by `opt_screen`), the table
+picture (320x512) in video memory, scrolled by the CRTC start address
+(`scroll`, `scroll_speed`); the display is a split screen below it,
+20 characters (`draw_char`, `display_font`, TDATA). Sprites
+(`sprites`, 4 records of 20h bytes) are drawn by `draw_sprites` through
+an area buffer in video memory at BB10h.
+
+**Sound**: INT 66h driver loaded by `load_sound_driver`; the routines
+from `play_tune` on run with DS = XDATA: `music_files`, `main_tunes`,
+`jingle_lists`, `effect_lists` per table; `tune_request`,
+`jingle_request`, `sound_request` (DATA) are what the game asks for.
+
+**Not understood / not checked**:
+
+- `lock_jackpot` tests `[BX+974Eh]` where the lock's state `[BX+4]`
+  must have been meant (only Nightmare uses it; reads BSS). `add_booster`
+  adds the booster value at player record +4, so it lands above the
+  shown digits. Both read, not checked by running.
+- The one-way passage's direction test (`map_special`), the rows of the
+  flipper shapes, the layout of `display_dots`, how the 17 flipper
+  frames map to the 10 sprite frames, what the five `surface_table`
+  constants are, `bounce`'s arithmetic (`mul_fix` etc.) in detail.
+- `module_callback` (set with INT 66h AL=13h; presumably the end of a
+  pattern), 9782h (the largest step count), byte 7CE6h.
+- Not seen running: locks, the hurry-up, the roulette, tilt, jackpots,
+  the high score entry.
 
 ## DDPCINTR.EXE (T1)
 
@@ -196,11 +269,24 @@ still be left: `ptrscan.py` finds some. This does not show in the byte
 comparison; it shows once the source is changed (moving data) or when
 code is translated.
 
+The source says `ASSUME DS:` wherever the tracked DS (or a `ds` hint)
+holds another segment of the program, so code running with DS = XDATA
+or TDATA gets labels of those segments; `es` hints do for ES what `ds`
+hints do. A `ptr` hint on an instruction without immediate names its
+address operand (a LEA of what is later read with another DS). A
+`words` table is written as DWs with or without a label at its start.
+
 `xfer.py` carries PD.hints over to PD2.hints: of 8,276 and 8,228
 instructions 8,042 align by their shape. A code address is carried only if
 the next ten instructions look the same at the new place; what cannot be
 carried is left as a comment. Run it again after changing PD.hints (it
-replaces its own block in PD2.hints, keeps the lines above it).
+replaces its own block in PD2.hints, keeps the lines above it). A
+`words` table of code pointers is carried only when PD2's words at the
+mapped place are the mapped routines: the objects of each program's own
+tables are listed in its own part (PD2: 188). Comments carry too, and a
+`SEG:OFF` in a comment's text is mapped like the address: a comment
+whose text has an address that cannot be mapped is left out (write
+`BSS:0000h`, not `BSS:0`, when the address is only prose).
 
 ## Running the originals (tools/run)
 
@@ -233,6 +319,12 @@ seconds: variables as a time series), `-wav`. Only one `-watch` at a
 time. A key script: `-key T KEY` (tap),
 `KEY+`/`KEY-` (down/up), or `-keys FILE`.
 
+To get the ball somewhere (a ramp, a hole) without a window: key
+scripts with random flipper presses and a launch every 10 s, many seeds
+in parallel (8 runs of 200 emulated seconds take 1.5 minutes here), a
+`-log` on the routine that should be reached; then repeat the seed that
+hit with `-dump`/`-shot`. Found the level switch this way in 3 of 24.
+
 Not done: savestates, a window, the menu programs (DDPCMAIN, DDPCINTR:
 untried; DDPCINTR wants MSCDEX for CD audio, which the DOS layer does not
 have). The runner is not part of `check.py` (it needs MSVC and the CD).
@@ -247,10 +339,11 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
 
 1. The menu program DDPCMAIN the same way (T2, Muse); DDPCINTR is done
    (T1). The FLI player needs no disassembly (FLI is documented).
-2. Understanding, into the hints (T4 for PD.EXE's engine, first pass
-   in): the structures (table descriptor, objects, hit rectangles, lights), the
-   formats (TBLDET*, FLIPPERS.SPR, DDPCICON.SPR, HISTORY *.HOP/*.IDX,
-   HISCORES.PD*). A `struct`/`dw` hint kind will be needed for data.
+2. Understanding, into the hints: PD.EXE's engine is done (T4, "Not
+   understood" above lists what is left); the formats FLIPPERS.SPR,
+   DDPCICON.SPR, HISTORY *.HOP/*.IDX, HISCORES.PD* are not described
+   yet. The table data is still DB lines apart from the handler words: a
+   `struct`/`dw` hint kind will be needed before data can move.
 3. The runner (done, T3) for comparing the C port with the original
    frame by frame will want savestates (start both at the same moment)
    (`-dumpevery` dumps chosen variables at a fixed interval).

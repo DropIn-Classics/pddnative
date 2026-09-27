@@ -765,7 +765,7 @@ name CODE:1BE3 ball_collide
 comment CODE:1BE3 the ball's next pixel against the collision map (map_test) and the flippers' shapes; CF and the surface when it hits
 name CODE:1B7E map_test
 comment CODE:1B7E the collision map at x = CX, y = DX (0..511): CF and AL = the surface, DH = its angle when the pixel is one of the row's surface pixels, else CF clear
-comment CODE:1B7E TBLDETLO/TBLDETHI: only the pixels where there is a surface; per row (512, from the top) two halves, x < 256 and x >= 256; an empty half is the byte FFh, else n pixels as three arrays of n bytes: the surface (bit 7 set on the last, so the array ends the list; the value is the low 7 bits), the angle, x (low 8 bits). Checked: every file parses to its last byte this way
+comment CODE:1B7E TBLDETLO/TBLDETHI: only the pixels where there is a surface; per row (512, from the top) two halves, x < 256 and x >= 256; an empty half is the byte FFh, else n pixels as three arrays of n bytes: the surface (bit 7 set on the last, so the array ends the list; the value is the low 7 bits), the angle, x (low 8 bits). Checked: all fifteen files of DREAMS1 and DREAMS2 parse to their last byte this way
 comment CODE:1B7E the surface's low nibble picks response_table's and surface_table's entry (the maps have 3, 5, 6, 7), high nibble 10h and 20h: kickers (score); low nibble Fh is no wall: 0Fh a one-way passage, 1Fh a line whose angle byte is a code or an event number (map_special)
 name CODE:1A57 index_map
 comment CODE:1A57 the row index at the start of BSS for the map the far pointer at BX points to (lower_map or upper_map): 512 rows of 4 bytes, +0 the offset of the row's x array of the first half, +2 the first half's pixels, +3 the second half's
