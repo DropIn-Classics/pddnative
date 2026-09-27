@@ -8,8 +8,8 @@ task's branch (see AGENTS.md).
 
 | id | for | status | what |
 |---|---|---|---|
-| T1 | Muse | changes | DDPCINTR.EXE: stage 1 with the names from its debug information |
-| T2 | Muse | later | DDPCMAIN.EXE: stage 1 |
+| T1 | Muse | done | DDPCINTR.EXE: stage 1 with the names from its debug information |
+| T2 | Muse | open | DDPCMAIN.EXE: stage 1 |
 | T3 | Claude | done | a headless runner for the original programs (C, from pfemu's core) |
 | T4 | Claude | later | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
 
@@ -64,6 +64,59 @@ the generated source under its name; `tools/gaps.py` leaves only data,
 and the notes list each remaining gap and what it is; the notes say in a
 few lines what the program does, step by step, as far as the code shows
 it.
+
+## T2: DDPCMAIN.EXE, stage 1
+
+DDPCMAIN.EXE is the Deluxe menu: F1-F8 start a table (through PD.EXE and
+PD2.EXE), F9 the "History of Pinball" viewer (640x480 pictures, texts in
+five languages), F10 the options; it uses the mouse. Unlike DDPCINTR it
+has no debug information (the file ends with the program image), so the
+names must come from the code.
+
+Files: `src/DDPCMAIN.hints` (new), `docs/tasks/T2.md`. Branch
+`muse/T2-ddpcmain`.
+
+Starting point (a first try by Claude, checked: it builds IDENTICAL,
+4333 instructions):
+
+    exe DELUXE/DDPCMAIN.EXE
+    segment CODE  0000 CODE
+    segment DATA  0448 DATA
+    segment SEG1  0766 FAR_DATA
+    segment SEG2  0B5E FAR_DATA
+    segment SEG3  0BC2 FAR_DATA
+    segment STACK 0E41 STACK stack size=800
+    relocorder DATA CODE
+
+The frames are the relocation values; the entry loads DS and ES with
+0448h, so that one is DATA. DATA holds 7 relocation sites itself (far
+pointers), listed before CODE's in the table. `tools/gaps.py` shows 38
+gaps, 7232 of 17536 code bytes not reached. SEG1..SEG3 are placeholders:
+name them after what they hold once known (check what the code reads
+from them).
+
+Steps:
+
+1. Close the gaps as AGENTS.md describes: for each, find the pointer
+   that reaches it (jump tables, key or menu dispatch tables, INT
+   vectors set with INT 21h AH=25h, `PUSH`/`RET`) and add
+   `words`/`ptr`/`code`/`coderange` hints with a comment saying where the
+   pointer is; or leave it as data. Run `tools/ptrscan.py` and check each
+   candidate by eye.
+2. Names for the main routines and the variables whose job the code
+   makes clear (what they do with INT 21h, INT 33h (mouse), INT 10h, the
+   ports, the file names in DATA), one-line comments; "presumably" where
+   it is a guess.
+3. Find how the menu starts a table program (the EXEC call, the command
+   line it builds) and what it writes before (DDPCOPTN.BIN?); say it in
+   the notes with the addresses.
+
+Done when: `tools/check.py` says `all ok` with DDPCMAIN among the
+programs; `tools/gaps.py` leaves only data and the notes list each
+remaining gap and what it is; the segments have names that say what
+they hold (or the notes say why not); the notes say in a few lines what
+the program does, step by step, as far as the code shows it, and how it
+calls PD.EXE/PD2.EXE (command line, files written before).
 
 ## T3: a headless runner (Claude)
 

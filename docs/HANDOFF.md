@@ -8,10 +8,11 @@ depth yet.
 
 - `master` has the remote `origin` (GitHub, mindphluxnet/pddnative); the
   user pushes, push only when the user asks.
-- Muse is working on T1 (DDPCINTR.EXE) in `../pddnative-muse` on
-  `muse/T1-ddpcintr`. Do not touch that checkout. When the user says
-  "Review T1", follow CLAUDE.md (review steps) and AGENTS.md (who writes
-  what where).
+- T1 (DDPCINTR.EXE, by Muse) is merged, see "DDPCINTR.EXE" below. T2
+  (DDPCMAIN.EXE) is open for Muse, with a starting point that builds
+  IDENTICAL. Muse works in `../pddnative-muse` on `muse/*`; do not touch
+  that checkout. When the user says "Review Tn", follow CLAUDE.md (review
+  steps) and AGENTS.md (who writes what where).
 - T3 (the runner) is done, see "Running the originals" below. Claude's
   next task is T4 (PD.EXE's engine core into the hints), now with the
   runner to check each claim against.
@@ -125,6 +126,24 @@ Checked by running (tools/run.py, 2026-09-27):
   tweaked modes at `CODE:4E7D`/`4EC1` are not used in these runs, perhaps
   a detail option from DDPCOPTN.BIN (not checked).
 
+## DDPCINTR.EXE (T1)
+
+Built IDENTICAL from `src/DDPCINTR.hints` with 153 of the 155 names from
+its CodeView (NB08) tail; `tools/cv4.py HINTS [--hints]` reads it
+(docstring: the layout). Debug segments 1-4 are the frames CODE, PALSEG
+(four 768-byte palettes and a table of their offsets), DATA (debug name
+VARIABLES), STACK. Not named yet: `delaytable` (DATA:003A) and
+`paltable` (PALSEG:0C00), both reached only as displacements (`[BX+3Ah]`,
+`LEA SI,[0C00h]`), which no hint kind names yet. The program, from the
+code (not run; the runner has no MSCDEX): shrink memory, read one digit
+from the command line (the CD track), Mode X, own INT 9, load four
+pictures into VRAM, start the track, show three pictures with fades and a
+time each, the fourth while MSCDEX reports the drive busy, fade out,
+stop, exit with code 0 in Mode X (no text mode). For the port: its
+failure exits before the INT 9 hook restore INT 9 to 0000:0000 (the saved
+vector is still zero), and every stop request before the drive search
+goes to drive 0. Details and addresses: docs/tasks/T1.md.
+
 ## The tools and the hints
 
 `build.py` regenerates the source from the hints each time and says,
@@ -187,8 +206,8 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
 
 ## Next
 
-1. The menu and intro programs (DDPCMAIN, DDPCINTR) the same way; the
-   FLI player needs no disassembly (FLI is documented).
+1. The menu program DDPCMAIN the same way (T2, Muse); DDPCINTR is done
+   (T1). The FLI player needs no disassembly (FLI is documented).
 2. Understanding, into the hints: names of variables and routines, the
    structures (table descriptor, objects, hit rectangles, lights), the
    formats (TBLDET*, FLIPPERS.SPR, DDPCICON.SPR, HISTORY *.HOP/*.IDX,
