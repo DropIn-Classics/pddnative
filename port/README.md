@@ -54,14 +54,17 @@ space of the driver's EXEC in CODE, the stack)
   times from state 7's entry, t = 68.472871 s at picture 4621), the
   attract show again at the 261st and 700th idle frame: a whole game, the
   score (1,052,000) in the high scores' fourth place. The ball's bounces
-  on the table and the kickers are thus checked; the flippers' are not
-  yet.
+  on the table and the kickers are thus checked.
 - the pause (P at picture 926, A at 1000; runner times 13.869301 +
   (picture - 827.5) / 70.09 s): equal at the 100th, 101st and 300th frame
   of play; tilt (Space tapped at play frames 230, 240, 250, 260, 270, in
   one window of nudge_timer): equal at state 9's entry, the drain and the
   next ball's start. State 4 is not checked by a run (no ball locked yet),
   nor state 12.
+- the flippers: 91 random taps of the Shift keys (4 to 14 pictures each,
+  3 to 25 apart, from picture 900; the runner's times as above, given
+  with -keys): equal at the 200th, 500th and 992nd frame of play (the ball
+  drains after it) and at the next ball's start.
 - XDATA's `music_pos` can differ from the original's: INT 66h AL=10h
   returns the position the driver's player has reached in the module, and
   the port's player does not advance in the headless build (no audio
