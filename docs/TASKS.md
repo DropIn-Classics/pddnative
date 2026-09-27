@@ -14,7 +14,7 @@ task's branch (see AGENTS.md).
 | T4 | Claude | done | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
 | T6 | Claude | working | the implementation in C (port/): the table programs' engine, routine by routine |
 | T5 | Sol | done | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
-| T7 | Sol | open | tools/ddfiles.py: the history viewer's files (HISTORY/*.HOP, *.IDX, HISTORY.FNT, the pictures) |
+| T7 | Sol | changes | tools/ddfiles.py: the history viewer's files (HISTORY/*.HOP, *.IDX, HISTORY.FNT, the pictures) |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
