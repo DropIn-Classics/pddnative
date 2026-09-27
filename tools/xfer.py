@@ -124,6 +124,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('src')
     ap.add_argument('dst')
+    ap.add_argument('--check', action='store_true',
+                    help="only say whether DST's carried block is up to date")
     args = ap.parse_args()
     a, _ = disasm.generate(args.src)
     # the target, analysed with its own lines only (none carried yet)
@@ -214,7 +216,14 @@ def main():
         else:
             out.append('; (not mapped) ' + line)
             n_bad += 1
-    open(args.dst, 'w', encoding='utf-8').write(own + '\n' + '\n'.join(out) + '\n')
+    result = own + '\n' + '\n'.join(out) + '\n'
+    if args.check:
+        if result != text:
+            print(f'{args.dst}: carried block out of date (run tools/xfer.py '
+                  f'{args.src} {args.dst})', file=sys.stderr)
+            sys.exit(1)
+        return
+    open(args.dst, 'w', encoding='utf-8').write(result)
     print(f'{n_ok} hints carried, {n_bad} not mapped -> {args.dst}', file=sys.stderr)
 
 

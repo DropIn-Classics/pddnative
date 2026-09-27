@@ -28,7 +28,8 @@ player's own copy each time (into `build/`).
 
 `gogx.py` takes the image's path as its first argument if GOG is not
 installed at `C:\GOG Games\Pinball Dreams Deluxe`. Python 3 with
-`capstone` (`pip install capstone`).
+`capstone` (`pip install capstone`). `$PDD_GAME` names another folder
+for the unpacked CD.
 
 ## Layout
 
@@ -42,8 +43,13 @@ installed at `C:\GOG Games\Pinball Dreams Deluxe`. Python 3 with
   - `gaps.py`: what of a code segment is not reached yet, and where the
     addresses of the gaps appear.
   - `ptrscan.py`: immediates that look like addresses.
+  - `check.py`: everything that must hold before a commit (all programs
+    identical, PD2's carried hints up to date); `hooks/pre-commit` runs it
+    (`git config core.hooksPath tools/hooks` once per clone).
   - `xfer.py`: carries hints from PD.hints to PD2.hints (the two programs
     share the engine; about 97 % of the instructions align).
   - `tasm.py`, `x86enc.py`, `tlink.py`: from pfnative (commit 35cb5ee),
     with MASM switches and one fix, see their comments.
 - `docs/HANDOFF.md`: state, what was learned, what is next.
+- `AGENTS.md`: rules for the agents working on this (two at a time, each
+  in its own git worktree); `docs/TASKS.md`: who does what.

@@ -41,6 +41,9 @@ Hints syntax (one per line, ';' starts a comment, numbers are hex):
     comment    SEG:OFF TEXT            a comment line before the address
     raw        SEG:OFF                 write the instruction as DB (the
                                        assembler would pick other bytes)
+    keeptail                           the bytes after the program image
+                                       (debug information) are copied from
+                                       the original, not made
     relocorder SEG SEG...              the order of the relocation table:
                                        by the segment holding the site
 """
@@ -50,6 +53,27 @@ from capstone import x86
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..'))
+
+
+def game_dir():
+    """Where the unpacked CD is: $PDD_GAME, else game/ of this checkout,
+    else game/ of the main checkout (a git worktree has none of its own)."""
+    env = os.environ.get('PDD_GAME')
+    if env:
+        return env
+    own = os.path.join(ROOT, 'game')
+    if os.path.isdir(own):
+        return own
+    try:
+        import subprocess
+        common = subprocess.run(['git', 'rev-parse', '--git-common-dir'], cwd=ROOT,
+                                capture_output=True, text=True).stdout.strip()
+        main = os.path.normpath(os.path.join(ROOT, common, '..', 'game'))
+        if os.path.isdir(main):
+            return main
+    except OSError:
+        pass
+    return own
 
 REG = {}
 
@@ -84,6 +108,7 @@ class Program:
         self.minalloc, self.maxalloc = minalloc, maxalloc
         self.ss, self.sp, self.cs, self.ip = ss, sp, cs, ip
         self.relocs = [struct.unpack_from('<HH', d, lfarlc + 4 * i) for i in range(crlc)]
+        self.tail = d[size:]                   # after the image (debug information)
         self.relsites = {}                     # image offset -> segment value
         for off, seg in self.relocs:
             a = seg * 16 + off
@@ -109,6 +134,7 @@ class Hints:
         self.comments = {}        # (seg, off) -> [text]
         self.raw = set()
         self.relocorder = []
+        self.keeptail = False
         for n, line in enumerate(open(path, encoding='utf-8'), 1):
             line = line.split(';', 1)[0].strip() if not line.lstrip().startswith('comment') else line.strip()
             if not line:
@@ -150,6 +176,8 @@ class Hints:
                 elif k == 'comment':
                     text = line.split(None, 2)[2] if len(f) > 2 else ''
                     self.comments.setdefault(self.addr(f[1]), []).append(text)
+                elif k == 'keeptail':
+                    self.keeptail = True
                 elif k == 'relocorder':
                     self.relocorder = f[1:]
                 elif k == 'raw':
@@ -881,7 +909,7 @@ def generate(hints_path, raw_extra=()):
     h = Hints(hints_path)
     for r in raw_extra:
         h.raw.add(r)
-    prog = Program(os.path.join(ROOT, 'game', h.exe))
+    prog = Program(os.path.join(game_dir(), h.exe))
     an = Analysis(prog, h)
     an.run()
     em = Emitter(an)

@@ -29,7 +29,9 @@ From the bytes:
 
 - Microsoft LINK: word 1 at 1Ch, relocations from 1Eh, header padded to
   512 bytes. The relocation table lists DATA's sites before CODE's.
-- MASM (6.x most likely): every jump has its shortest form (no NOP
+- MASM 6, or TASM in NOSMART mode with /m: DDPCINTR's debug
+  information has TASM-style local labels (`@@a`), so TASM is the better
+  guess for that program at least. Every jump has its shortest form (no NOP
   padding as TASM's single pass leaves), `LEA reg,[addr]` stays LEA, ALU
   with AX and a small constant takes the sign-extended byte form (83h),
   `TEST r,r` puts the first register in r/m. `tasm.py` has switches for
@@ -92,6 +94,12 @@ instructions 8,042 align by their shape. A code address is carried only if
 the next ten instructions look the same at the new place; what cannot be
 carried is left as a comment. Run it again after changing PD.hints (it
 replaces its own block in PD2.hints, keeps the lines above it).
+
+## Working with a second agent
+
+Muse (in OpenCode) works in the worktree `../pddnative-muse` on
+`muse/*` branches; the rules are in AGENTS.md, the tasks in
+docs/TASKS.md. `tools/check.py` guards every commit through the hook.
 
 ## Next
 

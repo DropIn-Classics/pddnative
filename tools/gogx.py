@@ -8,7 +8,7 @@ is its cue sheet; tracks 2 and 3 are the .ogg files in MUSIC).  Every data
 sector is Mode 2 Form 1: 24 bytes of sync, header and subheader, then 2048
 bytes of user data.  The ISO 9660 file system on it is read as is; file
 names lose their ';1' version.  Defaults: the GOG folder on C: and game/
-beside tools/.
+beside tools/ ($PDD_GAME if set).
 """
 import os, struct, sys
 
@@ -81,7 +81,7 @@ def unpack(image, out):
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     image = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_IMAGE
-    out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(here, '..', 'game')
+    out = sys.argv[2] if len(sys.argv) > 2 else os.environ.get('PDD_GAME') or os.path.join(here, '..', 'game')
     print(f'{unpack(image, out)} files -> {os.path.normpath(out)}')
 
 

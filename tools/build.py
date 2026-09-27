@@ -96,6 +96,8 @@ def build_once(hints, raw):
             if any(got[k] != want[k] for k in range(n) if k not in mask):
                 bad.append((s, off, 'bytes', f'{text.strip()}  got {got.hex()} want {want.hex()}'))
     exe = write_mz(out, an.p, [an.byname[s].frame for s in an.h.relocorder])
+    if an.h.keeptail:
+        exe += an.p.tail
     return an, em, a, out, exe, bad, name
 
 

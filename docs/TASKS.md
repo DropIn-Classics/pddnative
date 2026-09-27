@@ -1,0 +1,66 @@
+# Tasks
+
+Kept on master by Claude and the user. Status: `open` (free to take),
+`working`, `review` (branch ready), `changes` (review findings in
+`docs/reviews/<id>.md`), `done`, `later` (not to be started yet).
+Whoever works on a task keeps its notes in `docs/tasks/<id>.md` on the
+task's branch (see AGENTS.md).
+
+| id | for | status | what |
+|---|---|---|---|
+| T1 | Muse | open | DDPCINTR.EXE: stage 1 with the names from its debug information |
+| T2 | Muse | later | DDPCMAIN.EXE: stage 1 |
+| T3 | Claude | later | a headless 8086 runner for the original programs |
+| T4 | Claude | later | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
+
+## T1: DDPCINTR.EXE, stage 1 with names
+
+DDPCINTR.EXE is the Deluxe intro (pictures, fades, CD audio through
+MSCDEX). After its program image it carries 11,934 bytes of CodeView
+debug information (signature `NB08`, written by Microsoft LINK) with the
+names of its routines and labels, locals included (`@@a`, `@@fd_01`: TASM's
+local labels).
+
+Files: `src/DDPCINTR.hints` (new), `tools/cv4.py` (new),
+`docs/tasks/T1.md`. Branch `muse/T1-ddpcintr`.
+
+Starting point (a first try by Claude, checked: it builds IDENTICAL):
+
+    exe DELUXE/DDPCINTR.EXE
+    segment CODE  0000 CODE
+    segment XSEG  0097 FAR_DATA
+    segment DATA  0158 DATA
+    segment STACK 01AF STACK stack size=800
+    relocorder CODE
+    keeptail
+
+With it the build is identical, with `CODE:008F` written as DB (a word
+displacement 3Ah where the assembler takes a byte: add it as a `raw` hint
+with a comment); `tools/gaps.py` shows 940 of 2416 code bytes not reached.
+The segment names XSEG and the classes are placeholders: name them after
+what they hold once known.
+
+Steps:
+
+1. `tools/cv4.py`: reads the CodeView information at the end of a program
+   (the `NB08` signature at the very end points back to its start; the
+   format is Microsoft's CodeView 4, documented in "Microsoft Symbol and
+   Type Information" / CV4 spec), and prints every symbol with its
+   segment and offset. With an option it prints `name` hints. Names must
+   be valid assembler identifiers and unique: write a local label as
+   `<routine>_<local>` without the `@@` (e.g. `fadedn_fd_01`); say in the
+   notes how segments in the debug information map to the frames in the
+   hints (check a few by looking at the disassembly: a routine's name must
+   sit on the first instruction of something that looks like that
+   routine).
+2. Put the names into `src/DDPCINTR.hints`, then close the gaps as
+   AGENTS.md describes (the names help: every named routine is code).
+3. Comments on the main routines where the disassembly makes their job
+   clear (one line each; "presumably" where it does not).
+
+Done when: `tools/check.py` says `all ok` with DDPCINTR among the
+programs; every routine and label from the debug information appears in
+the generated source under its name; `tools/gaps.py` leaves only data,
+and the notes list each remaining gap and what it is; the notes say in a
+few lines what the program does, step by step, as far as the code shows
+it.
