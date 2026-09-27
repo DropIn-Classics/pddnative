@@ -12,6 +12,7 @@ task's branch (see AGENTS.md).
 | T2 | Muse, Sol | review | DDPCMAIN.EXE: stage 1 |
 | T3 | Claude | done | a headless runner for the original programs (C) |
 | T4 | Claude | done | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
+| T6 | Claude | working | the implementation in C (port/): the table programs' engine, routine by routine |
 | T5 | Sol | open | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
 
 ## T1: DDPCINTR.EXE, stage 1 with names

@@ -1200,3 +1200,44 @@ name DATA:9AA2 opt_screen
 comment DATA:9AA2 1: 320x200, 2: 320x350, the table scrolls less (checked with a DDPCOPTN.BIN of these 14 bytes)
 name DATA:845E options_file
 name DATA:80BC hiscore_file
+
+; ---- names the C port (port/) needs
+name DATA:0058 txt_load_error
+comment DATA:0058 fatal_error's text ('$' at its end, for INT 21h AH=9)
+name DATA:0083 txt_no_memory
+name DATA:00A7 name_flippers
+name DATA:8095 name_tbldetlo
+comment DATA:8095 the table's file names; load_table_files writes the extension (from table_exts) after the dot
+name DATA:80A2 name_tbldethi
+name DATA:80B0 name_table2m
+name DATA:80D3 table_exts
+comment DATA:80D3 the four tables' file name extensions, three letters each
+name DATA:8475 cleared_vars
+comment DATA:8475 start clears DATA from here up to sprite_seg
+name DATA:6735 txt_hiscore1
+comment DATA:6735 the table's four high scores as texts for the display (format_hiscores): initials at +0, the score at +5
+name DATA:674A txt_hiscore2
+name DATA:675F txt_hiscore3
+name DATA:6774 txt_hiscore4
+name CODE:4F05 crtc_480
+comment CODE:4F05 set_mode_e3's CRTC registers (index, value), 10 of them
+name CODE:4F19 crtc_350
+comment CODE:4F19 set_mode_350's CRTC registers (index, value), 16 of them
+name CODE:51FE tune_saved
+comment CODE:51FE jingle_request_run: 1 once a jingle (2 and up) has taken the music over and music_pos holds where the tune was
+name CODE:5200 in_timer
+comment CODE:5200 FFh while timer_callback runs (it does not run twice at once)
+name DATA:844F fade_steps
+comment DATA:844F music_fade: steps left (10h a fade)
+name DATA:8450 fade_volume
+comment DATA:8450 music_fade: the volume handed to INT 66h AL=6 (up to 100h)
+name DATA:7CE6 sprites_scroll
+comment DATA:7CE6 bit 0: draw_sprites calls scroll_step before putting an area back; timer_callback clears it, nothing sets it (as far as the code shows)
+name DATA:7CF2 sprite_list_end
+comment DATA:7CF2 draw_sprites: one past the last entry of sprite_list
+name DATA:7CF4 area_offset
+comment DATA:7CF4 draw_sprites: the area's first line in video memory (780h + 50h a line)
+name DATA:7CF6 area_rows
+comment DATA:7CF6 draw_sprites: the area's lines above line 512
+name DATA:7CF8 sprite_list
+comment DATA:7CF8 draw_sprites: the sprites (their offsets in sprites) of one area, a word each, sorted downwards

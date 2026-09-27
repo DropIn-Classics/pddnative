@@ -351,4 +351,11 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
 3. The runner (done, T3) for comparing the C port with the original
    frame by frame will want savestates (start both at the same moment)
    (`-dumpevery` dumps chosen variables at a fixed interval).
-4. The implementation in C (`port/`).
+4. The implementation in C (`port/`, T6): started 2026-09-27; state 1
+   (loading) runs for both programs and matches the original's memory at
+   the entry of `st_idle` (port/README.md). Next: state 2 (`st_idle` and
+   what it calls), then the ball and play, each state checked with
+   `tools/memcmp.py` against a run of the original stopped at the same
+   routine. The driver's tick is 70.09 a second in the 320x200 mode
+   (measured, SBLASTER.SDR); what AL=11h (effects) and AL=13h
+   (`module_callback`) do for the driver is still to be found.

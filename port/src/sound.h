@@ -1,0 +1,30 @@
+/* sound.h - the sound driver's functions (INT 66h) that the table programs
+ * call, played with modplay (micromod).  The functions and their
+ * arguments are those PD.EXE passes (see pd_sound.c); what the driver
+ * does with an argument is only taken as far as it is established for
+ * Dreams, the rest is marked. */
+#ifndef PD_SOUND_H
+#define PD_SOUND_H
+
+/* opens the audio output (once) */
+void snd_init(void);
+
+/* AL=12h: loads the module file at `path`; 0, or nonzero when it cannot */
+int snd_load_module(const char *path);
+/* AL=4: the music plays */
+void snd_play(void);
+/* AL=0: the music stops, the module is gone */
+void snd_stop(void);
+/* AL=6: the volume, CX = 0-100h (music_fade's steps; presumably 100h is
+ * full, not checked) */
+void snd_volume(int cx);
+/* AL=10h: the module goes on at order position BX.  The driver returns a
+ * position in AL (PD.EXE keeps it in music_pos); which one is not
+ * established yet: 0 here. */
+int snd_position(int bx);
+/* AL=11h: a sound effect with BL, BH, CL, DL from the table's effect
+ * list.  Not implemented yet: what the four bytes mean has to be found
+ * from the driver. */
+void snd_effect(int bl, int bh, int cl, int dl);
+
+#endif

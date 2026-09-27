@@ -63,6 +63,10 @@ it when needed. Its options are at the top of
     (`git config core.hooksPath tools/hooks` once per clone).
   - `xfer.py`: carries hints from PD.hints to PD2.hints (the two programs
     share the engine; about 97 % of the instructions align).
+  - `portmap.py`: the hints' names with their addresses in both programs,
+    for the C (`port/src/gen/pdnames.h`).
+  - `memcmp.py`: compares the memory of the C and of the original (tools/run)
+    stopped at the same point, by the names of the hints.
   - `tasm.py`, `x86enc.py`, `tlink.py`: assembler and linker work-alikes,
     with switches for the original's encodings (see their comments).
   - `run/`: `pddrun`, a headless PC that runs the shipped programs (386
@@ -70,6 +74,7 @@ it when needed. Its options are at the top of
     `C:` is the CD with a writable layer in `build/run/state`), see
     `run/pddrun.h`.
     `run.py`: its front end, takes addresses by their names in the hints.
+- `port/`: the implementation in C (its README says how far it is).
 - `docs/HANDOFF.md`: state, what was learned, what is next.
 - `AGENTS.md`: rules for the agents working on this (two at a time, each
   in its own git worktree); `docs/TASKS.md`: who does what.
