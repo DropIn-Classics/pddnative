@@ -263,11 +263,11 @@ words PALSEG:0C00 4 PALSEG
 ; ---- what the routines do (one line each, presumably where noted)
 comment CODE:0000 main: mstart2, get PSP via AH=62h, getcmdline, malloc 0FA1h, init320200, setkbdint, load_pics, mfree, disply_pics, then fall through into ldfail
 comment CODE:004B show pictures with fades and CD audio via GetSNL, DoPlayTrack, fadedn/fadeup and waitframe (presumably)
-comment CODE:010A load the four VGA files from introfnames via fload into picmem (presumably)
+comment CODE:010A load the four VGA files from introfnames via fload into picmem, then copy each into VRAM with mvscr
 comment CODE:015F copy memory to VGA Mode X planes via srdwr, SI+=4 (presumably)
 comment CODE:019B load 64000-byte VGA file via DOS open (AH=3Dh) and read (presumably)
 comment CODE:01DE shrink memory via msize with ES=CS-10h DX=0500h (INT 21h AH=4Ah)
-comment CODE:01F0 get digit from PSP cmdline at ES:BX+80h, SUB 30h, STC on fail (presumably BL=digit)
+comment CODE:01F0 get digit from PSP cmdline: BX is the PSP segment (from INT 21h AH=62h in intro), reads ES:0080h with ES=BX; BL is the first non-blank character minus 30h; only characters below 30h are rejected (JNS); empty tail (length byte 0) sets CF
 comment CODE:021D set VGA mode 13h then Mode X 320x200 via ports 3CE/3C4
 comment CODE:0266 clear palette to black via 3C8/3C9 after wblnk (presumably)
 comment CODE:027C set CRTC split screen via port 3D4 (presumably)
@@ -294,7 +294,7 @@ comment CODE:05B3 check [kmat] via REPE SCASW, ZF set if none (presumably)
 comment CODE:05CD clear [kmat] 32 bytes via REP STOSW
 comment CODE:05E6 load file via DOS open/read into picmem segment (presumably)
 comment CODE:061A save file via DOS create/write using [fhand], [fhigh], [flow] (presumably)
-comment CODE:06A3 alloc 0FA1h via malloc into [membuf], open/read file, JMP ldfail with 2 on OOM (presumably copy to VRAM next)
+comment CODE:06A3 alloc 0FA1h via malloc into [membuf], open/read file, call mv2vram; the 2 and 3 put into AX before JMP ldfail are lost, because ldfail loads AX=4C00h
 comment CODE:0705 copy memory to VGA planes via srdwr like mvscr (presumably)
 comment CODE:073E get CD disk info via MSCDEX using [DInfo_C], [RequestBlock] and GetCDDrive (presumably)
 comment CODE:0775 get CD track info via MSCDEX AX=1510h using [TnoInfo_C] (presumably)
@@ -304,7 +304,7 @@ comment CODE:082C play CD track via MSCDEX INT 2Fh using [PlayTrack] (presumably
 comment CODE:0844 fill [SNLTab] with track starts via GetStartSec for LoTrack..HiTrack (presumably)
 comment CODE:08B1 get CD volume size via MSCDEX using [VSize_c] (presumably)
 comment CODE:08D7 stop CD track via MSCDEX INT 2Fh using [StopTrack] (presumably)
-comment CODE:08EC get CD Q-channel info via MSCDEX using [QInfo_c] (presumably)
+comment CODE:08EC get CD Q-channel info via MSCDEX using [QInfo_c]; returns AL as bit 1 of DATA:0370 (high byte of [Status], bit 9 of the request status word; busy per device driver spec, not checked by running)
 comment CODE:0930 resize memory via INT 21h AH=4Ah ES=CS-10h BX=SS+41h-ES (initial shrink, presumably)
 comment CODE:0949 alloc memory via INT 21h AH=48h AX paragraphs (on failure AX holds the largest block DOS offers, from BX)
 comment CODE:0956 free memory via INT 21h AH=49h ES block
