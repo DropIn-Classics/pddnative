@@ -24,6 +24,9 @@ ptr CODE:020F CODE
 ptr CODE:0215 CODE
 ptr CODE:021B CODE
 ptr CODE:0C18 CODE
+; sound callback for INT 66h AL=0Bh (far pointer ES:DX built at
+; CODE:43D7-43DC via PUSH 4421 and PUSH CS/POP ES/POP DX)
+code CODE:4421
 
 ; CMP r/m8,r8 (38h) where MASM writes 3Ah (like PD.hints raw entries)
 raw CODE:05B1
