@@ -20,7 +20,7 @@ if git diff --cached --name-only | grep -Eiq '^(game|build)/|\.(exe|com|sdr|mod|
 fi
 
 # the checks, when something they depend on changed
-if git diff --cached --name-only | grep -Eq '^(src|tools)/'; then
+if git diff --cached --name-only | grep -Eq '^(src|tools|port/src/gen)/'; then
     exec python tools/check.py
 fi
 exit 0

@@ -1,0 +1,27 @@
+/* modplay.h - MOD playback: micromod (third_party/micromod) behind a small
+ * interface.
+ *
+ * Not thread-safe: the audio thread renders while the program calls the
+ * rest, so the caller holds plat_audio_lock() around every call. */
+#ifndef PD_MODPLAY_H
+#define PD_MODPLAY_H
+
+#include <stddef.h>
+#include <stdint.h>
+
+/* Takes a copy of the module and starts it at position 0.  0 on success,
+ * -1 if it is not a MOD micromod understands. */
+int modplay_load(const uint8_t *data, size_t size, long rate);
+void modplay_unload(void);
+int modplay_loaded(void);
+
+/* `frames` stereo 16-bit frames; silence without a module */
+void modplay_render(int16_t *out, int frames);
+
+/* row 0 of the order list's position `pos` */
+void modplay_set_position(int pos);
+
+/* 0-64; 64 is the loudest a 4-channel module plays without clipping */
+void modplay_set_gain(int value);
+
+#endif

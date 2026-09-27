@@ -1,0 +1,277 @@
+; DDPCMAIN.EXE: the Deluxe menu (tables F1-F8, history F9, options F10)
+; Hints for tools/disasm.py; numbers are hex.
+
+exe DELUXE/DDPCMAIN.EXE
+
+; the segments, from the relocations, the header (SS:SP = 0E41:0800) and
+; FONTS holds menu/option glyph bitmaps, OPTIONS the option screen's data,
+; strings and palettes, and HISTORY the history viewer's paths and data
+segment CODE    0000 CODE
+segment DATA    0448 DATA
+segment FONTS   0766 FAR_DATA
+segment OPTIONS 0B5E FAR_DATA
+segment HISTORY 0BC2 FAR_DATA
+segment STACK   0E41 STACK stack size=800
+
+; the relocation table lists the sites in DATA first, then those in CODE
+relocorder DATA CODE
+
+; ---- code reached through pointers (comment says where each comes from)
+; INT 9 handler set via AH=25h (MOV DX at CODE:1344, DS=CS)
+ptr CODE:1344 CODE
+; pointer variables DATA:31C7/31C5/31C9 holding code addresses, set to
+; 0DD9/0DD2/04E5 at startup (MOVs at CODE:020F/0215/021B), to 0DE0 (a RET
+; that disables them) at CODE:0C0C/0C12/0C18, and back at CODE:0E54/0E5A/0E60
+ptr CODE:020F CODE
+ptr CODE:0215 CODE
+ptr CODE:021B CODE
+ptr CODE:0C18 CODE
+; sound callback for INT 66h AL=0Bh (far pointer ES:DX built at
+; CODE:43D7-43DC via PUSH 4421 and PUSH CS/POP ES/POP DX; see INT 66h
+; AL=0Bh at CODE:43E1 with ES:DX=CS:4421)
+ptr CODE:43D7 CODE
+; SOUND.CFG is data embedded in CODE, opened by load_sound at 434Ch
+dptr CODE:434C CODE
+
+; L3158 runs with DS=HISTORY (called from L3140 at CODE:314B with DS=HISTORY;
+; CALL resets to DATA in the analysis, so override): its LEA DX,[0D19] /
+; [0D0C] are HISTORY paths, and [1E26]/[1E28]/[1E2A] are HISTORY data
+ds CODE:3158-31C8 HISTORY
+; these callees inherit DS=HISTORY; calls reset the analysis to DATA
+ds CODE:32DA-3347 HISTORY
+ds CODE:3599-36A8 HISTORY
+ds CODE:3DBF-3DE1 HISTORY
+ds CODE:3E09-3E3D HISTORY
+ds CODE:4394-43D2 HISTORY
+
+; near-pointer tables in DATA read with BX in L0B59 (CHDIR/EXEC for tables)
+words DATA:0D19 2 DATA
+words DATA:0D1D 2 DATA
+
+; HISTORY resource tables and the history menu's indirect CODE dispatch
+words HISTORY:0D4A 5 HISTORY ; language directories
+words HISTORY:0D8E 5 HISTORY ; .HOP files
+words HISTORY:0DD2 5 HISTORY ; .IDX files
+words HISTORY:0E0F 2 HISTORY ; intro module names, read by load_sound
+words HISTORY:0EBE 0A HISTORY ; 10 manufacturer names
+words HISTORY:10C7 1D HISTORY ; 29 designer names
+words HISTORY:1174 16 HISTORY ; 22 year names
+words HISTORY:1445 35 HISTORY ; 53 pinball-table names
+words HISTORY:16CD 5 CODE ; history menu action dispatch at CODE:32DA/3302
+
+; CMP r/m8,r8 (38h) where MASM writes 3Ah (like PD.hints raw entries)
+raw CODE:05B1
+
+; ---- dead code: each range decodes as complete routines ending RET/JMP,
+; but no direct, immediate, table, INT-vector or mouse-callback reference to
+; the cluster was found anywhere in the image (internal calls are noted)
+code CODE:026B ; far-memory to planar VGA copy
+code CODE:0BD4 ; alternative DOS memory resize via AH=4Ah
+code CODE:0D1D ; grayscale DAC entry
+code CODE:0D3E ; print the selected language name through DOS
+code CODE:0D91 ; yes/no prompt; calls the dead DAC helper at 0EC1
+code CODE:0DE1 ; one-shot intro/FLI/menu reinitializer
+code CODE:0EC1 ; two bright DAC entries, called only by dead 0D91
+code CODE:104A ; graphics-controller mode helper
+code CODE:1056 ; companion graphics-controller routine
+code CODE:1149 ; duplicate mode 13h initialization
+code CODE:1414 ; clear the keyboard bitmap at DATA:1362
+code CODE:3100 ; alternative DOS memory resize using CS-10h
+code CODE:3273 ; orphan RET
+code CODE:3274 ; VESA bank copy after the orphan RET
+code CODE:1979 ; animated pixel copy using the offset tables at 19CA/22CA
+code CODE:3904 ; unused history text helper
+code CODE:4162 ; decimal number formatter
+code CODE:418C ; pixel-copy helper after the formatter
+code CODE:38F1 ; single mouse-reset call stub
+code CODE:43D2 ; single jump to the sound-loader return
+
+; ---- main routines and the interfaces they use
+name CODE:0000 start
+comment CODE:0000 initialize DOS memory, keyboard, intro, FLI and menu, then exit through DOS
+name CODE:003E exit
+comment CODE:003E stop sound, restore INT 9 and text mode, print a status message, DOS exit
+name CODE:006B menu
+comment CODE:006B initialize and run the animated table-selection menu
+name CODE:0195 menu_init
+name CODE:0240 check_memory
+comment CODE:0240 resize the program and require at least 6630h paragraphs of free DOS memory
+name CODE:02A4 poll_mouse
+comment CODE:02A4 read mouse position and buttons with INT 33h when a mouse was found
+name CODE:0642 load_hiscores
+comment CODE:0642 load HISCORES.PD1 and HISCORES.PD2, using compiled defaults when absent
+name CODE:0B59 run_table
+comment CODE:0B59 CHDIR to DREAMS1/2, EXEC PD.EXE/PD2.EXE with digit 0-3, then CHDIR back
+name CODE:0BF0 run_selection
+comment CODE:0BF0 dispatch F1-F8 to a table, F9 to history and F10 to options
+name CODE:0C76 run_fli_player
+comment CODE:0C76 EXEC DDFLIPLY.EXE with the selected digit in the DOS command tail
+name CODE:0CD0 run_intro
+comment CODE:0CD0 EXEC DDPCINTR.EXE with CD track digit 2 or 3 chosen from PIT channel 1 bit 0
+name CODE:0E81 menu_video_init
+name CODE:0F0C set_mode_x
+comment CODE:0F0C set mode 13h and unchain its VGA planes
+name CODE:0F55 clear_palette
+name CODE:0FA8 set_palette
+name CODE:0FCD clear_vram
+name CODE:101A wait_retrace
+name CODE:1068 display_off
+name CODE:1074 display_on
+name CODE:11D1 read_file_far
+comment CODE:11D1 read a file through DOS into consecutive 8000h-byte far-memory windows
+name CODE:1205 write_file_far
+comment CODE:1205 create and write a far-memory buffer through DOS
+name CODE:128E load_vga_image
+comment CODE:128E allocate memory, read a VGA image and copy its four planes to video memory
+name CODE:1329 install_keyboard
+comment CODE:1329 save the old INT 9 vector and install keyboard_handler
+name CODE:134E restore_keyboard
+name CODE:1364 keyboard_handler
+name CODE:142D options_screen
+comment CODE:142D run the F10 options screen in OPTIONS until its exit flag is set
+name CODE:16D3 options_init
+comment CODE:16D3 initialize option graphics and mouse, load DDPCBKGD.VGA/DDPCICON.SPR and current options
+name CODE:2BEB load_options
+comment CODE:2BEB read the 13-byte DDPCOPTN.BIN or install defaults, then copy it to options_buffer
+name CODE:2CFE save_options
+comment CODE:2CFE write the four choices, four key words and resolution byte to DDPCOPTN.BIN
+name CODE:30D6 file_size
+name CODE:3119 alloc_memory
+name CODE:3126 free_memory
+name CODE:3131 resize_memory
+name CODE:3140 history_screen
+comment CODE:3140 run the F9 History of Pinball viewer with DS and ES set to HISTORY
+name CODE:3158 history_init
+name CODE:31C8 history_loop
+name CODE:3599 filter_manufacturer
+name CODE:35DC filter_designer
+name CODE:361F filter_year
+name CODE:3662 select_history_table
+name CODE:36A4 leave_history_menu
+name CODE:3713 select_history_filter
+name CODE:3BDC filter_history_records
+comment CODE:3599 HISTORY:16CD dispatches the manufacturer filter and rebuilds filtered_table_records
+comment CODE:35DC HISTORY:16CD dispatches the designer filter and rebuilds filtered_table_records
+comment CODE:361F HISTORY:16CD dispatches the year filter and rebuilds filtered_table_records
+comment CODE:3662 HISTORY:16CD dispatches direct table selection
+name CODE:41E5 load_sound
+comment CODE:41E5 save drive/directory, load the SDR named by SOUND.CFG and register sound_callback
+name CODE:4407 stop_sound
+name CODE:4421 sound_callback
+comment CODE:4421 INT 66h timer callback: call the three menu update pointers and release frame waits
+name CODE:19CA pixel_video_offsets
+name CODE:22CA pixel_source_offsets
+comment CODE:19CA two 24-by-48 word offset tables used together by the dead pixel-copy routine at 1979
+name CODE:421B sound_cfg_path
+name CODE:4225 sound_driver_name
+name CODE:4233 sound_exec_params
+name CODE:4241 sound_exec_buffer
+
+; ---- clear paths, buffers and state
+name DATA:0CBB select_vga_path
+name DATA:0CC6 hiscores_pd1_path
+name DATA:0CDD hiscores_pd2_path
+name DATA:0CF4 pd_program
+name DATA:0CFB pd2_program
+name DATA:0D03 dreams1_dir
+name DATA:0D0E dreams2_dir
+name DATA:0D19 table_programs
+name DATA:0D1D table_dirs
+name DATA:0D21 deluxe_dir
+name DATA:0D32 fli_player_program
+name DATA:0D3F intro_program
+name DATA:1237 command_tail
+comment DATA:1237 DOS command tail used by all three EXEC helpers
+name DATA:133B exec_params
+name DATA:134C selection
+comment DATA:134C menu selection: 1-8 tables, 9 history, 0Ah options
+name DATA:1356 sound_loaded
+name DATA:1357 frame_tick
+name DATA:1358 mouse_present
+name DATA:1359 mouse_x
+name DATA:135B mouse_y
+name DATA:135D mouse_buttons
+name DATA:31B8 options_buffer
+comment DATA:31B8 menu-side mirror of the current 13-byte DDPCOPTN.BIN options
+name OPTIONS:0191 icon_path
+name OPTIONS:019E background_path
+name OPTIONS:01AB options_path
+name OPTIONS:005A options_file_data
+comment OPTIONS:005A 13 bytes: four choice bytes, four key words, one resolution byte
+name OPTIONS:0610 option_keys
+name OPTIONS:0620 options_mouse_present
+name OPTIONS:0625 background_segment
+name OPTIONS:0629 options_mouse_x
+name OPTIONS:062B options_mouse_y
+name OPTIONS:062F options_exit
+
+; ---- History of Pinball resources and state
+name HISTORY:0000 history_picture_files
+comment HISTORY:0000 NUL-terminated .016 picture names for the 53 table records
+name HISTORY:03F7 select_table_text
+name HISTORY:0404 select_manufacturer_text
+name HISTORY:0418 select_designer_text
+name HISTORY:0428 select_year_text
+name HISTORY:0434 history_ui_graphics
+name HISTORY:0A0C history_palette
+comment HISTORY:0A0C 300h-byte VGA palette used when entering and leaving the history viewer
+name HISTORY:0D0C history_vga_path
+name HISTORY:0D19 history_dir
+name HISTORY:0D24 language_dirs
+name HISTORY:0D4A language_dir_table
+name HISTORY:0D54 hop_files
+name HISTORY:0D8E hop_file_table
+name HISTORY:0D98 idx_files
+name HISTORY:0DD2 idx_file_table
+name HISTORY:0DDC history_start_hitboxes
+name HISTORY:0E05 history_deluxe_dir
+name HISTORY:0E0F intro_module_table
+name HISTORY:0E13 intro_module
+name HISTORY:0E1D intro2_module
+name HISTORY:0E28 deluxe_root_dir
+name HISTORY:0E30 history_font_path
+name HISTORY:0E3C manufacturer_names
+name HISTORY:0EBE manufacturer_table
+name HISTORY:0ED2 designer_names
+name HISTORY:10C7 designer_table
+name HISTORY:1101 year_names
+name HISTORY:1174 year_table
+name HISTORY:11A0 table_names
+name HISTORY:1445 table_name_table
+name HISTORY:14AF table_records
+comment HISTORY:14AF 53 nine-byte records; +1 manufacturer, +2 year, +3 designer, +5/+7 picture-name offsets
+name HISTORY:168C history_menu_hitboxes
+name HISTORY:16CD history_action_table
+comment HISTORY:16CD near pointers for table/manufacturer/designer/year selection and leaving the menu
+name HISTORY:16D7 history_action_keys
+name HISTORY:16DC history_palette_tail
+comment HISTORY:16DC 30h bytes copied over the last 16 colours of a loaded picture palette
+name HISTORY:1730 history_filter_mask
+comment HISTORY:1730 bits 1/2/4 select manufacturer/designer/year filtering
+name HISTORY:1875 history_font_segment
+name HISTORY:1877 manufacturer_filter
+name HISTORY:1878 designer_filter
+name HISTORY:1879 year_filter
+name HISTORY:187A direct_table_selection
+name HISTORY:187B selected_table
+name HISTORY:187D hop_segment
+name HISTORY:187F vesa_window_granularity
+name HISTORY:1880 vesa_current_bank
+name HISTORY:1882 vesa_bank_step
+name HISTORY:1884 picture_bytes_read
+name HISTORY:1886 history_start_choice
+name HISTORY:1888 vesa_available
+name HISTORY:1889 filtered_table_count
+name HISTORY:188B filtered_table_records
+comment HISTORY:188B up to 53 filtered copies of the nine-byte table records
+name HISTORY:1A71 vbe_info
+name HISTORY:1A7F vbe_mode_list_ptr
+name HISTORY:1B71 vbe_mode_info
+name HISTORY:1B75 vbe_window_granularity_word
+name HISTORY:1D18 history_text_index
+name HISTORY:1E26 scroll_line_count
+name HISTORY:1E28 scroll_text_ptr
+name HISTORY:1E2A scroll_active
+name HISTORY:1E2C text_render_buffer
+name HISTORY:27AC saved_dir_path
+name HISTORY:27AD saved_dir_text

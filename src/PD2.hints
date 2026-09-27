@@ -25,6 +25,11 @@ code CODE:2B62              ; (PD CODE:2B73, changed: clears words, not bytes)
 ; names xfer.py could not carry (the code around them differs, or two
 ; PD names meet at one address); what they are: see PD.hints
 dptr CODE:0091 DATA         ; ADD BX,state_table
+name CODE:4EC8 crtc_350
+name CODE:51AE tune_saved
+name CODE:51B0 in_timer
+name CODE:4DB4 load_handle
+comment CODE:4DB4 load_file keeps the file handle here (PD2 only)
 name CODE:0000 start
 name CODE:0088 main_loop
 name CODE:4EE8 st_quit
@@ -1425,6 +1430,46 @@ name DATA:9AAD key_rflipper
 name DATA:9AAF key_nudge
 name DATA:9AB1 key_plunger
 name DATA:9AB3 opt_screen
-comment DATA:9AB3 1: 320x200, 2: 320x350, the table scrolls less (checked with a DDPCOPTN.BIN of these 14 bytes)
+comment DATA:9AB3 1: 320x200, 2: 320x350, the table scrolls less (checked with a DDPCOPTN.BIN of 14 bytes); a byte, the file's last: the menu writes 13 bytes and takes no other size (DDPCMAIN's save_options and load_options), load_file here reads any length, load_options' defaults write a word (9AA3h = 0)
 name DATA:846F options_file
 name DATA:80EF hiscore_file
+; ---- names the C port (port/) needs
+name DATA:0058 txt_load_error
+comment DATA:0058 fatal_error's text ('$' at its end, for INT 21h AH=9)
+name DATA:0084 txt_no_memory
+name DATA:00A8 name_flippers
+name DATA:80C8 name_tbldetlo
+comment DATA:80C8 the table's file names; load_table_files writes the extension (from table_exts) after the dot
+name DATA:80D5 name_tbldethi
+name DATA:80E3 name_table2m
+name DATA:8106 table_exts
+comment DATA:8106 the four tables' file name extensions, three letters each
+name DATA:8486 cleared_vars
+comment DATA:8486 start clears DATA from here up to sprite_seg
+name DATA:6808 txt_hiscore1
+comment DATA:6808 the table's four high scores as texts for the display (format_hiscores): initials at +0, the score at +5
+name DATA:681D txt_hiscore2
+name DATA:6832 txt_hiscore3
+name DATA:6847 txt_hiscore4
+name CODE:4EB4 crtc_480
+comment CODE:4EB4 set_mode_e3's CRTC registers (index, value), 10 of them
+; (not mapped) name CODE:4F19 crtc_350
+; (not mapped) comment CODE:4F19 set_mode_350's CRTC registers (index, value), 16 of them
+; (not mapped) name CODE:51FE tune_saved
+; (not mapped) comment CODE:51FE jingle_request_run: 1 once a jingle (2 and up) has taken the music over and music_pos holds where the tune was
+; (not mapped) name CODE:5200 in_timer
+; (not mapped) comment CODE:5200 FFh while timer_callback runs (it does not run twice at once)
+name DATA:8460 fade_steps
+comment DATA:8460 music_fade: steps left (10h a fade)
+name DATA:8461 fade_volume
+comment DATA:8461 music_fade: the volume handed to INT 66h AL=6 (up to 100h)
+name DATA:7D5A sprites_scroll
+comment DATA:7D5A bit 0: draw_sprites calls scroll_step before putting an area back; timer_callback clears it, nothing sets it (as far as the code shows)
+name DATA:7D66 sprite_list_end
+comment DATA:7D66 draw_sprites: one past the last entry of sprite_list
+name DATA:7D68 area_offset
+comment DATA:7D68 draw_sprites: the area's first line in video memory (780h + 50h a line)
+name DATA:7D6A area_rows
+comment DATA:7D6A draw_sprites: the area's lines above line 512
+name DATA:7D6C sprite_list
+comment DATA:7D6C draw_sprites: the sprites (their offsets in sprites) of one area, a word each, sorted downwards
