@@ -16,10 +16,14 @@ state 2 (the attract show with the idle texts and Ignition's tour, the
 lamps, the display messages, Esc to quit), a new game and a new ball (the
 players, lamps, objects and sequences reset, the event stack), state 3
 (the ball in the plunger lane: the jingles, "player n", the plunger, the
-nudge, the scroll following the ball) and the ball's physics (`ball_step`:
-the flippers' shapes, the collision map, the bounce). The program stops at
-the first routine not translated yet, with its name (now `st_play`, state
-5, when the ball leaves the plunger lane), and leaves its last picture on
+nudge, the scroll following the ball), state 5 (a frame of play: hit
+rectangles, lanes, holes and locks, the scores in BCD, the event stack and
+its objects, the lamp groups, the display's messages and hurry-up) and the
+ball's physics (`ball_step`: the flippers' shapes, the collision map, the
+bounce). The event objects' handlers (the tables' own code, +16h) are not
+translated yet. The program stops at the first routine not translated
+yet, with its name (now `st_ball_lost`, state 6, when the ball drains, or
+the first handler an event object runs), and leaves its last picture on
 the screen.
 
 Checked: the port's memory equals the original's in tools/run (DATA, BSS,
@@ -35,8 +39,10 @@ space of the driver's EXEC in CODE, the stack)
   runner: -key 5.443 f1) and the plunger pulled for 30 frames (port:
   pictures 744 to 774, runner: 12.67774 to 13.10576 s): at the 1st, 60th,
   100th and 132nd frame of state 3's loop (CODE:0553), the last before the
-  ball leaves the lane in both. The ball's bounces up the lane are thus
-  checked; the flippers' and the kickers' are not yet.
+  ball leaves the lane in both; then at the 1st, 100th, 300th and 615th
+  frame of state 5 (`st_play`), the last before the ball drains (18,000
+  points scored on the way, the flippers not touched). The ball's bounces
+  on the table and the kickers are thus checked; the flippers' are not yet.
 
 ## Build and run
 
@@ -53,7 +59,8 @@ PD2.EXE's, `-table` 0-3.
 Comparing with the original: stop both at the same place and compare
 their memory by the names of the hints. The port stops at the first routine
 not translated yet or, with `PD_STOP=where#N`, the Nth time it passes `checkpoint(where)`
-(`idle_loop`: the head of state 2's loop, `ball_start_loop`: state 3's;
+(`idle_loop`: the head of state 2's loop, `ball_start_loop`: state 3's,
+`play`: the entry of `st_play`;
 `PD_TRACE` prints each with the pictures shown so far), the runner with
 `-break ADDR#N`.
 

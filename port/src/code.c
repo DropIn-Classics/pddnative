@@ -1,6 +1,7 @@
 /* code.c - routines whose offsets the program keeps in its data: the
  * state table, frame_callback, the event objects' handlers.  call_code()
- * finds the C function for an offset in CODE by the names of the hints.
+ * and call_handler() find the C function for an offset in CODE by the
+ * names of the hints.
  * See pd.h. */
 #include <stddef.h>
 #include <stdio.h>
@@ -14,7 +15,7 @@ typedef struct {
 
 #define FN(name) {offsetof(PdNames, name), name}
 static const CodeFn ported[] = {
-    FN(st_load), FN(st_idle), FN(st_ball_start), FN(st_restart), FN(st_quit), FN(st_exit),
+    FN(st_load), FN(st_idle), FN(st_ball_start), FN(st_play), FN(st_restart), FN(st_quit), FN(st_exit),
     FN(no_callback), FN(upload_lights),
 };
 
@@ -31,6 +32,29 @@ static uint16_t value(size_t field)
     uint16_t v;
     memcpy(&v, (const char *)&nm + field, sizeof v);
     return v;
+}
+
+/* the event objects' handlers (+16h): DI = the object; 1 for ZF (a
+ * running object's handler: it is done) */
+typedef struct {
+    size_t field;
+    int (*fn)(uint16_t di);
+} HandlerFn;
+
+#define HN(name) {offsetof(PdNames, name), name}
+static const HandlerFn handlers[] = {
+    {0, NULL}
+};
+
+int call_handler(uint16_t offset, uint16_t di)
+{
+    size_t i;
+
+    for (i = 0; i < sizeof handlers / sizeof handlers[0]; i++)
+        if (handlers[i].fn && value(handlers[i].field) == offset)
+            return handlers[i].fn(di);
+    call_code(offset);                  /* not ported: ends with its name */
+    return 1;
 }
 
 void call_code(uint16_t offset)

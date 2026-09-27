@@ -778,6 +778,8 @@ comment CODE:1456 scroll += scroll_speed, kept within the table; the CRTC start 
 name CODE:15CC set_screen_start
 comment CODE:15CC the CRTC start address [screen_start], then wait_frame
 name CODE:14E8 play_frame
+name CODE:155E play_after_holes
+; (not mapped) comment CODE:156F where play_frame goes on after map_event_run; for an event number whose map_events entry is 0, map_event_run pops this return address, compares the holes with it (clearing the others' busy bytes, and DATA:0001 for the 0 entries) and returns from play_frame (read, not checked by running)
 comment CODE:14E8 the table's logic for a frame: texts, timers, the hit rectangles and lanes, the map's events, the event stack, drawing, the groups of lights
 name CODE:2BB1 lights_frame
 comment CODE:2BB1 the lights for a frame: blinking, the current player's lights into the palette, Ignition's timers, the light chains
@@ -1291,6 +1293,12 @@ name DATA:89D8 light_palette
 comment DATA:89D8 3 bytes a light: the colours uploaded to DAC 40h.. every tick (upload_lights); a light is on or off by its colours
 name DATA:8CFB table_palette
 name CODE:301E test_hit_rects
+name CODE:301C hit_sounds
+comment CODE:301C test_hit_rects: the hit rectangle's group's sound and jingle word (+2), kept here until a target of it is found
+name DATA:8AD2 score_text
+comment DATA:8AD2 display_frame: the entry of td_score_texts shown now (the texts that come after a while without score)
+name DATA:6E92 txt_count2
+comment DATA:6E92 Ignition's text whose +5, +6 update_texts sets to the two digits of the player's second count (record +10h, BCD)
 comment CODE:301E hit_x/hit_y against the hit rectangles, then the targets of the rectangle's group: the first target hit and not yet hit by the player gives hit_object and hit_score (the group), and the group's sounds
 comment CODE:301E a hit rectangle: 0Ah bytes, x1, y1, x2, y2 (inclusive), the group
 comment CODE:301E a group: 16h bytes, +0 its first member (target or lamp), +2 sound (high byte) and jingle (FFh: none), +4 points (BCD, 8 bytes) to the score, +0Ch points to the bonus, +14h a sequence (run_object_event); light groups go on: +16h frames to the next blink, +17h the blink period, +18h the chase phase (blink_lights)

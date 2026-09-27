@@ -68,6 +68,7 @@
     X(CODE, scroll_follow, 0x141B, 0x140A) \
     X(CODE, scroll_step, 0x1467, 0x1456) \
     X(CODE, play_frame, 0x14F9, 0x14E8) \
+    X(CODE, play_after_holes, 0x156F, 0x155E) \
     X(CODE, copy_to_vram, 0x159E, 0x158D) \
     X(CODE, set_screen_start, 0x15DD, 0x15CC) \
     X(CODE, st_ball_lost, 0x15F4, 0x15E3) \
@@ -148,6 +149,7 @@
     X(CODE, show_bonus_count, 0x2ED5, 0x2EC3) \
     X(CODE, show_score, 0x2EE3, 0x2ED1) \
     X(CODE, count_bonus, 0x2F3C, 0x2F2A) \
+    X(CODE, hit_sounds, 0x302E, 0x301C) \
     X(CODE, test_hit_rects, 0x3030, 0x301E) \
     X(CODE, test_lanes_b, 0x30EB, 0x30D9) \
     X(CODE, test_lanes_a, 0x30F3, 0x30E1) \
@@ -340,6 +342,7 @@
     X(DATA, txt_hiscore4, 0x6774, 0x6847) \
     X(DATA, txt_bonus_held, 0x6B80, 0x6C53) \
     X(DATA, txt_roulette, 0x6B95, 0x6C68) \
+    X(DATA, txt_count2, 0x6DBF, 0x6E92) \
     X(DATA, sprites_scroll, 0x7CE6, 0x7D5A) \
     X(DATA, area_col, 0x7CE8, 0x7D5C) \
     X(DATA, area_y, 0x7CEA, 0x7D5E) \
@@ -480,6 +483,7 @@
     X(DATA, flipper_pressed, 0x8ABE, 0x8ACF) \
     X(DATA, ball_drained, 0x8ABF, 0x8AD0) \
     X(DATA, flippers_off, 0x8AC0, 0x8AD1) \
+    X(DATA, score_text, 0x8AC1, 0x8AD2) \
     X(DATA, idle_text, 0x8AC3, 0x8AD4) \
     X(DATA, tour_step, 0x8AC5, 0x8AD6) \
     X(DATA, msg_starting, 0x8AC7, 0x8AD8) \

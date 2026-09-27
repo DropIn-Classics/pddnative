@@ -45,6 +45,9 @@ extern const char *pd_game_dir;
 /* ---- code addresses: routines stored in the program's data (the state
  * table, frame_callback, the event objects' handlers) */
 void call_code(uint16_t offset);
+/* an event object's handler (its +16h) for the object at di; 1 when it
+ * returned ZF (a running object's handler is done) */
+int call_handler(uint16_t offset, uint16_t di);
 
 /* ---- pd_main.c: start, the states */
 void st_load(void);
@@ -80,6 +83,11 @@ void clear_object_timers(void);
 
 /* ---- pd_events.c: DI = a sequence, its objects pushed on the event stack */
 void run_event(uint16_t di);
+
+/* ---- pd_rules.c: state 5, a frame of play */
+void st_play(void);
+/* the 6-byte BCD number at bp added to the one at di; idle_timer restarts */
+void bcd_add(uint16_t di, uint16_t bp);
 
 /* ---- pd_play.c: state 3, the nudge, the plunger, the scroll */
 void ball_start(void);
