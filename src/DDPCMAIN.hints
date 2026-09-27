@@ -3,13 +3,14 @@
 
 exe DELUXE/DDPCMAIN.EXE
 
-; the segments, from the relocations and the header (SS:SP = 0E41:0800)
-segment CODE  0000 CODE
-segment DATA  0448 DATA
-segment SEG1  0766 FAR_DATA
-segment SEG2  0B5E FAR_DATA
-segment SEG3  0BC2 FAR_DATA
-segment STACK 0E41 STACK stack size=800
+; the segments, from the relocations, the header (SS:SP = 0E41:0800) and
+; the history viewer (HISTORY holds its paths like ..\history and data)
+segment CODE    0000 CODE
+segment DATA    0448 DATA
+segment SEG1    0766 FAR_DATA
+segment SEG2    0B5E FAR_DATA
+segment HISTORY 0BC2 FAR_DATA
+segment STACK   0E41 STACK stack size=800
 
 ; the relocation table lists the sites in DATA first, then those in CODE
 relocorder DATA CODE
@@ -25,8 +26,18 @@ ptr CODE:0215 CODE
 ptr CODE:021B CODE
 ptr CODE:0C18 CODE
 ; sound callback for INT 66h AL=0Bh (far pointer ES:DX built at
-; CODE:43D7-43DC via PUSH 4421 and PUSH CS/POP ES/POP DX)
-code CODE:4421
+; CODE:43D7-43DC via PUSH 4421 and PUSH CS/POP ES/POP DX; see INT 66h
+; AL=0Bh at CODE:43E1 with ES:DX=CS:4421)
+ptr CODE:43D7 CODE
+
+; L3158 runs with DS=SEG3 (called from L3140 at CODE:314B with DS=SEG3;
+; CALL resets to DATA in the analysis, so override): its LEA DX,[0D19] /
+; [0D0C] are SEG3 history paths, and [1E26]/[1E28]/[1E2A] are SEG3
+ds CODE:3158-31C8 SEG3
+
+; near-pointer tables in DATA read with BX in L0B59 (CHDIR/EXEC for tables)
+words DATA:0D19 2 DATA
+words DATA:0D1D 2 DATA
 
 ; CMP r/m8,r8 (38h) where MASM writes 3Ah (like PD.hints raw entries)
 raw CODE:05B1
