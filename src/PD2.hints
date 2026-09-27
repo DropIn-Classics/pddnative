@@ -51,6 +51,199 @@ name CODE:4B49 beep
 name CODE:4F00 load_sound_driver
 name CODE:51B1 timer_callback
 
+; the handlers of PD2's event objects (+16h of each; see run_events in
+; PD.hints): the same search as there (words of the handlers' addresses
+; with the type 1Eh/1Fh at -16h; the hits whose word is no named handler
+; are lists, checked by eye, and left out)
+words DATA:0243 1 CODE	; 022D: count_message
+words DATA:026D 1 CODE	; 0257: double_score
+words DATA:0297 1 CODE	; 0281: double_bonus
+words DATA:02C1 1 CODE	; 02AB: mult_2
+words DATA:02EB 1 CODE	; 02D5: mult_3
+words DATA:0315 1 CODE	; 02FF: mult_4
+words DATA:033F 1 CODE	; 0329: mult_6
+words DATA:0369 1 CODE	; 0353: mult_8
+words DATA:0393 1 CODE	; 037D: obj_nop1
+words DATA:03BD 1 CODE	; 03A7: obj_nop2
+words DATA:03E7 1 CODE	; 03D1: obj_nop3
+words DATA:0411 1 CODE	; 03FB: obj_nop3
+words DATA:043B 1 CODE	; 0425: obj_nop3
+words DATA:0465 1 CODE	; 044F: obj_nop3
+words DATA:048F 1 CODE	; 0479: obj_nop3
+words DATA:04B9 1 CODE	; 04A3: obj_nop3
+words DATA:04E3 1 CODE	; 04CD: obj_nop3
+words DATA:050D 1 CODE	; 04F7: obj_nop3
+words DATA:0537 1 CODE	; 0521: obj_nop3
+words DATA:0561 1 CODE	; 054B: obj_nop3
+words DATA:058B 1 CODE	; 0575: obj_nop3
+words DATA:05B5 1 CODE	; 059F: obj_nop3
+words DATA:05DF 1 CODE	; 05C9: obj_nop3
+words DATA:0609 1 CODE	; 05F3: obj_nop3
+words DATA:0633 1 CODE	; 061D: collect_jackpot
+words DATA:065D 1 CODE	; 0647: collect_jackpot
+words DATA:0687 1 CODE	; 0671: raise_jackpot
+words DATA:06B1 1 CODE	; 069B: hold_bonus
+words DATA:06DB 1 CODE	; 06C5: extra_ball_award
+words DATA:0705 1 CODE	; 06EF: roulette
+words DATA:072F 1 CODE	; 0719: advance_object
+words DATA:075D 1 CODE	; 0747: advance_object
+words DATA:078B 1 CODE	; 0775: advance_object
+words DATA:07B9 1 CODE	; 07A3: advance_object
+words DATA:07E7 1 CODE	; 07D1: countdown
+words DATA:0811 1 CODE	; 07FB: light_locks
+words DATA:083B 1 CODE	; 0825: lock_ball
+words DATA:0865 1 CODE	; 084F: obj_nop4
+words DATA:0F13 1 CODE	; 0EFD: count_message
+words DATA:0F37 1 CODE	; 0F21: double_score
+words DATA:0F5B 1 CODE	; 0F45: double_bonus
+words DATA:0F7F 1 CODE	; 0F69: mult_2
+words DATA:0FA3 1 CODE	; 0F8D: mult_3
+words DATA:0FC7 1 CODE	; 0FB1: mult_4
+words DATA:0FEB 1 CODE	; 0FD5: mult_5
+words DATA:100F 1 CODE	; 0FF9: mult_6
+words DATA:1033 1 CODE	; 101D: mult_7
+words DATA:1057 1 CODE	; 1041: obj_nop1
+words DATA:107B 1 CODE	; 1065: obj_nop2
+words DATA:109F 1 CODE	; 1089: obj_nop3
+words DATA:10C3 1 CODE	; 10AD: obj_nop3
+words DATA:10E7 1 CODE	; 10D1: obj_nop3
+words DATA:110B 1 CODE	; 10F5: obj_nop3
+words DATA:112F 1 CODE	; 1119: obj_nop3
+words DATA:1153 1 CODE	; 113D: obj_nop3
+words DATA:1177 1 CODE	; 1161: obj_nop3
+words DATA:119B 1 CODE	; 1185: obj_nop3
+words DATA:11BF 1 CODE	; 11A9: obj_nop3
+words DATA:11E3 1 CODE	; 11CD: obj_nop3
+words DATA:1207 1 CODE	; 11F1: obj_nop3
+words DATA:122B 1 CODE	; 1215: obj_nop3
+words DATA:124F 1 CODE	; 1239: obj_nop3
+words DATA:1273 1 CODE	; 125D: obj_nop3
+words DATA:1297 1 CODE	; 1281: obj_nop3
+words DATA:12BB 1 CODE	; 12A5: obj_nop3
+words DATA:12DF 1 CODE	; 12C9: obj_nop3
+words DATA:1303 1 CODE	; 12ED: obj_nop3
+words DATA:1327 1 CODE	; 1311: obj_nop3
+words DATA:134B 1 CODE	; 1335: obj_nop3
+words DATA:136F 1 CODE	; 1359: obj_nop3
+words DATA:1393 1 CODE	; 137D: obj_nop3
+words DATA:13B7 1 CODE	; 13A1: obj_nop3
+words DATA:13DB 1 CODE	; 13C5: obj_nop3
+words DATA:13FF 1 CODE	; 13E9: obj_nop3
+words DATA:1427 1 CODE	; 1411: obj_nop3
+words DATA:144F 1 CODE	; 1439: collect_jackpot
+words DATA:1473 1 CODE	; 145D: collect_jackpot
+words DATA:1497 1 CODE	; 1481: raise_jackpot
+words DATA:14BB 1 CODE	; 14A5: hold_bonus
+words DATA:14DF 1 CODE	; 14C9: hold_bonus
+words DATA:1503 1 CODE	; 14ED: extra_ball_award
+words DATA:1527 1 CODE	; 1511: extra_ball_award
+words DATA:154B 1 CODE	; 1535: extra_ball_award
+words DATA:156F 1 CODE	; 1559: roulette
+words DATA:1593 1 CODE	; 157D: advance_object
+words DATA:15C1 1 CODE	; 15AB: advance_object
+words DATA:15EF 1 CODE	; 15D9: advance_object
+words DATA:161D 1 CODE	; 1607: countdown
+words DATA:1641 1 CODE	; 162B: countdown
+words DATA:1665 1 CODE	; 164F: light_locks
+words DATA:1689 1 CODE	; 1673: lock_ball
+words DATA:16AD 1 CODE	; 1697: add_hurry_value
+words DATA:16D1 1 CODE	; 16BB: obj_nop4
+words DATA:16F5 1 CODE	; 16DF: score_to_best
+words DATA:1719 1 CODE	; 1703: obj_nop4
+words DATA:1D31 1 CODE	; 1D1B: count_message
+words DATA:1D5F 1 CODE	; 1D49: double_score
+words DATA:1D8D 1 CODE	; 1D77: double_bonus
+words DATA:1DBB 1 CODE	; 1DA5: double_bonus
+words DATA:1DE9 1 CODE	; 1DD3: mult_2
+words DATA:1E17 1 CODE	; 1E01: mult_3
+words DATA:1E45 1 CODE	; 1E2F: mult_4
+words DATA:1E73 1 CODE	; 1E5D: mult_6
+words DATA:1EA1 1 CODE	; 1E8B: mult_8
+words DATA:1ECF 1 CODE	; 1EB9: mult_10
+words DATA:1EFD 1 CODE	; 1EE7: obj_nop1
+words DATA:1F2B 1 CODE	; 1F15: obj_nop2
+words DATA:1F59 1 CODE	; 1F43: obj_nop3
+words DATA:1F87 1 CODE	; 1F71: obj_nop3
+words DATA:1FB5 1 CODE	; 1F9F: obj_nop3
+words DATA:1FE3 1 CODE	; 1FCD: obj_nop3
+words DATA:2011 1 CODE	; 1FFB: obj_nop3
+words DATA:203F 1 CODE	; 2029: obj_nop3
+words DATA:206D 1 CODE	; 2057: obj_nop3
+words DATA:209B 1 CODE	; 2085: obj_nop3
+words DATA:20C9 1 CODE	; 20B3: obj_nop3
+words DATA:20F7 1 CODE	; 20E1: obj_nop3
+words DATA:2125 1 CODE	; 210F: collect_jackpot
+words DATA:2153 1 CODE	; 213D: raise_jackpot
+words DATA:2181 1 CODE	; 216B: raise_jackpot
+words DATA:21AF 1 CODE	; 2199: hold_bonus
+words DATA:21DD 1 CODE	; 21C7: extra_ball_award
+words DATA:220B 1 CODE	; 21F5: roulette
+words DATA:2239 1 CODE	; 2223: advance_object
+words DATA:2267 1 CODE	; 2251: advance_object
+words DATA:2295 1 CODE	; 227F: advance_object
+words DATA:22C3 1 CODE	; 22AD: advance_object
+words DATA:22F1 1 CODE	; 22DB: advance_object
+words DATA:231F 1 CODE	; 2309: countdown
+words DATA:234D 1 CODE	; 2337: light_locks
+words DATA:237B 1 CODE	; 2365: lock_ball
+words DATA:23A9 1 CODE	; 2393: add_hurry_value
+words DATA:23D7 1 CODE	; 23C1: obj_nop5
+words DATA:2405 1 CODE	; 23EF: obj_nop6
+words DATA:2433 1 CODE	; 241D: score_to_best
+words DATA:2AFD 1 CODE	; 2AE7: double_score
+words DATA:2B2B 1 CODE	; 2B15: double_bonus
+words DATA:2B59 1 CODE	; 2B43: mult_2
+words DATA:2B87 1 CODE	; 2B71: mult_4
+words DATA:2BB5 1 CODE	; 2B9F: mult_6
+words DATA:2BE3 1 CODE	; 2BCD: mult_8
+words DATA:2C11 1 CODE	; 2BFB: mult_10
+words DATA:2C3F 1 CODE	; 2C29: obj_nop1
+words DATA:2C6D 1 CODE	; 2C57: obj_nop3
+words DATA:2C9B 1 CODE	; 2C85: obj_nop3
+words DATA:2CC9 1 CODE	; 2CB3: obj_nop3
+words DATA:2CF7 1 CODE	; 2CE1: obj_nop3
+words DATA:2D25 1 CODE	; 2D0F: obj_nop3
+words DATA:2D53 1 CODE	; 2D3D: obj_nop3
+words DATA:2D81 1 CODE	; 2D6B: obj_nop3
+words DATA:2DAF 1 CODE	; 2D99: obj_nop3
+words DATA:2DDD 1 CODE	; 2DC7: obj_nop3
+words DATA:2E0B 1 CODE	; 2DF5: obj_nop3
+words DATA:2E39 1 CODE	; 2E23: obj_nop3
+words DATA:2E67 1 CODE	; 2E51: obj_nop3
+words DATA:2E8F 1 CODE	; 2E79: obj_nop3
+words DATA:2EBD 1 CODE	; 2EA7: obj_nop3
+words DATA:2EEB 1 CODE	; 2ED5: collect_jackpot
+words DATA:2F19 1 CODE	; 2F03: collect_jackpot
+words DATA:2F47 1 CODE	; 2F31: lock_jackpot
+words DATA:2F75 1 CODE	; 2F5F: raise_jackpot
+words DATA:2FA3 1 CODE	; 2F8D: raise_jackpot
+words DATA:2FD1 1 CODE	; 2FBB: raise_jackpot
+words DATA:2FFF 1 CODE	; 2FE9: hold_bonus
+words DATA:302D 1 CODE	; 3017: hold_bonus
+words DATA:305B 1 CODE	; 3045: extra_ball_award
+words DATA:3089 1 CODE	; 3073: extra_ball_award
+words DATA:30B7 1 CODE	; 30A1: extra_ball_award
+words DATA:30E5 1 CODE	; 30CF: roulette
+words DATA:3113 1 CODE	; 30FD: advance_object
+words DATA:3141 1 CODE	; 312B: advance_object
+words DATA:316F 1 CODE	; 3159: advance_object
+words DATA:319D 1 CODE	; 3187: advance_object
+words DATA:31CB 1 CODE	; 31B5: advance_object
+words DATA:31F9 1 CODE	; 31E3: advance_object
+words DATA:3227 1 CODE	; 3211: advance_object
+words DATA:3255 1 CODE	; 323F: countdown
+words DATA:3283 1 CODE	; 326D: countdown
+words DATA:32B1 1 CODE	; 329B: light_locks
+words DATA:32DF 1 CODE	; 32C9: lock_ball
+words DATA:330D 1 CODE	; 32F7: lock_ball2
+words DATA:333B 1 CODE	; 3325: lock_ball3
+words DATA:3369 1 CODE	; 3353: add_hurry_value
+words DATA:3397 1 CODE	; 3381: obj_nop4
+words DATA:33C5 1 CODE	; 33AF: obj_nop4
+words DATA:33F3 1 CODE	; 33DD: obj_nop4
+words DATA:3421 1 CODE	; 340B: nightmare_switch
+words DATA:344F 1 CODE	; 3439: score_to_best
+
 ; ==== carried over from PD.hints by tools/xfer.py; check, then keep or edit
 ; PD.EXE: Pinball Dreams, the four tables of the first game
 ; (Ignition, Steel Wheel, Beat Box, Nightmare), Deluxe CD (= GOG).
@@ -67,38 +260,218 @@ ptr CODE:0068 CODE ; [845A] := routine
 ptr CODE:516E CODE
 ptr CODE:2AAF CODE ; DS:DX for INT 21h
 dptr CODE:5052 CODE ; DS:DX = "SOUND.CFG" (CS = DS there?)
-ptr CODE:5133 CODE ; pushed as return address
+ptr CODE:5133 CODE ; module_callback, handed to the driver (INT 66h AL=13h)
+ptr CODE:5122 CODE ; timer_callback, handed to the driver (INT 66h AL=0Bh)
 ; routines for [9776] AND 0Fh = 0..7 (8..15: none), jumped to by
 ; PUSH/RET at 1EAE; [9776] is the surface the ball has just hit (all
 ; eight entries are the same routine in PD.EXE)
 words DATA:81DD 8 CODE
-; reached through pointers not found yet (object handlers etc.)
+; not reached by the code: routines nothing calls (see their comments),
+; lone RETs (041E, 19C9, 302C, 302D, 38EA), a row of INC AX (27D5)
 code CODE:009B
 code CODE:041D
 code CODE:0FBD
 code CODE:19B8
-code CODE:1E61
-code CODE:239E
 ; (not mapped) code CODE:27D5
 code CODE:2B47
 code CODE:301A
 code CODE:301B
-code CODE:3497
 code CODE:38D8
-code CODE:3BC1
-code CODE:40FA
 code CODE:4A9E
 ; (not mapped) code CODE:4BD8
 code CODE:4B78
 code CODE:4CC6
 code CODE:4E06
-; (not mapped) code CODE:5201
-code CODE:52EE
+; the handlers of the event objects (+16h of each; run_events), all
+; tables' objects in DATA order; found as words of the handlers' addresses
+; with the type 1Eh/1Fh at -16h (the other hits of that search checked
+; by eye: pictures and lists, not objects)
+words DATA:0243 1 CODE ; 022C: count_message
+words DATA:026D 1 CODE ; 0256: double_score
+; (not mapped) words DATA:0296 1 CODE	; 0280: double_bonus
+; (not mapped) words DATA:02C0 1 CODE	; 02AA: mult_2
+; (not mapped) words DATA:02EA 1 CODE	; 02D4: mult_3
+; (not mapped) words DATA:0314 1 CODE	; 02FE: mult_4
+; (not mapped) words DATA:033E 1 CODE	; 0328: mult_6
+; (not mapped) words DATA:0368 1 CODE	; 0352: mult_8
+; (not mapped) words DATA:0392 1 CODE	; 037C: obj_nop1
+words DATA:03BC 1 CODE ; 03A6: obj_nop2
+words DATA:03E6 1 CODE ; 03D0: obj_nop3
+; (not mapped) words DATA:0410 1 CODE	; 03FA: obj_nop3
+; (not mapped) words DATA:043A 1 CODE	; 0424: obj_nop3
+; (not mapped) words DATA:0464 1 CODE	; 044E: obj_nop3
+; (not mapped) words DATA:048E 1 CODE	; 0478: obj_nop3
+; (not mapped) words DATA:04B8 1 CODE	; 04A2: obj_nop3
+; (not mapped) words DATA:04E2 1 CODE	; 04CC: obj_nop3
+; (not mapped) words DATA:050C 1 CODE	; 04F6: obj_nop3
+; (not mapped) words DATA:0536 1 CODE	; 0520: obj_nop3
+; (not mapped) words DATA:0560 1 CODE	; 054A: obj_nop3
+; (not mapped) words DATA:058A 1 CODE	; 0574: obj_nop3
+; (not mapped) words DATA:05B4 1 CODE	; 059E: obj_nop3
+; (not mapped) words DATA:05DE 1 CODE	; 05C8: obj_nop3
+; (not mapped) words DATA:0608 1 CODE	; 05F2: obj_nop3
+; (not mapped) words DATA:0632 1 CODE	; 061C: collect_jackpot
+; (not mapped) words DATA:065C 1 CODE	; 0646: collect_jackpot
+; (not mapped) words DATA:0686 1 CODE	; 0670: raise_jackpot
+; (not mapped) words DATA:06B0 1 CODE	; 069A: hold_bonus
+; (not mapped) words DATA:06DA 1 CODE	; 06C4: extra_ball_award
+; (not mapped) words DATA:0704 1 CODE	; 06EE: roulette
+; (not mapped) words DATA:072E 1 CODE	; 0718: advance_object
+; (not mapped) words DATA:075C 1 CODE	; 0746: advance_object
+; (not mapped) words DATA:078A 1 CODE	; 0774: advance_object
+; (not mapped) words DATA:07B8 1 CODE	; 07A2: advance_object
+; (not mapped) words DATA:07E6 1 CODE	; 07D0: countdown
+; (not mapped) words DATA:0810 1 CODE	; 07FA: light_locks
+; (not mapped) words DATA:083A 1 CODE	; 0824: lock_ball
+; (not mapped) words DATA:0864 1 CODE	; 084E: obj_nop4
+words DATA:0F13 1 CODE ; 0EFA: count_message
+words DATA:0F37 1 CODE ; 0F1E: double_score
+; (not mapped) words DATA:0F58 1 CODE	; 0F42: double_bonus
+; (not mapped) words DATA:0F7C 1 CODE	; 0F66: mult_2
+; (not mapped) words DATA:0FA0 1 CODE	; 0F8A: mult_3
+; (not mapped) words DATA:0FC4 1 CODE	; 0FAE: mult_4
+; (not mapped) words DATA:0FE8 1 CODE	; 0FD2: mult_5
+; (not mapped) words DATA:100C 1 CODE	; 0FF6: mult_6
+; (not mapped) words DATA:1030 1 CODE	; 101A: mult_7
+; (not mapped) words DATA:1054 1 CODE	; 103E: obj_nop1
+words DATA:107B 1 CODE ; 1062: obj_nop2
+words DATA:109F 1 CODE ; 1086: obj_nop3
+; (not mapped) words DATA:10C0 1 CODE	; 10AA: obj_nop3
+; (not mapped) words DATA:10E4 1 CODE	; 10CE: obj_nop3
+; (not mapped) words DATA:1108 1 CODE	; 10F2: obj_nop3
+; (not mapped) words DATA:112C 1 CODE	; 1116: obj_nop3
+; (not mapped) words DATA:1150 1 CODE	; 113A: obj_nop3
+; (not mapped) words DATA:1174 1 CODE	; 115E: obj_nop3
+; (not mapped) words DATA:1198 1 CODE	; 1182: obj_nop3
+; (not mapped) words DATA:11BC 1 CODE	; 11A6: obj_nop3
+; (not mapped) words DATA:11E0 1 CODE	; 11CA: obj_nop3
+; (not mapped) words DATA:1204 1 CODE	; 11EE: obj_nop3
+; (not mapped) words DATA:1228 1 CODE	; 1212: obj_nop3
+; (not mapped) words DATA:124C 1 CODE	; 1236: obj_nop3
+; (not mapped) words DATA:1270 1 CODE	; 125A: obj_nop3
+; (not mapped) words DATA:1294 1 CODE	; 127E: obj_nop3
+; (not mapped) words DATA:12B8 1 CODE	; 12A2: obj_nop3
+; (not mapped) words DATA:12DC 1 CODE	; 12C6: obj_nop3
+; (not mapped) words DATA:1300 1 CODE	; 12EA: obj_nop3
+; (not mapped) words DATA:1324 1 CODE	; 130E: obj_nop3
+; (not mapped) words DATA:1348 1 CODE	; 1332: obj_nop3
+; (not mapped) words DATA:136C 1 CODE	; 1356: obj_nop3
+; (not mapped) words DATA:1390 1 CODE	; 137A: obj_nop3
+; (not mapped) words DATA:13B4 1 CODE	; 139E: obj_nop3
+; (not mapped) words DATA:13D8 1 CODE	; 13C2: obj_nop3
+; (not mapped) words DATA:13FC 1 CODE	; 13E6: obj_nop3
+; (not mapped) words DATA:1424 1 CODE	; 140E: obj_nop3
+; (not mapped) words DATA:144C 1 CODE	; 1436: collect_jackpot
+; (not mapped) words DATA:1470 1 CODE	; 145A: collect_jackpot
+; (not mapped) words DATA:1494 1 CODE	; 147E: raise_jackpot
+; (not mapped) words DATA:14B8 1 CODE	; 14A2: hold_bonus
+; (not mapped) words DATA:14DC 1 CODE	; 14C6: hold_bonus
+; (not mapped) words DATA:1500 1 CODE	; 14EA: extra_ball_award
+; (not mapped) words DATA:1524 1 CODE	; 150E: extra_ball_award
+; (not mapped) words DATA:1548 1 CODE	; 1532: extra_ball_award
+; (not mapped) words DATA:156C 1 CODE	; 1556: roulette
+; (not mapped) words DATA:1590 1 CODE	; 157A: advance_object
+; (not mapped) words DATA:15BE 1 CODE	; 15A8: advance_object
+; (not mapped) words DATA:15EC 1 CODE	; 15D6: advance_object
+; (not mapped) words DATA:161A 1 CODE	; 1604: countdown
+; (not mapped) words DATA:163E 1 CODE	; 1628: countdown
+; (not mapped) words DATA:1662 1 CODE	; 164C: light_locks
+; (not mapped) words DATA:1686 1 CODE	; 1670: lock_ball
+words DATA:16AD 1 CODE ; 1694: add_hurry_value
+words DATA:16D1 1 CODE ; 16B8: obj_nop4
+; (not mapped) words DATA:16F2 1 CODE	; 16DC: score_to_best
+words DATA:1D31 1 CODE ; 1CF2: count_message
+; (not mapped) words DATA:1D36 1 CODE	; 1D20: double_score
+; (not mapped) words DATA:1D64 1 CODE	; 1D4E: double_bonus
+; (not mapped) words DATA:1D92 1 CODE	; 1D7C: double_bonus
+; (not mapped) words DATA:1DC0 1 CODE	; 1DAA: mult_2
+; (not mapped) words DATA:1DEE 1 CODE	; 1DD8: mult_3
+; (not mapped) words DATA:1E1C 1 CODE	; 1E06: mult_4
+; (not mapped) words DATA:1E4A 1 CODE	; 1E34: mult_6
+; (not mapped) words DATA:1E78 1 CODE	; 1E62: mult_8
+; (not mapped) words DATA:1EA6 1 CODE	; 1E90: mult_10
+; (not mapped) words DATA:1ED4 1 CODE	; 1EBE: obj_nop1
+words DATA:1F2B 1 CODE ; 1EEC: obj_nop2
+; (not mapped) words DATA:1F30 1 CODE	; 1F1A: obj_nop3
+; (not mapped) words DATA:1F5E 1 CODE	; 1F48: obj_nop3
+; (not mapped) words DATA:1F8C 1 CODE	; 1F76: obj_nop3
+; (not mapped) words DATA:1FBA 1 CODE	; 1FA4: obj_nop3
+; (not mapped) words DATA:1FE8 1 CODE	; 1FD2: obj_nop3
+; (not mapped) words DATA:2016 1 CODE	; 2000: obj_nop3
+; (not mapped) words DATA:2044 1 CODE	; 202E: obj_nop3
+; (not mapped) words DATA:2072 1 CODE	; 205C: obj_nop3
+; (not mapped) words DATA:20A0 1 CODE	; 208A: obj_nop3
+; (not mapped) words DATA:20CE 1 CODE	; 20B8: obj_nop3
+; (not mapped) words DATA:20FC 1 CODE	; 20E6: collect_jackpot
+; (not mapped) words DATA:212A 1 CODE	; 2114: raise_jackpot
+; (not mapped) words DATA:2158 1 CODE	; 2142: raise_jackpot
+; (not mapped) words DATA:2186 1 CODE	; 2170: hold_bonus
+; (not mapped) words DATA:21B4 1 CODE	; 219E: extra_ball_award
+; (not mapped) words DATA:21E2 1 CODE	; 21CC: roulette
+; (not mapped) words DATA:2210 1 CODE	; 21FA: advance_object
+; (not mapped) words DATA:223E 1 CODE	; 2228: advance_object
+; (not mapped) words DATA:226C 1 CODE	; 2256: advance_object
+; (not mapped) words DATA:229A 1 CODE	; 2284: advance_object
+; (not mapped) words DATA:22C8 1 CODE	; 22B2: advance_object
+; (not mapped) words DATA:22F6 1 CODE	; 22E0: countdown
+; (not mapped) words DATA:2324 1 CODE	; 230E: light_locks
+; (not mapped) words DATA:2352 1 CODE	; 233C: lock_ball
+words DATA:23A9 1 CODE ; 236A: add_hurry_value
+; (not mapped) words DATA:23AE 1 CODE	; 2398: obj_nop5
+; (not mapped) words DATA:23DC 1 CODE	; 23C6: obj_nop6
+; (not mapped) words DATA:240A 1 CODE	; 23F4: score_to_best
+; (not mapped) words DATA:2AD4 1 CODE	; 2ABE: double_score
+; (not mapped) words DATA:2B02 1 CODE	; 2AEC: double_bonus
+; (not mapped) words DATA:2B30 1 CODE	; 2B1A: mult_2
+; (not mapped) words DATA:2B5E 1 CODE	; 2B48: mult_4
+; (not mapped) words DATA:2B8C 1 CODE	; 2B76: mult_6
+; (not mapped) words DATA:2BBA 1 CODE	; 2BA4: mult_8
+; (not mapped) words DATA:2BE8 1 CODE	; 2BD2: mult_10
+; (not mapped) words DATA:2C16 1 CODE	; 2C00: obj_nop1
+; (not mapped) words DATA:2C44 1 CODE	; 2C2E: obj_nop3
+; (not mapped) words DATA:2C72 1 CODE	; 2C5C: obj_nop3
+; (not mapped) words DATA:2CA0 1 CODE	; 2C8A: obj_nop3
+; (not mapped) words DATA:2CCE 1 CODE	; 2CB8: obj_nop3
+; (not mapped) words DATA:2CFC 1 CODE	; 2CE6: obj_nop3
+; (not mapped) words DATA:2D2A 1 CODE	; 2D14: obj_nop3
+; (not mapped) words DATA:2D58 1 CODE	; 2D42: obj_nop3
+; (not mapped) words DATA:2D86 1 CODE	; 2D70: obj_nop3
+; (not mapped) words DATA:2DB4 1 CODE	; 2D9E: obj_nop3
+words DATA:2E0B 1 CODE ; 2DCC: obj_nop3
+; (not mapped) words DATA:2E10 1 CODE	; 2DFA: obj_nop3
+; (not mapped) words DATA:2E3E 1 CODE	; 2E28: obj_nop3
+; (not mapped) words DATA:2E66 1 CODE	; 2E50: obj_nop3
+; (not mapped) words DATA:2E94 1 CODE	; 2E7E: obj_nop3
+; (not mapped) words DATA:2EC2 1 CODE	; 2EAC: collect_jackpot
+; (not mapped) words DATA:2EF0 1 CODE	; 2EDA: collect_jackpot
+; (not mapped) words DATA:2F1E 1 CODE	; 2F08: lock_jackpot
+; (not mapped) words DATA:2F4C 1 CODE	; 2F36: raise_jackpot
+; (not mapped) words DATA:2F7A 1 CODE	; 2F64: hold_bonus
+; (not mapped) words DATA:2FA8 1 CODE	; 2F92: hold_bonus
+; (not mapped) words DATA:2FD6 1 CODE	; 2FC0: extra_ball_award
+; (not mapped) words DATA:3004 1 CODE	; 2FEE: extra_ball_award
+; (not mapped) words DATA:3032 1 CODE	; 301C: extra_ball_award
+; (not mapped) words DATA:3060 1 CODE	; 304A: roulette
+words DATA:3113 1 CODE ; 3078: advance_object
+words DATA:3141 1 CODE ; 30A6: advance_object
+; (not mapped) words DATA:30EA 1 CODE	; 30D4: advance_object
+; (not mapped) words DATA:3118 1 CODE	; 3102: advance_object
+; (not mapped) words DATA:3146 1 CODE	; 3130: advance_object
+; (not mapped) words DATA:3174 1 CODE	; 315E: advance_object
+; (not mapped) words DATA:31A2 1 CODE	; 318C: advance_object
+; (not mapped) words DATA:31D0 1 CODE	; 31BA: countdown
+; (not mapped) words DATA:31FE 1 CODE	; 31E8: countdown
+; (not mapped) words DATA:322C 1 CODE	; 3216: light_locks
+; (not mapped) words DATA:325A 1 CODE	; 3244: lock_ball
+words DATA:3369 1 CODE ; 3272: add_hurry_value
+; (not mapped) words DATA:32B6 1 CODE	; 32A0: obj_nop4
+; (not mapped) words DATA:32E4 1 CODE	; 32CE: obj_nop4
+; (not mapped) words DATA:3312 1 CODE	; 32FC: obj_nop4
+; (not mapped) words DATA:3340 1 CODE	; 332A: nightmare_switch
+; (not mapped) words DATA:336E 1 CODE	; 3358: score_to_best
 ; CRTC register tables of the screen modes, read with LODS CS:[SI]
 dptr CODE:4E56 CODE
 dptr CODE:4E9A CODE
-code CODE:3C2E
-code CODE:412D
 code CODE:4E2C
 code CODE:52A8
 code CODE:549F
@@ -171,6 +544,10 @@ dptr CODE:23EA DATA ; mov dx, kicker_score2
 dptr CODE:5061 CODE ; the driver's name, read from SOUND.CFG into CODE
 dptr CODE:5082 CODE ; the EXEC parameter block
 dptr CODE:5085 CODE
+num CODE:3C69 ; [BX+974Eh] in lock_jackpot, not map_flags (see there)
+num CODE:3C81
+; (not mapped) dptr CODE:09EE DATA	; mov [td_count_obj2], an object (Steel Wheel)
+dptr CODE:0B32 DATA ; the same (Beat Box)
 ; word variables the per-table set-up fills with offsets (the analysis
 ; only sees a pointer variable when it is loaded and used as a base)
 var DATA:84A9 DATA
@@ -245,6 +622,16 @@ comment CODE:4C24 state 12: player 1's score in a text, then state 11; nothing s
 ; (not mapped) comment CODE:0FA3 a file could not be loaded: sound off, text mode, the error text, exit
 name CODE:4C81 parse_cmdline
 comment CODE:4C81 BX = PSP: the first digit of the command line minus '0' into BL; CF when there is none
+name CODE:0FBD print_at
+comment CODE:0FBD not called: the DOS text at DS:DX ('$' at its end) at the cursor CX (column, row), the cursor read back after it
+name CODE:0FCE set_cursor
+comment CODE:0FCE the BIOS cursor to cursor_col/cursor_row on cursor_page
+name CODE:0FDF get_cursor
+name DATA:96ED cursor_col
+name DATA:96EE cursor_row
+name DATA:96EF cursor_page
+name CODE:009B exit_jump
+comment CODE:009B not reached: a jump to st_exit
 name CODE:4CAE dos_alloc
 comment CODE:4CAE AX paragraphs -> AX = segment (CF on failure)
 name CODE:4CBB dos_free
@@ -364,6 +751,11 @@ name CODE:1E9F load_far
 comment CODE:1E9F ES:BX := the far pointer at [BX]
 name CODE:2295 mul_fix
 comment CODE:2295 DX times the 24-bit factor at [BX] (signed), the high part into BX (presumably fixed point; read, not checked)
+name CODE:2303 add_s16
+comment CODE:2303 DX (CL its sign) += the signed word at [BX-1]; bounce adds the surface's speed (surface_vx/vy) and nudge_push to the ball's before the reflection and takes them off after it (quarter_sub_s16, sub_s16)
+name CODE:230F quarter_sub_s16
+comment CODE:230F DX := DX / 4 (at least 1 when DX was 1..3), then minus the signed word at [BX-1] (sub_s16)
+name CODE:2324 sub_s16
 name CODE:22D2 mul_u16
 name CODE:22E3 mul_s16
 name CODE:2330 clamp_speed
@@ -424,6 +816,11 @@ name DATA:975F map_flags
 name DATA:9760 map_event
 comment DATA:9760 an event number from the map (FFh: none), run by map_event_run
 name DATA:9745 table_push
+name DATA:9738 surface_vx
+comment DATA:9738 the speed of the surface hit: 0, or a flipper's at the hit point (its angular speed times the distance from the pivot; surface_params)
+name DATA:973A surface_vy
+name DATA:9747 surface_type
+comment DATA:9747 the surface as surface_params found it; 5: the hit rectangles are not tested (test_hit_rects)
 name DATA:973C nudge_push
 name DATA:9748 nudge_timer
 name DATA:9749 nudge_count
@@ -531,7 +928,8 @@ name CODE:2E63 show_text
 comment CODE:2E63 the text at DI (FFh at its end) on the display from column 0; returns ZF from [6581h]
 name CODE:2CF9 message_start
 name CODE:2D01 message_step
-comment CODE:2D01 one frame of a display message (DI): scrolling, blinking, flashing as its flags say
+comment CODE:2D01 one frame of a display message (DI); ZF when it has ended
+comment CODE:2D01 a message: 8 bytes, +0 flags (1: scrolls in, +6 its start; 4: flashes +2 times, +3 frames each; 8: ends when the text is short (byte 12h FFh); 10h: the letters count up to theirs, then +6 frames), +1 0: to start, FFh: running, +4 the text (20 characters, FFh)
 name CODE:2C15 display_frame
 comment CODE:2C15 the running message (message) or, after a while without score, the next idle text of td_score_texts
 name CODE:2ED1 show_score
@@ -629,21 +1027,34 @@ name DATA:84B7 td_lanes_a_upper
 name DATA:84B9 td_lanes_b_lower
 name DATA:84BB td_lanes_b_upper
 name DATA:84BD td_lights
+comment DATA:84BD the lists of td_* end with a negative word (FFFFh); the records they reach are described at their users: lamps and light groups (update_lights, blink_lights), groups, targets and hit rectangles (test_hit_rects), lanes (test_lanes_a), holes (map_event_run), locks (reset_locks), event objects (run_events), sequences (run_event), messages (message_step)
 name DATA:84BF td_rotating
+comment DATA:84BF light groups whose lit bits move one lamp along when a flipper is pressed (rotate_lights)
 name DATA:84C1 td_extra_ball
 name DATA:84C3 td_ign_timers
+comment DATA:84C3 records: +0 frames left, +2 the period, +4 a light group, +6 a sequence, +8 sound (high byte) and jingle; each period the last lit lamp of the group goes out (with the sound) and the sequence's step goes back by one (ign_timers)
 name DATA:84C5 td_chains
+comment DATA:84C5 light groups lit in order: the first lamp not lit for the player blinks (flag 40h), the ones after it are cleared (light_chains)
 name DATA:84C7 td_random_lights
+comment DATA:84C7 targets; one of them (by frame_count) gets its lamp blinking (flag 2); hitting that one runs the event of td_random_event's group (pick_random_light, random_light_check)
 name DATA:84C9 td_random_event
 name DATA:84CB td_locks
+comment DATA:84CB records of 6 bytes: +0 the hole, +2 its lamp (flags 14h: blinks when lit, while the locks are lit), +4 FFFFh while a ball is in it
 name DATA:84CD td_objects
 name DATA:84CF td_timed
-name DATA:84D1 td_counters
+comment DATA:84CF event objects with a timer (+24h, +26h; object_timers)
+name DATA:84D1 td_events
+comment DATA:84D1 the sequences whose steps go back to 0 at a new ball (unless their byte +1 is set) and a new game (reset_objects)
 name DATA:84D3 td_count_obj
+comment DATA:84D3 the event object whose hits are counted at player record +14h (BCD) and +16h; at count_target the sequence of td_count_event's group (+2) runs and the count starts again (count_object)
+name DATA:845D count_target
+comment DATA:845D hits of td_count_obj for its event: 9 Ignition, 4 Steel Wheel, 1 the others
 name DATA:84D5 td_count_event
 name DATA:84D7 td_count_obj2
+comment DATA:84D7 the event object whose hits are counted at player record +10h (BCD; Ignition shows it) and +12h
 name DATA:84D9 td_count_texts
 name DATA:84DB td_hurry
+comment DATA:84DB the event object of the hurry-up: while armed (+22h) hurry_value rises every frame (Nightmare: falls, disarmed at 0) and td_txt_hurry shows it (display_frame)
 name DATA:84DD td_txt_hurry
 name DATA:84DF td_txt_jackpot2
 name DATA:84E1 td_txt_jackpot3
@@ -656,7 +1067,9 @@ name DATA:84ED td_txt_boosters
 name DATA:84EF td_roulette
 name DATA:84F1 td_roulette_pick
 name DATA:6604 hit_rects
-comment DATA:6604 the lists of the ball's level: hit rectangles (x1,y1,x2,y2,group) and two lists of lanes
+comment DATA:6604 the lists of the ball's level (td_*_lower or td_*_upper): hit rectangles and two lists of lanes
+name DATA:9765 map_events
+comment DATA:9765 the table's holes by map event number (1..), set by setup_*
 name DATA:6606 lanes_a
 name DATA:6608 lanes_b
 name DATA:9741 hit_score
@@ -667,6 +1080,56 @@ comment DATA:6674 the event stack (event_stack..): pairs (0 or FFFFh, object) pu
 name DATA:8AE4 event_stack
 name DATA:8C64 event_sp_ball
 name DATA:8ACA running_object
+name DATA:8ADD message_busy
+comment DATA:8ADD FFh while a message runs (message_step), 0 after it and when the running object is done (end_running)
+name CODE:348B end_running
+comment CODE:348B running_object and message_busy cleared
+name DATA:8CEB event_player_bit
+name DATA:8CDF event_arm
+comment DATA:8CDF run_event's word for the stack (0 fire, FFFFh arm); a scratch word of the display code as well
+name DATA:8AA0 ball_in_hole
+comment DATA:8AA0 a hole of type 6 has the ball: it stays held while messages or events run (hold_ball_check)
+name DATA:8A9D lock_pending
+comment DATA:8A9D a lock handler took the ball (lock_ball): held until state 4 gives a new one
+name DATA:8AA1 hole_period
+comment DATA:8AA1 a hole of type 5 has the ball: its group's points every hole_period frames (hole_timer), hole_count times, then the ball goes (add_hit_score)
+name DATA:8AA3 hole_timer
+name DATA:8AA5 hole_group
+name DATA:8AA7 hole_count
+name DATA:8AC6 rect_clear_target
+comment DATA:8AC6 the next target of a completed hit rectangle group to go out, every rect_clear_timer frames (28h before the first)
+name DATA:8AC8 rect_clear_timer
+name DATA:8A94 done_light_group
+comment DATA:8A94 a light group all lit: it blinks for light_group_timer (46h) frames, then goes out (blink_light_group)
+name DATA:8A92 light_group_timer
+name DATA:8AAE random_lit
+comment DATA:8AAE a random light blinks (pick_random_light)
+name DATA:8ACF flipper_pressed
+comment DATA:8ACF 80h: a flipper key went down (flipper_move), for rotate_lights
+name DATA:667A lamp_stack
+comment DATA:667A ign_timers' list of the lit lamps of a group
+name DATA:6630 jackpot_shown
+comment DATA:6630 the jackpot as the texts show it (update_texts), copied when it changes
+name DATA:6638 hurry_base
+name DATA:6640 hurry_value
+comment DATA:6640 the hurry-up's value (8 bytes BCD): hurry_base when armed, + hurry_step every frame (td_hurry)
+name DATA:6648 hurry_step
+name DATA:66FA roulette_on
+name DATA:66FB roulette_pos
+name DATA:66FD roulette_delay
+name DATA:66FF roulette_period
+name DATA:89C8 always_0
+comment DATA:89C8 never written: handlers end with CMP [always_0],0 to return ZF (done), show_text with always_ff to return NZ (go on)
+name DATA:6654 always_ff
+name DATA:89C9 attract_mode
+comment DATA:89C9 FFh while no game runs: lamps with flag 4 blink as well, blinking in every group (blink_lights, update_lights)
+name DATA:89C6 booster_col
+comment DATA:89C6 where count_boosters writes the boosters into td_txt_boosters
+name DATA:979A lock2_used
+comment DATA:979A set by lock_ball2 (lock3_used by lock_ball3), cleared by new_game, read nowhere
+name DATA:979C lock3_used
+name DATA:8D99 lights
+comment DATA:8D99 light_count records of 26h bytes (the layout of ball_obj): +22h the palette slot (0..), set by init_lights; a lamp's +4 points at one
 comment DATA:8ACA an object whose handler runs every frame until it returns ZF set
 name DATA:8A9E ball_locked
 name DATA:8A9F locks_lit
@@ -677,28 +1140,41 @@ name DATA:89D8 light_palette
 comment DATA:89D8 3 bytes a light: the colours uploaded to DAC 40h.. every tick (upload_lights); a light is on or off by its colours
 name DATA:8CFB table_palette
 name CODE:301E test_hit_rects
-comment CODE:301E hit_x/hit_y against the hit rectangles and their objects' rectangles: hit_object, hit_score, sounds
+comment CODE:301E hit_x/hit_y against the hit rectangles, then the targets of the rectangle's group: the first target hit and not yet hit by the player gives hit_object and hit_score (the group), and the group's sounds
+comment CODE:301E a hit rectangle: 0Ah bytes, x1, y1, x2, y2 (inclusive), the group
+comment CODE:301E a group: 16h bytes, +0 its first member (target or lamp), +2 sound (high byte) and jingle (FFh: none), +4 points (BCD, 8 bytes) to the score, +0Ch points to the bonus, +14h a sequence (run_object_event); light groups go on: +16h frames to the next blink, +17h the blink period, +18h the chase phase (blink_lights)
+comment CODE:301E a target: 0Eh bytes, +0 type (1, 8: lit by a hit, mark_hit_object; 4: nothing; 7: a hit then ignored for 14h frames, the count at +0Eh), +1 the players who hit it (a bit each), +2 the lamp lit by a hit (light_hit_object), +4 the next target of the group, +6 x1, +8 y1, +0Ah x2, +0Ch y2 (inclusive)
 name CODE:30E1 test_lanes_a
+comment CODE:30E1 hit_x/hit_y in a lane (0Ah bytes: x1, y1, x2, y2 (x2, y2 not inside), an object): hit_object = the object, hit_score = its group (+4), hit_lane set, sound 2 (lanes_b: 6); not when tilted
+comment CODE:30E1 the lanes' and holes' objects: +0 type, +1 busy/hit bits, +2 a lamp, +4 the group (score, sounds, sequence)
 name CODE:30D9 test_lanes_b
 name CODE:312D light_hit_object
 name CODE:3148 mark_hit_object
 name CODE:3180 add_hit_score
 comment CODE:3180 the score record's points (+4) to the score, (+0Ch) to the bonus; repeated for a while when a spinner-like object set 8A90h
 name CODE:31D2 map_event_run
-comment CODE:31D2 the map's event number: its object from the list [9754h]; holes (type 6: a lock, 5: timed) hold the ball and set its position and speed
+comment CODE:31D2 AL = the map's event number: its hole from map_events: the group's sounds; unless busy (+1): type 6 (a lock: held when the locks are lit), type 5 (the ball held while the group's points are given +8 times, every +6 frames: add_hit_score), both then put the ball at +0Eh, +10h (pixels) with the speed +0Ah, +0Ch and run the group's sequence; type 14h runs the group's sequence; any other just gives hit_object and hit_score; the other holes' busy bytes are cleared
 name CODE:3373 run_events
-comment CODE:3373 pops the event stack: per object its sounds, lights (+18h on, +1Eh off), score (score_object), counters, handler (+16h), message (+1Ah)
+comment CODE:3373 pops the event stack, an entry (0 or FFFFh, an event object) a call; while running_object is set its handler runs instead
+comment CODE:3373 FFFFh (armed): sound +1Ch, lamp +1Eh lit (unless +1 = FEh), message +20h (priority +3), flag 4: the timer restarts
+comment CODE:3373 0 (fired): points +6 to the score and +0Eh to the bonus (BCD, 8 bytes each), sound +4, count_object, lamp +18h lit, lamp +1Eh out, flag 1: the handler +16h runs every frame until it returns ZF (running_object), flag 2: the timer restarts, the handler +16h, message +1Ah (priority +2)
+comment CODE:3373 an event object: 2Ah bytes, +0 type (1Eh: fires only when armed for the player, then disarmed unless +1 = FEh; 1Fh: always), +22h the players it is armed for, +23h flags, +24h the timer's period, +26h the timer (object_timers: at 0 disarmed and lamp +1Eh out); objects with the handler advance_object have 2Eh bytes (+28h, +2Ah, +2Ch)
 name CODE:39FC run_object_event
+comment CODE:39FC SI = a group: its sequence (+14h), if any
 name CODE:3A13 run_event
-comment CODE:3A13 DI = an event record: type 2Ah a list of objects (4000h: another event, 8000h: arm); else a sequence stepped per player
+comment CODE:3A13 DI = a sequence: pushes event objects to the event stack; a word of it: an event object, +8000h: arm it (FFFFh on the stack), +4000h: run that sequence instead
+comment CODE:3A13 type 2Ah (a word): the words from +2 up to FFFFh, all of them; types 28h, 29h: +2..+9 the step of each player, the step's word at +0Ah + 2 * step: FFFFh nothing, FFFEh step 0 again, FFFDh one step back, FFFCh the step := the next word; type 28h moves one step on after each (back again when an object of type 1Eh is not armed), 29h only by advance_object
 name CODE:422A score_object
 comment CODE:422A the object's points: +6 to the score, +0Eh to the bonus
 name CODE:3497 set_message
 name CODE:34AE restart_timer
 name CODE:34B5 count_object
 name CODE:351A blink_lights
+comment CODE:351A each light group every +17h frames: lamps with flag 40h change their blink phase, with 20h the group's chase moves a lamp on
 name CODE:357C update_lights
-comment CODE:357C the current player's light states into the palette, at most ten changes a frame
+comment CODE:357C the current player's lamps into the palette, at most ten changes a frame; player record +18h.. keeps what each lamp shows
+comment CODE:357C a lamp: 8 bytes, +0 flags, +1 lit, a bit per player, +2 the blink phase, +3 the state shown with flag 2, +4 the light (palette slot), +6 the next lamp of the group
+comment CODE:357C flags: 2 shows +3 (random_light_check, blink_light_group), 4 blinks (unlit; lit too with 10h), 8 not counted by light_group_done, 10h lit means blinking, 20h a chase in the group, 40h blinks, 80h kept at a new ball (lights_off_player)
 name CODE:3613 idle_update_lights
 name CODE:41A6 light_on
 comment CODE:41A6 SI = a light: its palette slot gets the "on" colours
@@ -720,12 +1196,20 @@ name CODE:38D9 hold_ball_check
 name CODE:2BC7 object_timers
 name CODE:2BFF clear_object_timers
 name CODE:28D5 reset_locks
+comment CODE:28D5 each lock empty, its lamp's flags 14h cleared
 name CODE:28F5 lights_off_player
 name CODE:2922 lights_off_all
 name CODE:2946 reset_objects
 name CODE:29A6 reset_objects_all
 name CODE:2A41 restore_lights
 name CODE:27B9 reset_targets
+comment CODE:27B9 the player's bits of every target of both levels' hit rectangles cleared
+name CODE:27C8 reset_rect_targets
+comment CODE:27C8 DI = hit rectangles: the player's bit of each target of their groups cleared (lights_frame after types 1, 8)
+; (not mapped) name CODE:27D5 unused_27D5
+; (not mapped) comment CODE:27D5 not reached: sixteen INC AX in front of reset_targets
+name CODE:2B7C clear_hit
+comment CODE:2B7C hit_score, hit_object, hit_x/hit_y and hit_lane cleared, unless the ball is held
 name CODE:32F6 pick_random_light
 name CODE:3322 random_light_check
 name CODE:4316 table_ball_events
@@ -733,8 +1217,18 @@ comment CODE:4316 per table at a new ball (Steel Wheel, Nightmare: an event)
 name CODE:4353 table_game_objects
 ; object handlers (+16h of an object; coderanges 3C4D-3F99, 4162-41B2)
 name CODE:3C2E extra_ball_award
+name CODE:3BC1 advance_object
+comment CODE:3BC1 a handler (2Eh-byte objects): the sequence +28h one step on for the player (not onto a negative word), the first lamp not lit of the light group +2Ah lit (not with flag 8), the Ignition timer +2Ch restarted (+0 := +2)
+name CODE:3C3B obj_nop1
+comment CODE:3C3B handlers that do nothing (obj_nop1..6)
+name CODE:3C3C obj_nop2
+name CODE:3C3D obj_nop3
+name CODE:3C3E obj_nop4
+name CODE:3D66 obj_nop5
+name CODE:3D67 obj_nop6
 name CODE:3C3F lock_jackpot
-comment CODE:3C3F the jackpot added for each locked ball (presumably; the lock test reads [td_locks+974Eh], not understood)
+comment CODE:3C3F the jackpot to the score, once more for each of the first two locks that is full (as meant), the count ("n x") into td_txt_jackpot4, the jackpot back to jackpot_base, the locks emptied
+comment CODE:3C3F the test of a lock reads [BX+974Eh] (974Eh happens to be map_flags' address; kept a number) where [BX+4] (the lock's state) must have been meant (a bug, presumably): only Nightmare's objects use this handler, and there the first test reads BSS:44CCh, a byte of TBLDETLO.NTM (9Dh: always counted), the second one BSS:44D2h, past the end of that file (memory not loaded; not checked what it holds)
 name CODE:3CC6 mult_2
 name CODE:3CCC mult_3
 name CODE:3CD2 mult_4
@@ -745,19 +1239,23 @@ name CODE:3CEA mult_8
 name CODE:3CF0 mult_9
 name CODE:3CF6 mult_10
 name CODE:3CFC add_hurry_value
+comment CODE:3CFC hurry_value to the score
 name CODE:3D0A score_to_best
 comment CODE:3D0A adds the current player's score to the best other player's that is not lower (as the code reads; not checked)
 name CODE:3D68 nightmare_switch
+comment CODE:3D68 jingle 11h, the object at 30A6h armed and the one at 3078h disarmed for the player
 name CODE:3D81 double_score
 name CODE:3D9C double_bonus
 name CODE:3DB9 hold_bonus
 name CODE:3DBF count_message
+comment CODE:3DBF the message of td_count_texts for the count (player record +16h)
 name CODE:3DDA collect_jackpot
 name CODE:3E11 raise_jackpot
 name CODE:3E35 roulette
 comment CODE:3E35 "russian roulette": runs through td_roulette slowing down, lighting each; the last one's event (the start from td_roulette_pick by the frame counter)
 name CODE:3F17 countdown
 name CODE:40FA light_locks
+comment CODE:40FA unless a ball is locked: locks_lit, each lock's lamp lit and blinking (flags 14h)
 name CODE:412D lock_ball
 comment CODE:412D locks lit: the ball is held, a new one comes (state 4); the two after it the same with 9789h/978Bh set
 name CODE:4150 lock_ball2

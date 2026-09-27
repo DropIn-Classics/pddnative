@@ -186,6 +186,20 @@ def main():
         r = map_data((s, o), data)
         return f'{r[0]}:{r[1]:04X}' if r else None
 
+    def words_agree(f, new):
+        """a table of code pointers carries only if the target's words at
+        the mapped place are the mapped routines (tables in data a program
+        has for itself, such as the objects of its tables, do not)"""
+        (s, o), (s2, o2) = (x.split(':') for x in (f[1], new[1]))
+        A, B = a.byname[s], b.byname[s2]
+        for i in range(int(f[2], 16)):
+            va = struct.unpack_from('<H', a.p.img, A.base + int(o, 16) + 2 * i)[0]
+            p = B.base + int(o2, 16) + 2 * i
+            vb = struct.unpack_from('<H', b.p.img, p)[0] if p + 2 <= len(b.p.img) else None
+            if code_at(va) is None or code_at(va) != vb:
+                return False
+        return True
+
     out = [MARK + os.path.basename(args.src) + ' by tools/xfer.py; check, then keep or edit']
     skip = ('exe', 'segment', 'relocorder')
     n_ok = n_bad = 0
@@ -207,6 +221,8 @@ def main():
                 new.append(c)
             else:
                 new.append(t)
+        if new and f[0] == 'words' and f[4:5] == ['CODE'] and not words_agree(f, new):
+            new = None
         lines.append((line, new))
     # two routines that differ only in an immediate (MOV AX,1201h / 1200h)
     # can both map to the one the target has, and two data addresses to

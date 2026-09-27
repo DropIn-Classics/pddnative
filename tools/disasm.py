@@ -812,6 +812,8 @@ class Emitter:
         img = an.p.img
         stored = max(0, min(S.size, len(img) - S.base))
         labels = sorted(o for (s, o) in an.labels if s == S.name)
+        # a table of a words hint is written as DWs, with or without a label
+        tables = set(o for s, o, cnt, t in an.h.words if s == S.name)
         import bisect
         off = 0
         while off < S.size:
@@ -838,7 +840,7 @@ class Emitter:
             end = off + 1
             while end < S.size and (S.name, end) not in an.insns and (S.name, end) not in an.labels \
                     and S.base + end not in an.farptrs and S.base + end not in an.p.relsites \
-                    and not (end == stored):
+                    and end not in tables and not (end == stored):
                 end += 1
             a = S.base + off
             if a in an.farptrs:
