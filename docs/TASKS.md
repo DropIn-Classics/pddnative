@@ -11,7 +11,7 @@ task's branch (see AGENTS.md).
 | T1 | Muse | done | DDPCINTR.EXE: stage 1 with the names from its debug information |
 | T2 | Muse | open | DDPCMAIN.EXE: stage 1 |
 | T3 | Claude | done | a headless runner for the original programs (C, from pfemu's core) |
-| T4 | Claude | later | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
+| T4 | Claude | working | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
@@ -141,3 +141,37 @@ Done when:
   runner prints a hash).
 - `tools/run.py` stops at an address given by its name in the hints
   (`CODE:4CEE`, a label) and prints the registers and memory asked for.
+
+## T4: PD.EXE's engine core into the hints (Claude)
+
+Names and comments in `src/PD.hints` for what the table programs do,
+each claim checked with the runner where it can be, so that the port
+(stage 3) can be written from the hints and the generated source.
+
+Files: `src/PD.hints`, `src/PD2.hints` (own part and the carried block),
+`tools/` where the tools need it, docs/HANDOFF.md.
+
+First pass done (998468c): names for about 430 routines and variables,
+comments on the main ones, `var`/`dptr` hints for the table descriptor
+and address immediates.
+
+Done when:
+
+- Every routine the code calls or reaches through a table has a name
+  (seven helpers are left: `L0FD0`, `L2314`, `L2320`, `L2335`, `L27F4`,
+  `L2B8E`, `L349D`), the main ones a one-line comment.
+- The records the engine walks are written down field by field where
+  their users are (objects, event records, lights, hit rectangles,
+  lanes, locks, the table descriptor, the sprite and flipper records),
+  every field the code touches named or listed as not understood.
+- The collision map's format (TBLDETLO/TBLDETHI: the row index, the
+  run coding, what a value means) is described, and the switch to the
+  upper level (map code FEh) seen in a run, or it is said why it
+  could not be.
+- The code that runs with DS = XDATA (the sound routines from 5315h on)
+  and the display font read through DS = TDATA are written with labels
+  of those segments (`ds`/`ptr` hints), the build still IDENTICAL.
+- The names are carried to PD2.hints, its "not mapped" names placed by
+  hand where they matter; `tools/check.py` says `all ok`.
+- docs/HANDOFF.md says in a page how the engine works, with the
+  addresses, and what is still not understood.
