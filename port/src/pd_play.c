@@ -245,15 +245,13 @@ void st_ball_locked(void)
     ww(V(lanes_b), rw(V(td_lanes_b_lower)));
     ww(V(hit_rects), rw(V(td_rects_lower)));
     do {
+        checkpoint("ball_locked_loop");
         lights_frame();
         wd(V(scroll_speed), 0x4000);
         scroll_step();
         s = (int32_t)rd(V(scroll));
-        if (rb(V(opt_screen)) != 2) {
-            if (s < 0x29E000)
-                continue;
+        if (rb(V(opt_screen)) != 2)
             s -= 0x29E000;
-        }
-    } while (s - 0x172000 < 0);
+    } while (s < 0x172000);
     ball_start();
 }

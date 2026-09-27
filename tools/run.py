@@ -10,7 +10,8 @@ is that program gives the names.  The options are the runner's (see the
 top of tools/run/main.c); run.py only
   * finds the unpacked CD as the other tools do and passes -game,
   * builds build/pddrun.exe when it is missing or older than its sources,
-  * translates the ADDR of -break, -log, -watch and -dump when it is
+  * translates the ADDR of -break, -log, -watch, -dump and -poke (both
+      of its addresses) when it is
       SEG:OFF   with SEG a segment of the hints (CODE:4CEE, DATA:8A8A),
       a label   of the generated source (L4CEE, D8A8A, C4F05) or a `name`
                 or `code` name of the hints,
@@ -27,11 +28,11 @@ from disasm import Hints, game_dir
 
 EXE = os.path.join(ROOT, 'build', 'pddrun.exe')
 SRC = os.path.join(HERE, 'run')
-ADDR_OPTS = {'-break': 1, '-log': 1, '-watch': 1, '-dump': 2}
+ADDR_OPTS = {'-break': 1, '-log': 1, '-watch': 1, '-dump': 1, '-poke': 2}
 # options and how many arguments they take (to find PROGRAM)
 OPTS = {'-game': 1, '-state': 1, '-sound': 1, '-until': 1, '-ips': 1, '-key': 2, '-keys': 1,
         '-shot': 2, '-shotevery': 2, '-break': 1, '-log': 1, '-watch': 1, '-trace': 2,
-        '-dump': 2, '-dumpevery': 1, '-ram': 1, '-vram': 1, '-wav': 1, '-dos': 0, '-intwatch': 1, '-prof': 0,
+        '-dump': 2, '-poke': 3, '-dumpevery': 1, '-ram': 1, '-vram': 1, '-wav': 1, '-dos': 0, '-intwatch': 1, '-prof': 0,
         '-v': 0}
 
 
@@ -130,7 +131,8 @@ def main():
             n = OPTS[a]
             vals = args[i+1:i+1+n]
             if a in ADDR_OPTS and names:
-                vals[0] = names.translate(vals[0])
+                for k in range(ADDR_OPTS[a]):
+                    vals[k] = names.translate(vals[k])
             out += [a] + vals
             i += 1 + n
         else:

@@ -31,6 +31,41 @@ void pump_frame(void)
         pd_exit();
 }
 
+/* PD_POKE="where#N OFF HEX[;...]": the Nth time the checkpoint `where` is
+ * passed, the bytes HEX are written at DATA:OFF (tools/run's -poke at the
+ * same place) */
+static struct { char where[32]; unsigned long n, count; uint16_t off; uint8_t b[16]; int len; } pokes[8];
+static int npokes;
+
+static void parse_pokes(void)
+{
+    const char *s = getenv("PD_POKE");
+
+    while (s && *s && npokes < 8) {
+        char where[32], hex[40];
+        unsigned off;
+        int k, used = 0;
+        const char *h;
+        if (sscanf(s, " %31[^#]#%lu %x %39[0-9A-Fa-f ]%n", where, &pokes[npokes].n, &off, hex, &used) < 4)
+            break;
+        strcpy(pokes[npokes].where, where);
+        pokes[npokes].off = (uint16_t)off;
+        for (h = hex, k = 0; *h && k < 16; ) {
+            unsigned v;
+            if (*h == ' ') { h++; continue; }
+            if (sscanf(h, "%2x", &v) != 1)
+                break;
+            pokes[npokes].b[k++] = (uint8_t)v;
+            h += 2;
+        }
+        pokes[npokes++].len = k;
+        s += used;
+        s = strchr(s, ';');
+        if (s)
+            s++;
+    }
+}
+
 /* PD_STOP=where#N: the program ends the Nth time it passes the checkpoint
  * `where` (for comparing its memory with a run of the original stopped at
  * the same place with tools/run's -break ADDR#N); PD_TRACE: each
@@ -41,6 +76,7 @@ void checkpoint(const char *where)
     static unsigned long count, want;
     static size_t len;
     static int parsed;
+    int i, k;
 
     if (!parsed) {
         const char *hash;
@@ -51,9 +87,14 @@ void checkpoint(const char *where)
             len = hash ? (size_t)(hash - stop) : strlen(stop);
             want = hash ? strtoul(hash + 1, NULL, 10) : 1;
         }
+        parse_pokes();
     }
     if (getenv("PD_TRACE"))
         fprintf(stderr, "%s picture %lu\n", where, frame_count());
+    for (i = 0; i < npokes; i++)
+        if (!strcmp(where, pokes[i].where) && ++pokes[i].count == pokes[i].n)
+            for (k = 0; k < pokes[i].len; k++)
+                wb((uint16_t)(pokes[i].off + k), pokes[i].b[k]);
     if (stop && strlen(where) == len && !strncmp(where, stop, len) && ++count == want)
         pd_exit();
 }

@@ -39,6 +39,7 @@
     X(CODE, scroll_toward, 0x039A, 0x0399) \
     X(CODE, idle_scroll, 0x03D8, 0x03D7) \
     X(CODE, st_ball_locked, 0x041F, 0x041E) \
+    X(CODE, ball_locked_loop, 0x04B4, 0x04B3) \
     X(CODE, st_ball_start, 0x04E6, 0x04E5) \
     X(CODE, ball_start, 0x04EE, 0x04ED) \
     X(CODE, ball_start_loop, 0x0553, 0x0552) \

@@ -3,7 +3,7 @@
 same keys, stop both at the same places and compare their memory.
 
     portcmp.py [--prog 1|2] [--table N] [--keys FILE] [--until T] [--all]
-               WHERE#N ...
+               [--poke WHERE#N NAME HEX] [--options HEX] WHERE#N ...
 
 WHERE is a checkpoint of the port (a name of the hints: idle_loop,
 ball_start_loop, st_play, st_ball_lost, st_ball_start, st_game_over,
@@ -20,19 +20,33 @@ The keys file has a line per key event, in the order they happen:
     ball_start_loop#49 E050+ the Down key (E0 50) ...
 
 The key is a scan code in hex (E0xx for the extended keys), + down, -
-up.  The tool finds where each event lands in both: for the first event
-of a run of events at the same checkpoint it runs both programs (with
-the keys before it) to that pass and takes the port's picture count and
-the runner's time; the later events of the run are placed from there at
-one pass a picture (70.09 pictures a second, the 320x200 mode's), which
-holds for the loops above.  The port must be built (port/build.bat).
+up.  The tool finds where each event lands in both: it runs the port
+(with the keys before it) to that pass and takes its picture count; the
+runner's time is taken from a run of the original to the same pass,
+unless the last such run was at the same checkpoint and the port passed
+it once a picture since (70.09 pictures a second): then the time is
+counted on from there (as is the port's picture for a pass the loop was
+left before: a key let go after it).  The port must be built
+(port/build.bat).
+
+--poke writes the bytes HEX ("0400") at the DATA variable NAME in both,
+the Nth time they pass WHERE (the runner's -poke, the port's PD_POKE):
+a way into a state the keys do not easily reach (game_state 4 at
+st_play#100).  It may be given more than once.
+
+Every run starts from nothing written: the port's saved files
+(PD_DATA_DIR) and the runner's layer over C: (-state) are made afresh in
+build/portcmp/, so the high scores a game writes do not reach the next
+run.  --options puts a DDPCOPTN.BIN with the bytes HEX into both (13
+bytes: the options in the order of load_options; 01 01 02 01 05 04 06 40
+07 02 1A 01 02 is the defaults with opt_screen 2).
 """
-import argparse, os, re, subprocess, sys
+import argparse, os, re, shutil, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..'))
 sys.path.insert(0, HERE)
-from disasm import game_dir
+from disasm import Hints, game_dir
 
 PORT = os.path.join(ROOT, 'port', 'build', 'pdd-headless.exe')
 BUILD = os.path.join(ROOT, 'build')
@@ -67,10 +81,24 @@ def runner_key(t, code, down):
     return '%.5f %0*X%s' % (t, 4 if code > 0xFF else 2, code, '+' if down else '-')
 
 
+def fresh(args, which):
+    """an empty layer for one run of `which` ('port' or 'run'), with the
+    options file when --options gave one; its path"""
+    d = os.path.join(BUILD, 'portcmp', which)
+    shutil.rmtree(d, ignore_errors=True)
+    opt = os.path.join(d, 'save', 'DELUXE') if which == 'port' else os.path.join(d, 'DELUXE')
+    os.makedirs(opt)
+    if args.options:
+        with open(os.path.join(opt, 'DDPCOPTN.BIN'), 'wb') as f:
+            f.write(bytes.fromhex(args.options))
+    return d
+
+
 def run_port(args, keys, stop, ram=None, vram=None):
     """the port's picture count at `stop` (None when it does not get there)"""
-    env = dict(os.environ, PD_TRACE='1', PD_STOP=stop, PD_KEYS=' '.join(keys),
-               PD_FRAMES=str(int(args.until * RATE)))
+    env = dict(os.environ, PD_DATA_DIR=fresh(args, 'port'), PD_TRACE='1', PD_STOP=stop, PD_KEYS=' '.join(keys),
+               PD_FRAMES=str(int(args.until * RATE)),
+               PD_POKE=';'.join('%s %04X %s' % (w, data_offset(args, n), h) for w, n, h in args.poke))
     for k in ('PD_RAM', 'PD_VRAM'):
         env.pop(k, None)
     if ram:
@@ -84,13 +112,25 @@ def run_port(args, keys, stop, ram=None, vram=None):
 
 def run_original(args, keyfile, stop, ram=None, vram=None):
     """the runner's time at `stop` (None when it does not get there)"""
-    cmd = [sys.executable, os.path.join(HERE, 'run.py'), '-sound', 'sb', '-until', str(args.until),
+    cmd = [sys.executable, os.path.join(HERE, 'run.py'), '-state', fresh(args, 'run'), '-sound', 'sb',
+           '-until', str(args.until),
            '-keys', keyfile, '-break', stop]
+    for w, n, h in args.poke:
+        cmd += ['-poke', w, n, h]
     if ram:
         cmd += ['-ram', ram, '-vram', vram]
     r = subprocess.run(cmd + [EXES[args.prog][0], str(args.table)], capture_output=True, text=True)
     m = re.search(r'^stop break t=([\d.]+)', r.stdout, re.M)
     return float(m.group(1)) if m else None
+
+
+def data_offset(args, name):
+    """the offset of the DATA variable `name` in the program's hints"""
+    h = Hints(os.path.join(ROOT, EXES[args.prog][1]))
+    for (seg, off), n in h.names.items():
+        if n == name and seg == 'DATA':
+            return off
+    raise SystemExit('portcmp.py: no DATA name %s in %s' % (name, EXES[args.prog][1]))
 
 
 def write_keys(path, lines):
@@ -101,18 +141,23 @@ def write_keys(path, lines):
 def place(args, events, keyfile):
     """the events as port keys and runner key lines"""
     pk, rk, anchor = [], [], None
-    for i, (where, n, code, down) in enumerate(events):
-        if anchor is None or anchor[0] != where:
+    for where, n, code, down in events:
+        stop = '%s#%d' % (where, n)
+        pic = run_port(args, pk, stop)
+        if pic is None and anchor and anchor[0] == where:
+            pic = anchor[2] + n - anchor[1]         # the loop was left: a key up after it
+        if pic is None:
+            raise SystemExit('portcmp.py: %s is not reached by the port' % stop)
+        if anchor and anchor[0] == where and pic - anchor[2] == n - anchor[1]:
+            t = anchor[3] + (n - anchor[1]) / RATE
+        else:
             write_keys(keyfile, rk)
-            stop = '%s#%d' % (where, n)
-            pic, t = run_port(args, pk, stop), run_original(args, keyfile, stop)
-            if pic is None or t is None:
-                raise SystemExit('portcmp.py: %s is not reached by %s' %
-                                 (stop, 'the port' if pic is None else 'the original'))
+            t = run_original(args, keyfile, stop)
+            if t is None:
+                raise SystemExit('portcmp.py: %s is not reached by the original' % stop)
             anchor = (where, n, pic, t)
-        _, n0, pic, t = anchor
-        pk.append(port_key(pic + (n - n0) - 1, code, down))
-        rk.append(runner_key(t + (n - n0 - 0.5) / RATE, code, down))
+        pk.append(port_key(pic - 1, code, down))
+        rk.append(runner_key(t - 0.5 / RATE, code, down))
     return pk, rk
 
 
@@ -142,6 +187,8 @@ def main():
     ap.add_argument('--keys')
     ap.add_argument('--until', type=float, default=300, help='emulated seconds at most (default 300)')
     ap.add_argument('--all', action='store_true', help='show the expected differences too')
+    ap.add_argument('--options', help='DDPCOPTN.BIN as hex bytes, for both')
+    ap.add_argument('--poke', nargs=3, action='append', default=[], metavar=('WHERE#N', 'NAME', 'HEX'))
     ap.add_argument('stops', nargs='+')
     args = ap.parse_args()
     if not os.path.exists(PORT):

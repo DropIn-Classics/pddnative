@@ -94,9 +94,16 @@ void sys_exe_dir(char *out, size_t n)
     snprintf(out, n, "%s", path);
 }
 
-/* beside the program, as ever on Windows */
+/* PD_DATA_DIR if set, else beside the program, as ever on Windows */
 void sys_data_dir(char *out, size_t n)
 {
+    const char *env = getenv("PD_DATA_DIR");
+
+    if (env && *env) {
+        snprintf(out, n, "%s", env);
+        sys_mkdir(out);
+        return;
+    }
     sys_exe_dir(out, n);
 }
 

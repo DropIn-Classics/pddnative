@@ -32,6 +32,8 @@
  *   -shotevery DT PREFIX   the screen every DT seconds, PREFIX_NNNNN.png
  *   -break ADDR[#N]  stop before the instruction at ADDR (the Nth time)
  *   -log ADDR        print the registers each time ADDR is reached, go on
+ *   -poke ADDR[#N] TARGET HEX   when ADDR is reached (the Nth time), write
+ *                    the bytes HEX ("04 00" or "0400") at TARGET, go on
  *   -watch ADDR      print each write to the byte at ADDR
  *   -trace FILE N    one line per instruction for N instructions, from the
  *                    first -break/-log hit on (or from the start without one)
@@ -138,7 +140,8 @@ static double shot_every = 0.0, shot_next = 0.0;
 static char shot_prefix[260];
 static unsigned shot_index = 0;
 
-typedef struct { Addr a; int stop; int count, hits; } Brk;
+/* stop: 0 -log, 1 -break, 2 -poke (pa, pb, pn: where and what it writes) */
+typedef struct { Addr a; int stop; int count, hits; Addr pa; uint8_t pb[16]; int pn; } Brk;
 static Brk brks[BRK_MAX];
 static int nbrks = 0;
 
@@ -256,6 +259,7 @@ static void on_load(const char *dospath, uint16_t load){
         uint32_t before = brks[i].a.lin;
         resolve(&brks[i].a, b, load);
         if(brks[i].a.lin != before) brk_lin[i] = brks[i].a.lin;
+        if(brks[i].stop == 2) resolve(&brks[i].pa, b, load);
     }
     if(have_watch){ resolve(&watch_addr, b, load); memwatch_addr = watch_addr.lin; }
     for(i=0;i<ndumps;i++) resolve(&dumps[i].a, b, load);
@@ -325,6 +329,28 @@ int main(int argc, char **argv){
             brks[nbrks].a = parse_addr(spec);
             brks[nbrks].stop = !strcmp(a,"-break");
             brk_lin[nbrks] = brks[nbrks].a.lin;
+            nbrks++; }
+        else if(!strcmp(a,"-poke")){ NEED(3);
+            char spec[64], *hash;
+            const char *h;
+            Brk *b = &brks[nbrks];
+            if(nbrks == BRK_MAX) die("at most %d -break/-log/-poke", BRK_MAX);
+            snprintf(spec, sizeof(spec), "%s", argv[++i]);
+            hash = strchr(spec, '#');
+            b->count = 1;
+            if(hash){ *hash = 0; b->count = atoi(hash+1); }
+            b->a = parse_addr(spec);
+            b->stop = 2;
+            b->pa = parse_addr(argv[++i]);
+            for(h = argv[++i], b->pn = 0; *h; ){
+                char two[3];
+                if(*h == ' '){ h++; continue; }
+                if(!h[1] || b->pn == 16) die("-poke: bad bytes %s", argv[i]);
+                two[0] = h[0]; two[1] = h[1]; two[2] = 0;
+                b->pb[b->pn++] = (uint8_t)strtoul(two, NULL, 16);
+                h += 2;
+            }
+            brk_lin[nbrks] = b->a.lin;
             nbrks++; }
         else if(!strcmp(a,"-watch")){ NEED(1); watch_addr = parse_addr(argv[++i]); have_watch = 1;
             memwatch_addr = watch_addr.lin; }
@@ -450,18 +476,32 @@ int main(int argc, char **argv){
                 dev_tick();
             }
             if(brk_hit >= 0){
-                Brk *b = &brks[brk_hit];
+                /* every -break, -log and -poke at this address; a poke is
+                 * written before a stop at the same pass */
                 uint32_t lin = brk_lin[brk_hit];
+                Brk *stopped = NULL;
                 brk_hit = -1;
-                b->hits++;
                 if(held){ xtrace_fp = held; held = NULL; }
-                if(!b->stop){
-                    printf("log %s t=%.6f hit=%d ", addr_str(&b->a), emu_now(), b->hits);
-                    print_regs();
-                } else if(b->hits >= b->count){
+                for(i=0;i<nbrks;i++){
+                    Brk *b = &brks[i];
+                    if(brk_lin[i] != lin) continue;
+                    b->hits++;
+                    if(b->stop == 2){
+                        if(b->hits == b->count){
+                            int k;
+                            for(k=0;k<b->pn;k++) mem_w8(b->pa.lin + k, b->pb[k]);
+                            printf("poke %s t=%.6f hit=%d\n", addr_str(&b->pa), emu_now(), b->hits);
+                        }
+                    } else if(!b->stop){
+                        printf("log %s t=%.6f hit=%d ", addr_str(&b->a), emu_now(), b->hits);
+                        print_regs();
+                    } else if(b->hits >= b->count && !stopped)
+                        stopped = b;
+                }
+                if(stopped){
                     stop = "break";
-                    printf("break %d at %04X:%04X t=%.6f hit=%d\n", (int)(b - brks),
-                           cpu.sreg[S_CS], (unsigned)cpu.eip, emu_now(), b->hits);
+                    printf("break %d at %04X:%04X t=%.6f hit=%d\n", (int)(stopped - brks),
+                           cpu.sreg[S_CS], (unsigned)cpu.eip, emu_now(), stopped->hits);
                     break;
                 }
                 /* go on: step over this instruction without stopping again */
@@ -485,7 +525,7 @@ int main(int argc, char **argv){
     print_regs();
     dev_report();
     for(i=0;i<nbrks;i++)
-        printf("%s %s lin=%05X hits=%d\n", brks[i].stop ? "break" : "log",
+        printf("%s %s lin=%05X hits=%d\n", brks[i].stop == 1 ? "break" : brks[i].stop ? "poke" : "log",
                addr_str(&brks[i].a), brks[i].a.lin, brks[i].hits);
     print_dumps();
     memwatch_report();

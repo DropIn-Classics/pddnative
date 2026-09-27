@@ -59,8 +59,16 @@ space of the driver's EXEC in CODE, the stack)
   (picture - 827.5) / 70.09 s): equal at the 100th, 101st and 300th frame
   of play; tilt (Space tapped at play frames 230, 240, 250, 260, 270, in
   one window of nudge_timer): equal at state 9's entry, the drain and the
-  next ball's start. State 4 is not checked by a run (no ball locked yet),
-  nor state 12.
+  next ball's start. State 12 is not checked by a run (nothing sets it).
+- state 4 (a ball locked), entered with game_state set to 4 at the 100th
+  frame of play (`--poke`, below), on Ignition and on PD2.EXE's second
+  table: in the 320x200 mode (the default) its scroll loop does not end
+  in the original either (equal at its 1st and 300th pass; see the hints
+  at `st_ball_locked`); in the 350-line mode (opt_screen 2, from a
+  DDPCOPTN.BIN) it ends after 73 passes, and the next ball is equal at
+  its plunger and at the 1st and 300th frame of play. The attract show in
+  the 350-line mode is equal at its 200th and 700th frame. A ball locked
+  by play (lock_ball) is not checked yet.
 - the flippers: 91 random taps of the Shift keys (4 to 14 pictures each,
   3 to 25 apart, from picture 900; the runner's times as above, given
   with -keys): equal at the 200th, 500th and 992nd frame of play (the ball
@@ -91,8 +99,12 @@ not translated yet or, with `PD_STOP=where#N`, the Nth time it passes
 `checkpoint(where)`; `where` is a name of the hints, so the runner's
 `-break where#N` stops the original at the same place: `idle_loop` (state
 2's loop), `ball_start_loop` (state 3's), `st_play`, `st_ball_lost`,
-`st_ball_start`, `st_game_over`, `st_tilt`, `st_ball_locked`. `PD_TRACE`
-prints each checkpoint passed with the pictures shown so far.
+`st_ball_start`, `st_game_over`, `st_tilt`, `st_ball_locked`,
+`ball_locked_loop` (state 4's loop). `PD_TRACE` prints each checkpoint
+passed with the pictures shown so far; `PD_POKE="where#N OFF HEX"` writes
+bytes at DATA:OFF the Nth time `where` is passed (the runner's `-poke`);
+`PD_DATA_DIR` is where the saved files are looked for and written
+(`save/` in it).
 
 `tools/portcmp.py` does all of it: it takes key events tied to a
 checkpoint's pass (`st_play#20 2A+`: left Shift down, seen first by the
@@ -100,6 +112,10 @@ checkpoint's pass (`st_play#20 2A+`: left Shift down, seen first by the
 the runner's time), runs both to the stops given and compares:
 
     python tools\portcmp.py --table 1 --keys keys.txt st_play#615 st_ball_start#2
+
+`--poke st_play#100 game_state 0400` writes a variable in both at the
+same pass; `--options HEX` gives both a DDPCOPTN.BIN. Each run starts
+with nothing saved (in `build/portcmp/`).
 
 The results listed under "State" were found by hand this way before the
 tool; it reproduces them.
