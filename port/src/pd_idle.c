@@ -208,13 +208,3 @@ void game_scroll_down(void)
     reset_ball();
     ww(V(game_state), 3);
 }
-
-void new_game(void)
-{
-    not_ported("new_game");
-}
-
-void reset_ball(void)
-{
-    not_ported("reset_ball");
-}

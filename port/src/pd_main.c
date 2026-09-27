@@ -33,7 +33,8 @@ void pump_frame(void)
 
 /* PD_STOP=where#N: the program ends the Nth time it passes the checkpoint
  * `where` (for comparing its memory with a run of the original stopped at
- * the same place with tools/run's -break ADDR#N) */
+ * the same place with tools/run's -break ADDR#N); PD_TRACE: each
+ * checkpoint passed is printed with the number of pictures shown */
 void checkpoint(const char *where)
 {
     static const char *stop;
@@ -51,6 +52,8 @@ void checkpoint(const char *where)
             want = hash ? strtoul(hash + 1, NULL, 10) : 1;
         }
     }
+    if (getenv("PD_TRACE"))
+        fprintf(stderr, "%s picture %lu\n", where, frame_count());
     if (stop && strlen(where) == len && !strncmp(where, stop, len) && ++count == want)
         pd_exit();
 }

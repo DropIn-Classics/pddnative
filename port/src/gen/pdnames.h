@@ -291,6 +291,10 @@
     X(DATA, txt_load_error, 0x0058, 0x0058) \
     X(DATA, txt_no_memory, 0x0083, 0x0084) \
     X(DATA, name_flippers, 0x00A7, 0x00A8) \
+    X(DATA, ball_event_1, 0x0E20, 0x0E23) \
+    X(DATA, ball_event_3, 0x29D0, 0x29F9) \
+    X(DATA, ball_object_3, 0x2DCC, 0x2DF5) \
+    X(DATA, game_object_3, 0x30A6, 0x312B) \
     X(DATA, player, 0x651C, 0x65EF) \
     X(DATA, last_player, 0x651D, 0x65F0) \
     X(DATA, player_rec, 0x651E, 0x65F1) \
@@ -324,6 +328,7 @@
     X(DATA, txt_quit, 0x6643, 0x6716) \
     X(DATA, txt_players_ball, 0x6658, 0x672B) \
     X(DATA, txt_player, 0x666D, 0x6740) \
+    X(DATA, txt_shoot_player, 0x6676, 0x6749) \
     X(DATA, txt_player2, 0x668B, 0x675E) \
     X(DATA, txt_bonus_x, 0x6694, 0x6767) \
     X(DATA, txt_blank, 0x669F, 0x6772) \
@@ -462,8 +467,12 @@
     X(DATA, ball_held, 0x8A98, 0x8AA9) \
     X(DATA, extra_ball, 0x8A99, 0x8AAA) \
     X(DATA, bonus_held, 0x8A9A, 0x8AAB) \
+    X(DATA, unused_8A9B, 0x8A9B, 0x8AAC) \
     X(DATA, bonus_mult, 0x8A9C, 0x8AAD) \
     X(DATA, random_lit, 0x8A9D, 0x8AAE) \
+    X(DATA, unused_8A9E, 0x8A9E, 0x8AAF) \
+    X(DATA, bonus_count_period, 0x8A9F, 0x8AB0) \
+    X(DATA, wait_count, 0x8AA1, 0x8AB2) \
     X(DATA, rect_clear_target, 0x8AB5, 0x8AC6) \
     X(DATA, rect_clear_timer, 0x8AB7, 0x8AC8) \
     X(DATA, running_object, 0x8AB9, 0x8ACA) \
@@ -485,6 +494,7 @@
     X(DATA, event_sp_ball, 0x8C53, 0x8C64) \
     X(DATA, msg_count_max, 0x8CB5, 0x8CC6) \
     X(DATA, msg_count_src, 0x8CB6, 0x8CC7) \
+    X(DATA, score_copy, 0x8CC6, 0x8CD7) \
     X(DATA, event_arm, 0x8CCE, 0x8CDF) \
     X(DATA, msg_counting, 0x8CD2, 0x8CE3) \
     X(DATA, msg_cols, 0x8CD6, 0x8CE7) \
@@ -517,6 +527,8 @@
     X(DATA, scroll_speed_hi, 0x96F1, 0x9702) \
     X(DATA, frame_count, 0x96F3, 0x9704) \
     X(DATA, flipper_shapes, 0x96F5, 0x9706) \
+    X(DATA, unused_9718, 0x9718, 0x9729) \
+    X(DATA, unused_9719, 0x9719, 0x972A) \
     X(DATA, table_num, 0x971A, 0x972B) \
     X(DATA, balls_left, 0x971B, 0x972C) \
     X(DATA, ball_num, 0x971C, 0x972D) \

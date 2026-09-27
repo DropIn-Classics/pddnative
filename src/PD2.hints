@@ -741,6 +741,26 @@ comment CODE:05BD during the ball start: "player n" / the players and the ball n
 name DATA:8CF0 player_blink_timer
 comment DATA:8CF0 show_player_up: frames (14h) until the current player's digit changes (player_blink); st_idle sets 1
 name DATA:8CEF player_blink
+name DATA:8AB2 wait_count
+comment DATA:8AB2 frames of a counted wait: ball_start's "player n" (46h), the bonus count (bonus_count_step)
+name DATA:6749 txt_shoot_player
+comment DATA:6749 show_player_up's text for a ball after a lock, the player's digit written at +13h
+name DATA:8AB0 bonus_count_period
+comment DATA:8AB0 bonus_count_step: frames between two steps of the count (4)
+name DATA:8CD7 score_copy
+comment DATA:8CD7 score_to_best: the current player's score (8 bytes) compared with the others'; run_event clears its first word
+name DATA:8AAC unused_8A9B
+comment DATA:8AAC reset_ball_objects clears it, nothing reads it (as far as the code shows)
+name DATA:8AAF unused_8A9E
+comment DATA:8AAF reset_ball_objects clears it, nothing reads it (as far as the code shows)
+name DATA:9729 unused_9718
+comment DATA:9729 new_game writes frame_count's low byte here and its complement at 9719h, nothing reads them (as far as the code shows)
+name DATA:972A unused_9719
+name DATA:0E23 ball_event_1
+comment DATA:0E23 table_ball_events: the sequence run at every new ball on table 1, ball_event_3 (and object ball_object_3 disarmed) on table 3; game_object_3 armed for all at a new game on table 3 (table_game_objects)
+name DATA:29F9 ball_event_3
+name DATA:2DF5 ball_object_3
+name DATA:312B game_object_3
 name CODE:0FF0 reset_ball
 comment CODE:0FF0 the ball to its start (ball_start_x/y), speed 0, gravity from opt_slope, flippers on, the table's objects for a new ball
 name CODE:2804 reset_ball_objects

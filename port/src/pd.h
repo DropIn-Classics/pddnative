@@ -72,8 +72,20 @@ void no_callback(void);
 
 /* ---- pd_idle.c: state 2 */
 void game_scroll_down(void);
+
+/* ---- pd_game.c: a new game, a new ball */
 void new_game(void);
 void reset_ball(void);
+void clear_object_timers(void);
+
+/* ---- pd_events.c: DI = a sequence, its objects pushed on the event stack */
+void run_event(uint16_t di);
+
+/* ---- pd_play.c: state 3, the nudge, the plunger, the scroll */
+void ball_start(void);
+void scroll_follow(void);
+void nudge(void);
+void plunger(void);
 
 /* ---- pd_ball.c: the ball and the flippers */
 void ball_frame(void);
