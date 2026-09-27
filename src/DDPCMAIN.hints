@@ -41,3 +41,23 @@ words DATA:0D1D 2 DATA
 
 ; CMP r/m8,r8 (38h) where MASM writes 3Ah (like PD.hints raw entries)
 raw CODE:05B1
+
+; ---- routine gaps decoded to find their pointers (PUSHA/PUSH starts with
+; sensible bodies ending RET; entry pointer sought for each, dead code will
+; be marked as such; all verified as code by linear decode, not data)
+code CODE:026B ; routine, entry sought
+code CODE:0BD4 ; shrinks memory via AH=4Ah, entry sought (before an EXEC?)
+code CODE:0D1D ; palette via DAC ports, entry sought
+code CODE:0DE1 ; tests [31CD]/[31CE], entry sought
+code CODE:0EC1 ; routine, entry sought
+code CODE:104A ; routine, entry sought
+code CODE:1149 ; video mode 13h init, no refs found (dead duplicate?)
+code CODE:1414 ; clears words at DATA:1362, entry sought
+code CODE:3100 ; shrinks memory (MOV AX,CS/SUB AX,10h), entry sought
+code CODE:3274 ; routine after orphan RET at 3273, entry sought
+code CODE:3713 ; routine, entry sought
+code CODE:3904 ; routine, entry sought
+code CODE:3BDC ; sets DS=SEG3 itself (history), entry sought
+code CODE:4162 ; routine, entry sought
+code CODE:38F1 ; single CALL 13C4 stub, entry sought
+code CODE:43D2 ; single JMP 43FF stub, entry sought
