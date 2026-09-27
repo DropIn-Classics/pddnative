@@ -15,6 +15,7 @@ task's branch (see AGENTS.md).
 | T6 | Claude | working | the implementation in C (port/): the table programs' engine, routine by routine |
 | T5 | Sol | done | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
 | T7 | Sol | changes | tools/ddfiles.py: the history viewer's files (HISTORY/*.HOP, *.IDX, HISTORY.FNT, the pictures) |
+| T8 | Sol | open | tools/gfxfiles.py: the pictures and sprites (DELUXE/*.VGA, the .SPR files, TABLE2M) with their real palettes |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
@@ -261,5 +262,55 @@ and re-encode to identical bytes (the counts in the notes); the text of
 one table's record prints readably in two languages; two pictures (one
 .016, one .256) and the font look right (describe them in the notes, do
 not commit them); `tools/check.py` says `all ok`; the notes say which
+statements were checked by running (`tools/run`, if at all) and which
+were only read.
+
+## T8: tools/gfxfiles.py, the pictures and sprites (Sol)
+
+The picture files not described yet, each shown with the palette the
+program really sets for it, so the port can draw them and the
+descriptions get checked against the files.
+
+Files: `tools/gfxfiles.py` (new), `src/DDPCINTR.hints` and
+`src/DDPCMAIN.hints` (comments and names at the routines that read these
+files), `docs/tasks/T8.md`. Branch `sol/T8-gfx`, made from master after
+T7 is merged (T7 changes `src/DDPCMAIN.hints` too). What you find in
+PD.EXE and PD2.EXE goes into the notes, not into `src/PD.hints`: Claude
+works in that file and carries it over.
+
+The files:
+
+- `DELUXE/*.VGA`: 21STLOGO, DDPCBKGD, DDPCLANG, PRESENTS, SELECT,
+  SPIDER, TITLE. Which program opens each (DDPCINTR, DDPCMAIN, or none),
+  through which loader (`load_vga_image` in DDPCMAIN is one), and where
+  the palette it is shown with comes from (as `history_palette` is
+  DDPCHIST.VGA's).
+- `DELUXE/DDPCICON.SPR` (DDPCMAIN, the comment at CODE:16D3) and
+  `FLIPPERS.SPR` of DREAMS1 and DREAMS2 (PD.EXE: the comments at
+  CODE:108F and CODE:4816, the frame list at DATA:7D80).
+- `TABLE2M.xxx` of DREAMS1 and DREAMS2 (320x512, a byte a pixel, raw,
+  per docs/HANDOFF.md), with the palette `set_palette` (PD.EXE
+  CODE:4B39) gets for that table.
+- Not the `.FLI` files (DDFLIPLY.EXE's; a later task).
+
+Steps:
+
+1. For each file: the program and routine that read it, what they do
+   with the bytes, where the palette comes from (an address in the
+   program, found from the code). In DDPCINTR and DDPCMAIN write that as
+   `comment`/`name` hints; the builds must stay identical.
+2. `gfxfiles.py FILE [--png OUT]`: parse, print the layout, and write a
+   PNG into `build/` with the program's palette. The tool reads the
+   palette from the program file at the address step 1 found; it does
+   not copy palette bytes into the source (rule 3 of AGENTS.md).
+3. An encoder for each format; the tool checks that parsing and encoding
+   again gives the file's bytes.
+
+Done when: every file listed above parses to its last byte and
+re-encodes to identical bytes (the counts in the notes); the notes say
+for each file which program reads it and where, or that none does and
+how you know; three PNGs (a DELUXE .VGA, a FLIPPERS.SPR, a TABLE2M) look
+right with their real palettes (describe them in the notes, do not
+commit them); `tools/check.py` says `all ok`; the notes say which
 statements were checked by running (`tools/run`, if at all) and which
 were only read.
