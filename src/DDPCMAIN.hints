@@ -38,10 +38,13 @@ dptr CODE:434C CODE
 ; [0D0C] are HISTORY paths, and [1E26]/[1E28]/[1E2A] are HISTORY data
 ds CODE:3158-31C8 HISTORY
 ; these callees inherit DS=HISTORY; calls reset the analysis to DATA
+ds CODE:3234-3273 HISTORY
 ds CODE:32DA-3347 HISTORY
 ds CODE:3599-36A8 HISTORY
+ds CODE:36A8-3713 HISTORY
 ds CODE:3DBF-3DE1 HISTORY
 ds CODE:3E09-3E3D HISTORY
+ds CODE:3EE1-3F81 HISTORY
 ds CODE:4394-43D2 HISTORY
 
 ; near-pointer tables in DATA read with BX in L0B59 (CHDIR/EXEC for tables)
@@ -144,7 +147,7 @@ name CODE:3131 resize_memory
 name CODE:3140 history_screen
 comment CODE:3140 run the F9 History of Pinball viewer with DS and ES set to HISTORY
 name CODE:3158 history_init
-comment CODE:3158 CHDIR HISTORY, initialize mode 13h with DDPCHIST.VGA, detect VESA 640x480x256, then load HISTORY.FNT, the selected language's .HOP/.IDX and enter the viewer
+comment CODE:3158 CHDIR HISTORY, initialize Mode X with DDPCHIST.VGA, detect VESA 640x480x256, load HISTORY.FNT and the selected language's .IDX, choose the picture format and enter the viewer; the .HOP is loaded after leaving this menu
 name CODE:31C8 history_loop
 name CODE:33D3 load_history_font
 comment CODE:33D3 allocate 800h bytes and read HISTORY.FNT: 256 glyphs, eight row bytes each; bit 7 is the glyph's left pixel
@@ -181,7 +184,7 @@ comment CODE:3E09 read the selected language's 265-byte .IDX into history_text_i
 name CODE:3E3D draw_history_record
 comment CODE:3E3D use table record +0 as the .IDX record number, then draw count+1 NUL-terminated strings from the HOP start offset
 name CODE:3EE1 draw_history_line
-comment CODE:3EE1 draw one HOP string; pairs 00h,00h terminate stored strings and 0Dh,0Ah after them adds a blank screen line
+comment CODE:3EE1 draw one HOP string; in 16-colour mode skip all following NULs and add a row for each following 0Dh,0Ah, while VESA skips CR/LF within strings and following NULs so they add no row; the two-NUL loop at L3F53 is dead
 name CODE:3F81 render_history_glyph
 name CODE:41E5 load_sound
 comment CODE:41E5 save drive/directory, load the SDR named by SOUND.CFG and register sound_callback

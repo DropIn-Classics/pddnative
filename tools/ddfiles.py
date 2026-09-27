@@ -9,8 +9,10 @@
 ``idx`` and ``hop`` decode the five language-specific index/text pairs.
 The companion file with the same stem must be beside a HOP file.  Text
 bytes are printed as code page 437, the closest terminal representation
-of the glyph indices used by HISTORY.FNT.  ``font`` renders that 8x8
-font, while ``picture`` understands the viewer's planar .016 images,
+of the glyph indices used by HISTORY.FNT.  The blank rows printed after
+HOP strings are those used by the viewer's 16-colour path; its VESA path
+skips the same CR/LF bytes without adding rows.  ``font`` renders that
+8x8 font, while ``picture`` understands the viewer's planar .016 images,
 paletted .256 images, and its raw 320x200 .VGA background.  Every command
 encodes its parsed representation again and requires identical bytes.
 PNG output uses only the Python standard library.
