@@ -1,0 +1,19 @@
+; DDPCINTR.EXE: the Deluxe intro (pictures, fades, CD audio through MSCDEX)
+; Hints for tools/disasm.py; numbers are hex.
+
+exe DELUXE/DDPCINTR.EXE
+
+; the segments, from the relocations and the header (SS:SP = 01AF:0800)
+segment CODE  0000 CODE
+segment XSEG  0097 FAR_DATA
+segment DATA  0158 DATA
+segment STACK 01AF STACK stack size=800
+
+; the relocation table lists only sites in CODE
+relocorder CODE
+
+; the bytes after the program image (CodeView NB08 debug information)
+keeptail
+
+; a word displacement 3Ah where the assembler takes a byte (not checked)
+raw CODE:008F
