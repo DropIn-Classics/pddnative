@@ -3,6 +3,27 @@
 State of 2026-09-27: stage 1 (source from the programs) done for the two
 table programs; nothing understood in depth yet.
 
+## Start here (next session)
+
+- `master` has the remote `origin` (GitHub, mindphluxnet/pddnative); the
+  user pushes, push only when the user asks.
+- Muse is working on T1 (DDPCINTR.EXE) in `../pddnative-muse` on
+  `muse/T1-ddpcintr`. Do not touch that checkout. When the user says
+  "Review T1", follow CLAUDE.md (review steps) and AGENTS.md (who writes
+  what where).
+- Claude's next task is open: T4 (PD.EXE's engine core into the hints)
+  or T3 (a headless 8086 runner). The user has not chosen yet; ask.
+- Before any change to `tools/` or the hints: `python tools/check.py`
+  must stay `all ok` (the hook enforces it on commit). `game/` holds the
+  unpacked CD (`python tools/gogx.py` if it is missing).
+- Useful to know about the tools (also in their comments): capstone names
+  98h/99h `cwde`/`cdq` in 16-bit mode (disasm.py renames them); tasm.py
+  got a fix for `[BX+VAR]` and three switches for the original's
+  encodings (`lea_smart`, `alu_ax_short`, `test_form`, set in build.py);
+  `xfer.py` only carries a code address when the next ten instructions
+  match, so after PD.hints changes run it and look at the "not mapped"
+  lines in PD2.hints.
+
 ## The CD (game.gog)
 
 | Folder | What |

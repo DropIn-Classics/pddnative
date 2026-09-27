@@ -8,7 +8,7 @@ task's branch (see AGENTS.md).
 
 | id | for | status | what |
 |---|---|---|---|
-| T1 | Muse | open | DDPCINTR.EXE: stage 1 with the names from its debug information |
+| T1 | Muse | working | DDPCINTR.EXE: stage 1 with the names from its debug information |
 | T2 | Muse | later | DDPCMAIN.EXE: stage 1 |
 | T3 | Claude | later | a headless 8086 runner for the original programs |
 | T4 | Claude | later | PD.EXE: the engine's core (state machine, objects, ball) into the hints |
