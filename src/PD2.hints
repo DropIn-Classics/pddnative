@@ -1,0 +1,119 @@
+; PD2.EXE: Pinball Dreams 2, Spidersoft's four tables (Neptune, Safari,
+; Stall Turn and a fourth: REVENGE.FLI, files .MNG), Deluxe CD (= GOG).  The engine is
+; PD.EXE's: most hints are carried over from PD.hints by tools/xfer.py.
+
+exe DREAMS2/PD2.EXE
+
+; the segments, from the relocations and the header (SS:SP = 1968:0200,
+; the stack after BSS this time)
+segment CODE  0000 CODE
+segment TDATA 054B FAR_DATA
+segment DATA  088F DATA
+segment XDATA 123B XDATA
+segment BSS   1279 BSS size=6EF0
+segment STACK 1968 STACK stack size=200
+
+relocorder DATA CODE
+
+; ---- found for PD2 itself (the rest is carried over below)
+words DATA:81BB 10 CODE     ; the main loop's routines per game state
+code CODE:4B49              ; beep (PD CODE:4BD8)
+code CODE:51B1              ; (PD CODE:5201)
+; PD's CODE:27D5 (a row of INC AX) has no counterpart here
+code CODE:2B62              ; (PD CODE:2B73, changed: clears words, not bytes)
+
+; ==== carried over from PD.hints by tools/xfer.py; check, then keep or edit
+; PD.EXE: Pinball Dreams, the four tables of the first game
+; (Ignition, Steel Wheel, Beat Box, Nightmare), Deluxe CD (= GOG).
+; Hints for tools/disasm.py; numbers are hex.
+; the segments, from the relocations and the header (SS:SP = 0550:0200)
+; the relocation table lists the sites in DATA first, then those in CODE
+; ---- code
+; the main loop calls the routine of the game state [8A8A] (0..15)
+; (not mapped) words DATA:8188 10 CODE
+; code addresses handed over as immediates
+ptr CODE:0068 CODE ; [845A] := routine
+; (not mapped) ptr CODE:00C2 CODE
+ptr CODE:516E CODE
+ptr CODE:2AAF CODE ; DS:DX for INT 21h
+dptr CODE:5052 CODE ; DS:DX = "SOUND.CFG" (CS = DS there?)
+ptr CODE:5133 CODE ; pushed as return address
+; routines for [9776] AND 0Fh = 0..7 (8..15: none), jumped to by
+; PUSH/RET at 1EAE; what [9776] is: not known yet
+words DATA:81DD 8 CODE
+; reached through pointers not found yet (object handlers etc.)
+code CODE:009B
+code CODE:041D
+code CODE:0FBD
+code CODE:19B8
+code CODE:1E61
+code CODE:239E
+; (not mapped) code CODE:27D5
+code CODE:2B47
+code CODE:301A
+code CODE:301B
+code CODE:3497
+code CODE:38D8
+code CODE:3BC1
+code CODE:40FA
+code CODE:4A9E
+; (not mapped) code CODE:4BD8
+code CODE:4B78
+code CODE:4CC6
+code CODE:4E06
+; (not mapped) code CODE:5201
+code CODE:52EE
+; CRTC register tables of the screen modes, read with LODS CS:[SI]
+dptr CODE:4E56 CODE
+dptr CODE:4E9A CODE
+code CODE:3C2E
+code CODE:412D
+code CODE:4E2C
+code CODE:52A8
+code CODE:549F
+coderange CODE:3C3B-3F87
+coderange CODE:4150-41A0
+; ---- encodings tasm.py does not choose by itself
+; CMP r/m8,r8 (38h) where MASM writes 3Ah: the original has both
+raw CODE:17AB
+raw CODE:1B63
+raw CODE:1D41
+raw CODE:1F9D
+raw CODE:201F
+raw CODE:2363
+raw CODE:252E
+raw CODE:2651
+; ADD SI,20H with a word immediate (a constant defined further down in
+; the original source, most likely)
+raw CODE:442F
+raw CODE:447E
+raw CODE:44FF
+; immediates that are offsets in DATA (the value is a variable or table
+; the analysis knows; checked by eye)
+dptr CODE:0044 DATA ; mov cx, 0x9a90
+dptr CODE:0047 DATA ; sub cx, 0x8475
+; (not mapped) dptr CODE:086C DATA	; mov word ptr [0x84c6], 0x3a6
+dptr CODE:0DB4 DATA ; mov word ptr [0x651e], 0x84e2
+dptr CODE:18D0 DATA ; add bx, 0x6521
+dptr CODE:1A35 DATA ; mov bx, 0x821e
+dptr CODE:1A3C DATA ; mov di, 0x96f5
+dptr CODE:1AB8 DATA ; add bx, 0x96f5
+dptr CODE:1F43 DATA ; mov bx, 0x9746
+dptr CODE:2030 DATA ; mov bx, 0x977e
+dptr CODE:2037 DATA ; mov bx, 0x977f
+dptr CODE:2059 DATA ; mov bx, 0x977e
+dptr CODE:2060 DATA ; mov bx, 0x977f
+dptr CODE:213A DATA ; mov bx, 0x9772
+dptr CODE:2145 DATA ; mov bx, 0x9778
+dptr CODE:2152 DATA ; mov bx, 0x9778
+dptr CODE:215A DATA ; mov bx, 0x9772
+dptr CODE:2242 DATA ; mov bx, 0x9772
+dptr CODE:224D DATA ; mov bx, 0x9778
+dptr CODE:225A DATA ; mov bx, 0x9778
+dptr CODE:2262 DATA ; mov bx, 0x9772
+dptr CODE:23C0 DATA ; mov di, 0x971d
+dptr CODE:2471 DATA ; mov bx, 0x973a
+dptr CODE:2488 DATA ; mov bx, 0x9742
+dptr CODE:3FA9 DATA ; mov word ptr [0x8cc2], 0x8aad
+dptr CODE:41C2 DATA ; add di, 0x89c7
+dptr CODE:41F3 DATA ; add di, 0x89c7

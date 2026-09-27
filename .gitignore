@@ -1,0 +1,4 @@
+build/
+game/
+__pycache__/
+*.pyc

@@ -1,0 +1,113 @@
+; PD.EXE: Pinball Dreams, the four tables of the first game
+; (Ignition, Steel Wheel, Beat Box, Nightmare), Deluxe CD (= GOG).
+; Hints for tools/disasm.py; numbers are hex.
+
+exe DREAMS1/PD.EXE
+
+; the segments, from the relocations and the header (SS:SP = 0550:0200)
+segment CODE  0000 CODE
+segment STACK 0550 STACK stack
+segment TDATA 0570 FAR_DATA
+segment DATA  08BD DATA
+segment XDATA 1268 XDATA
+segment BSS   12A6 BSS size=6EF2
+
+; the relocation table lists the sites in DATA first, then those in CODE
+relocorder DATA CODE
+
+; ---- code
+
+; the main loop calls the routine of the game state [8A8A] (0..15)
+words DATA:8188 10 CODE
+
+; code addresses handed over as immediates
+ptr CODE:0069 CODE          ; [845A] := routine
+ptr CODE:00C2 CODE
+ptr CODE:51BE CODE
+ptr CODE:2ADB CODE          ; DS:DX for INT 21h
+dptr CODE:50A2 CODE         ; DS:DX = "SOUND.CFG" (CS = DS there?)
+ptr CODE:5183 CODE          ; pushed as return address
+
+; routines for [9776] AND 0Fh = 0..7 (8..15: none), jumped to by
+; PUSH/RET at 1EAE; what [9776] is: not known yet
+words DATA:81AA 8 CODE
+
+; reached through pointers not found yet (object handlers etc.)
+code CODE:009C
+code CODE:041E
+code CODE:0FBF
+code CODE:19C9
+code CODE:1E72
+code CODE:23AF
+code CODE:27D5
+code CODE:2B73
+code CODE:302C
+code CODE:302D
+code CODE:34A9
+code CODE:38EA
+code CODE:3BD3
+code CODE:410C
+code CODE:4A8E
+code CODE:4BD8
+code CODE:4BE5
+code CODE:4D33
+code CODE:4E57
+code CODE:5201
+code CODE:533E
+
+; CRTC register tables of the screen modes, read with LODS CS:[SI]
+dptr CODE:4EA7 CODE
+dptr CODE:4EEB CODE
+code CODE:3C40
+code CODE:413F
+code CODE:4E7D
+code CODE:52F8
+code CODE:54EF
+coderange CODE:3C4D-3F99
+coderange CODE:4162-41B2
+
+; ---- encodings tasm.py does not choose by itself
+; CMP r/m8,r8 (38h) where MASM writes 3Ah: the original has both
+raw CODE:17BC
+raw CODE:1B74
+raw CODE:1D52
+raw CODE:1FAE
+raw CODE:2030
+raw CODE:2374
+raw CODE:253F
+raw CODE:2662
+; ADD SI,20H with a word immediate (a constant defined further down in
+; the original source, most likely)
+raw CODE:4441
+raw CODE:4490
+raw CODE:4511
+
+; immediates that are offsets in DATA (the value is a variable or table
+; the analysis knows; checked by eye)
+dptr CODE:0045 DATA	; mov cx, 0x9a90
+dptr CODE:0048 DATA	; sub cx, 0x8475
+dptr CODE:086C DATA	; mov word ptr [0x84c6], 0x3a6
+dptr CODE:0DBC DATA	; mov word ptr [0x651e], 0x84e2
+dptr CODE:18E1 DATA	; add bx, 0x6521
+dptr CODE:1A46 DATA	; mov bx, 0x821e
+dptr CODE:1A4D DATA	; mov di, 0x96f5
+dptr CODE:1AC9 DATA	; add bx, 0x96f5
+dptr CODE:1F54 DATA	; mov bx, 0x9746
+dptr CODE:2041 DATA	; mov bx, 0x977e
+dptr CODE:2048 DATA	; mov bx, 0x977f
+dptr CODE:206A DATA	; mov bx, 0x977e
+dptr CODE:2071 DATA	; mov bx, 0x977f
+dptr CODE:214B DATA	; mov bx, 0x9772
+dptr CODE:2156 DATA	; mov bx, 0x9778
+dptr CODE:2163 DATA	; mov bx, 0x9778
+dptr CODE:216B DATA	; mov bx, 0x9772
+dptr CODE:2253 DATA	; mov bx, 0x9772
+dptr CODE:225E DATA	; mov bx, 0x9778
+dptr CODE:226B DATA	; mov bx, 0x9778
+dptr CODE:2273 DATA	; mov bx, 0x9772
+dptr CODE:23D1 DATA	; mov di, 0x971d
+dptr CODE:2482 DATA	; mov bx, 0x973a
+dptr CODE:2499 DATA	; mov bx, 0x9742
+dptr CODE:3FBB DATA	; mov word ptr [0x8cc2], 0x8aad
+dptr CODE:41D4 DATA	; add di, 0x89c7
+dptr CODE:4205 DATA	; add di, 0x89c7
