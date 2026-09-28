@@ -30,7 +30,10 @@ translated and matches the original through a whole game on Steel Wheel.
   and T8 (`tools/gfxfiles.py`, the pictures and sprites with their real
   palettes; docs/tasks/T8.md) and T9 (`tools/flifiles.py`, the FLI
   animations and DDFLIPLY; docs/tasks/T9.md) are merged; T10 (the sound
-  drivers) is open for Sol. Sol's branches are on the Windows machine: the user pushes one to
+  drivers) is `later`. Where the port is going (the user, 2026-09-28:
+  a launcher like a DOS setup program, the translated menu as the hub,
+  controllers, no FLIs) is in docs/TASKS.md, with T11 (the launcher) for
+  Sol and T13 (the menu) for Claude. Sol's branches are on the Windows machine: the user pushes one to
   `origin` for a review from the Mac. When the user says
   "Review Tn", follow CLAUDE.md (review steps) and AGENTS.md (who writes
   what where).
@@ -486,9 +489,32 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    portcmp's key times over long spans (re-anchored every 1000 passes).
    The user played all eight tables in the window on the Mac
    (2026-09-28), some for long, and found nothing wrong that the original
-   does not do as well (PD2's tables only started). Next: the port's player does not
-   advance in the headless build (XDATA's music_pos differs; the driver's
-   tick is 70.087 a second in the 320x200 mode, measured).
+   does not do as well (PD2's tables only started). The headless build
+   moves the module as SBLASTER.SDR mixes it (2026-09-28), so XDATA's
+   music_pos is compared too (portcmp no longer leaves it out); see the
+   next point. The window's sound can be shaped (`-fx`, `audiofx.c`:
+   shelves, oomph, a headphone mode) and has keys in the game (+ - * /,
+   `hud.c`, a box drawn over the picture); neither reaches the game's
+   memory or the headless build.
+- The music's timing (2026-09-28): SBLASTER.SDR (quality 0, loaded at
+  1ABE under PD.EXE and 1AC8 under PD2.EXE in tools/run) mixes in
+  240-sample chunks at 12 kHz ([795], one module tick at 125 BPM) into a
+  960-sample DMA buffer (CS:[0B35]). Play (AL=4, 0611h) mixes four ticks
+  and starts the DMA; each AL=8 (from `timer_callback`, once a program
+  tick) mixes from the write position (DS:[0897]) up to the DMA's read
+  position (0C7Ah; 15F4h reads the DMA count), a whole tick when 240 are
+  free, else what is free if at least 50h, a part up to the next tick
+  boundary when the write position is inside a tick; a tick is stepped
+  (CS:[0B58] counts them) when a chunk starts on a boundary. The DSP runs
+  single-cycle blocks at time constant 173 (1e6/83 Hz); in tools/run the
+  read position moves 171.9043 samples a program tick (12048.136 Hz
+  against 70.0863 Hz). `port/src/sound.c` models this for the headless
+  build (the comment there has the phase and the accuracy). The driver's
+  INT 8 handler (1C2Fh) walks a list of timed calls synchronised to the
+  vertical retrace and can mix itself when the buffer runs low; with AL=8
+  every tick that did not happen in the runs looked at. Not modelled: the
+  window build, where the audio device's buffer sets how far ahead
+  micromod plays.
 - The sound effects (2026-09-28; the user heard none on Beat Box, the port
   had AL=11h empty): SBLASTER.SDR is EXEPACKed (unpacked by hand for
   reading; the INT 66h dispatcher at 0049h of the unpacked code, DS

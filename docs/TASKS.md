@@ -17,7 +17,10 @@ task's branch (see AGENTS.md).
 | T7 | Sol | done | tools/ddfiles.py: the history viewer's files (HISTORY/*.HOP, *.IDX, HISTORY.FNT, the pictures) |
 | T8 | Sol | done | tools/gfxfiles.py: the pictures and sprites (DELUXE/*.VGA, the .SPR files, TABLE2M) with their real palettes |
 | T9 | Sol | done | tools/flifiles.py: the FLI animations (DELUXE/*.FLI) and which one DDFLIPLY.EXE plays for which argument |
-| T10 | Sol | open | tools/sdrfiles.py: the sound drivers (DELUXE/*.SDR): unpacked, their INT 66h functions, SOUND.CFG |
+| T10 | Sol | later | tools/sdrfiles.py: the sound drivers (DELUXE/*.SDR): unpacked, their INT 66h functions, SOUND.CFG |
+| T11 | Sol | open | port: the launcher, a setup program in text mode before the game (options, sound, start) |
+| T12 | Sol | later | port: game controllers (after T11) |
+| T13 | Claude | open | port: the menu (DDPCMAIN) in C as the hub between the tables |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
@@ -398,3 +401,91 @@ image is checked against the running original; the notes hold the
 function table, the callers list and SOUND.CFG's format, each statement
 marked as read from the code or checked by running; nothing of the
 drivers' bytes is committed; `tools/check.py` says `all ok`.
+
+## Where the port is going (the user, 2026-09-28)
+
+The port modernises the game; parts of the original that get in the way
+may go. It gets: a launcher in the style of a DOS setup program, before
+the game, where the options the original sets only in its menu (F10,
+DDPCOPTN.BIN) are set, and the sound; from it the intro can be skipped
+and a table started directly. After the launcher the original menu
+(DDPCMAIN, translated: T13) is the hub. Esc from a table goes back to
+where the table was started from: the menu, or the launcher when it was
+started from there. Game controllers. The FLI animations (DDFLIPLY) are
+left out. T10 is `later`: the port plays the music with micromod, and
+what it needs of SBLASTER.SDR's timing is in docs/HANDOFF.md.
+
+## T11: the launcher (Sol)
+
+A setup screen in text mode, 80x25, in the port's own window (keyboard
+now, controllers with T12), shown when `pdd` starts without `-prog` or
+`-table` (with them it goes straight to the table, as now: the tools
+start it that way, and the headless build never shows the launcher).
+
+Files: `port/src/launcher.c`, `launcher.h`, `textmode.c`, `textmode.h`
+(new), `port/src/main.c`, `port/build.sh`, `port/build.bat`,
+`port/README.md` (a section), `docs/tasks/T11.md`. Branch
+`sol/T11-launcher`. Anything else in `port/src/` (the engine, frame.c,
+the platforms): ask first in the notes.
+
+What it offers:
+
+- The game's options, as the menu's F10 screen sets them: the balls a
+  game, the music (tunes and jingles or one tune), the palette (colour or
+  grey), the slope, the four keys (left flipper, right flipper, nudge,
+  plunger), the screen (320x200 or 320x350). Stored as the 13 bytes of
+  `C:\DELUXE\DDPCOPTN.BIN` that `load_options` reads (layout: `opt_*`
+  and `key_*` in `src/PD.hints`, `parse_options` in `tools/pdfiles.py`),
+  written where the port writes the program's files
+  (`sys_data_dir()/save/DELUXE/DDPCOPTN.BIN`, see `pd_files.c`), so the
+  table engine reads it unchanged. Read it back at start (defaults as
+  `load_options` has them when it is missing).
+- The sound: bass, treble, oomph, headphone (`snd_set_fx`, the ranges in
+  `audiofx.h`), the volume (`snd_set_gain`), shaping on or off
+  (`snd_set_fx_bypass`); the window: full screen or not. These are the
+  port's own: kept in a text file of its own (`pdd.cfg`, key = value, in
+  `sys_data_dir()`), not in DDPCOPTN.BIN. The volume and shaping set in
+  the game with the sound keys (`hud.c`) are saved there too (hud.c may
+  get a function to set its state from the file).
+- Start: a table (PD.EXE's four, PD2.EXE's four, by their names; which
+  file is which: docs/HANDOFF.md, "Checked by running"), or the menu
+  (greyed out until T13 is merged), or quit. Esc in the table (the game's
+  quit, state 0) comes back to the launcher: `pd_run` returns now and the
+  program ends; make the launcher call it in a loop (a second `pd_run`
+  needs `mem_load` again: check that nothing of the first run is left).
+- The look: a DOS setup program (blue, a frame, a highlighted line, a
+  help line at the bottom). The font: 8x16, drawn by us or taken from a
+  font whose licence allows it (then into `port/third_party/` with its
+  licence); not from the game's files and not from a VGA BIOS.
+
+Done when: `pdd` without arguments shows the launcher; each option set
+there is in the DDPCOPTN.BIN it writes (`tools/pdfiles.py options` on
+the file shows it) and takes effect in the table (say in the notes which
+you saw: balls, screen mode, a key); the sound settings are heard and
+kept across a restart; a table started from the launcher returns to it
+after Esc, and a second table can be started; `portcmp.py --table 1
+idle_loop#3000` is still equal (the headless build unchanged);
+`tools/check.py` says `all ok`; the notes say what was checked in the
+window on which system and what was not.
+
+## T12: game controllers (Sol, after T11)
+
+SDL2's game controller API in `plat_sdl.c`, XInput in `plat_win32.c`:
+the buttons become the scan codes of the keys the table reads (the two
+flippers, nudge, plunger, F1 to start, P for pause, Esc), pushed into
+the same queue as the keyboard's, so `-record` and the replays work with
+them; controllers plugged in while the game runs are found. The
+launcher is driven with the controller too, and gets a page for the
+mapping. Details when T11 is merged.
+
+## T13: the menu in C (Claude)
+
+DDPCMAIN.EXE's menu translated as the tables were: the program loaded
+into the port's memory model beside the table programs, its names from
+`src/DDPCMAIN.hints` through `tools/portmap.py`, the menu loop (Mode X,
+SELECT.VGA, the mouse, F1-F8, the high scores shown), F1-F8 running the
+table in the same process (without the FLI) and coming back to the menu
+with the high scores read again (`menu_init`). F9 (the history viewer)
+and F10 (the options screen) later. Checked against runs of DDPCMAIN in
+tools/run where the runner can run it.
+
