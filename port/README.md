@@ -95,6 +95,15 @@ space of the driver's EXEC in CODE, the stack)
   alone 10,700 frames: equal also at the frame where a key had first been
   placed a picture late in the original, before portcmp counted a key's
   time on over 1000 passes at most).
+- the event objects' handlers no game reached, fired by `--poke`
+  (the object onto the event stack: `event_stack 0000` and the object's
+  offset, `event_sp` the stack + 4) at a frame of play of a portplay game,
+  equal after each: on Steel Wheel double_score, double_bonus, mult_4,
+  collect_jackpot, countdown, light_locks, add_hurry_value, score_to_best
+  (also with three players); on Beat Box the same with mult_8 and mult_10;
+  on Nightmare lock_jackpot (the bytes its test reads as they are, and
+  both set with `map_flags+4C0E`, `map_flags+4C14`) and nightmare_switch;
+  on PD2.EXE's table 3 the same set with nightmare_switch.
 - A ball can come to rest in the original: on Steel Wheel at (279, 25),
   top right, its speed changing while it stays (random taps, from the
   1,100th frame of play on); the port equal at the 1,000th, 1,100th and

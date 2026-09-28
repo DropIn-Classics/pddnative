@@ -15,7 +15,8 @@ task's branch (see AGENTS.md).
 | T6 | Claude | working | the implementation in C (port/): the table programs' engine, routine by routine |
 | T5 | Sol | done | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
 | T7 | Sol | done | tools/ddfiles.py: the history viewer's files (HISTORY/*.HOP, *.IDX, HISTORY.FNT, the pictures) |
-| T8 | Sol | changes | tools/gfxfiles.py: the pictures and sprites (DELUXE/*.VGA, the .SPR files, TABLE2M) with their real palettes |
+| T8 | Sol | done | tools/gfxfiles.py: the pictures and sprites (DELUXE/*.VGA, the .SPR files, TABLE2M) with their real palettes |
+| T9 | Sol | open | tools/flifiles.py: the FLI animations (DELUXE/*.FLI) and which one DDFLIPLY.EXE plays for which argument |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
@@ -311,6 +312,48 @@ re-encodes to identical bytes (the counts in the notes); the notes say
 for each file which program reads it and where, or that none does and
 how you know; three PNGs (a DELUXE .VGA, a FLIPPERS.SPR, a TABLE2M) look
 right with their real palettes (describe them in the notes, do not
+commit them); `tools/check.py` says `all ok`; the notes say which
+statements were checked by running (`tools/run`, if at all) and which
+were only read.
+
+## T9: tools/flifiles.py, the FLI animations (Sol)
+
+DDFLIPLY.EXE (Borland C++ 1991) plays the twelve `DELUXE/*.FLI` files:
+the intro (INTRO_P1..P3, SPIN21ST) and one per table (IGNITION,
+STEELWHL, BEATBOX, NIGHTMRE, NEPTUNE, SAFARI, REVENGE, STALLTRN).
+DDPCMAIN runs it once with `0` at start and with the key's digit before
+a table (`run_table`, CODE:0B59; see docs/HANDOFF.md, "DDPCMAIN.EXE").
+FLI is Autodesk's documented format (magic AF11h, 320x200, chunks such as
+COLOR_64, LC, BLACK, BRUN, COPY); read it from those files and the
+format's description. DDFLIPLY needs no stage 1.
+
+Files: `tools/flifiles.py` (new), `docs/tasks/T9.md`, and
+`src/DDPCMAIN.hints` only if a comment at the DDFLIPLY calls needs
+correcting. Branch `sol/T9-fli`.
+
+Steps:
+
+1. `flifiles.py FILE`: parse the header and every frame and chunk; print
+   the size, the frame count, the speed field, and per chunk type how
+   many chunks there are. Each chunk must consume exactly its bytes.
+2. Decode the frames into a 320x200 picture and a palette (six bits a
+   component, as the VGA takes them); `--png N OUT` writes frame N into
+   `build/` (standard library only, as in `pdfiles.py`). Say whether the
+   last frame is the "ring" frame that leads back to the first.
+3. An encoder that writes the parsed structure back (the chunks as they
+   are, not compressed anew); the tool checks that it gives the file's
+   bytes.
+4. Which file DDFLIPLY plays for which argument (`0`, the digits DDPCMAIN
+   passes for F1-F8, anything else), and how it times the frames (the
+   speed field in the file, or something in the program): from
+   DDFLIPLY.EXE's data and code. Say how you know; a guess says it is
+   one.
+
+Done when: all twelve files parse to their last byte, every frame decodes
+without error, and each re-encodes to identical bytes (the counts in the
+notes); the notes list per file its frames, speed and chunk types, and
+which argument plays it; the first and last frame of one table's FLI and
+of one intro FLI look right as PNGs (describe them in the notes, do not
 commit them); `tools/check.py` says `all ok`; the notes say which
 statements were checked by running (`tools/run`, if at all) and which
 were only read.

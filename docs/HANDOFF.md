@@ -1,6 +1,6 @@
 # Handoff
 
-State of 2026-09-27: stage 1 (source from the programs) done for the two
+State of 2026-09-28: stage 1 (source from the programs) done for the two
 table programs, the intro (T1) and the menu (T2); a headless runner (T3)
 runs them; PD.EXE's engine named, commented and its records described
 (T4); the implementation in C (T6, `port/`) has every game state
@@ -26,8 +26,11 @@ translated and matches the original through a whole game on Steel Wheel.
 - T1 (DDPCINTR.EXE, by Muse) and T2 (DDPCMAIN.EXE, begun by Muse and
   finished by Sol) are merged, see below. Sol, the second agent now,
   works in `../pddnative-muse` on `sol/*` (older branches `muse/*`); do
-  not touch that checkout. T5 (`tools/pdfiles.py`) and T7 (`tools/ddfiles.py`) are
-  merged; T8 (the pictures and sprites) is open for Sol. When the user says
+  not touch that checkout. T5 (`tools/pdfiles.py`), T7 (`tools/ddfiles.py`)
+  and T8 (`tools/gfxfiles.py`, the pictures and sprites with their real
+  palettes; docs/tasks/T8.md) are merged; T9 (the FLI files) is open for
+  Sol. Sol's branches are on the Windows machine: the user pushes one to
+  `origin` for a review from the Mac. When the user says
   "Review Tn", follow CLAUDE.md (review steps) and AGENTS.md (who writes
   what where).
 - T3 (the runner) and T4 (PD.EXE's engine into the hints) are done; see
@@ -410,11 +413,12 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
 1. The menu program DDPCMAIN the same way (T2, Sol); DDPCINTR is done
    (T1). The FLI player needs no disassembly (FLI is documented).
 2. Understanding, into the hints: PD.EXE's engine is done (T4, "Not
-   understood" above lists what is left); the formats FLIPPERS.SPR,
-   DDPCICON.SPR, the DELUXE .VGA pictures and TABLE2M (T8) are not
-   described yet; the collision maps, HISCORES.PD* and DDPCOPTN.BIN are
-   (T5, `tools/pdfiles.py`), the history viewer's files too (T7,
-   `tools/ddfiles.py`). The table data is still DB lines apart from the handler words: a
+   understood" above lists what is left); the collision maps, HISCORES.PD*
+   and DDPCOPTN.BIN are described (T5, `tools/pdfiles.py`), the history
+   viewer's files (T7, `tools/ddfiles.py`), the DELUXE .VGA pictures, the
+   .SPR files and TABLE2M with the palettes the programs set (T8,
+   `tools/gfxfiles.py`; PD2's `set_palette` is not PD's, see
+   docs/tasks/T8.md); the .FLI files are T9. The table data is still DB lines apart from the handler words: a
    `struct`/`dw` hint kind will be needed before data can move.
 3. The runner (done, T3) for comparing the C port with the original
    frame by frame will want savestates (start both at the same moment)
@@ -436,9 +440,17 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    writes the keys file; the roulette, hold_bonus, extra_ball_award,
    count_message, the locks and the level switches ran on the way. The port
    traces the handlers it runs (PD_TRACE notes), so a game shows what it
-   reached. Not reached by any compared game yet: collect_jackpot,
-   lock_jackpot, add_hurry_value, countdown, double_score, double_bonus,
-   score_to_best, nightmare_switch, mult_4 and up, light_locks.
+   reached. The handlers no game reached were fired by putting their
+   object onto the event stack with `--poke` (port/README.md), in a game
+   of portplay's, and are equal after each (2026-09-28): on Steel Wheel
+   double_score, double_bonus, mult_4, collect_jackpot, countdown,
+   light_locks, add_hurry_value, score_to_best (also with three players,
+   player 2 up); on Beat Box the same with mult_8 and mult_10; on
+   Nightmare lock_jackpot (with the two bytes its test reads as they are:
+   "JACKPOT 2 X", one of them lies in the collision map and is not 0; and
+   both set: "3 X") and nightmare_switch; on PD2.EXE's table 3 the same
+   set with nightmare_switch. mult_5, mult_6 and mult_7 are the same
+   routine with another number and were not fired.
    The user plays games by hand in the window (`pdd -record`) and hands
    over the recordings (`build/play*.rec`); `portcmp.py --record` replays
    them in the original (port/README.md). Equal so far: Nightmare
@@ -456,10 +468,12 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    and AL=10h's return value, from SBLASTER.SDR), stuck flippers in the
    window (Windows sends no key-up for the first of two Shift keys), and
    portcmp's key times over long spans (re-anchored every 1000 passes).
-   Next: that recompare; those handlers (more recordings, portplay
-   seeds, or --poke into the state before them); then the sound: the driver's tick is 70.087 a second in the
-   320x200 mode (measured, SBLASTER.SDR), and the port's player does not
-   advance in the headless build (XDATA's music_pos differs).
+   The user played all eight tables in the window on the Mac
+   (2026-09-28), some for long, and found nothing wrong that the original
+   does not do as well (PD2's tables only started). Next: that recompare
+   (the recordings are on the Windows machine); the port's player does not
+   advance in the headless build (XDATA's music_pos differs; the driver's
+   tick is 70.087 a second in the 320x200 mode, measured).
 - The sound effects (2026-09-28; the user heard none on Beat Box, the port
   had AL=11h empty): SBLASTER.SDR is EXEPACKed (unpacked by hand for
   reading; the INT 66h dispatcher at 0049h of the unpacked code, DS
@@ -474,6 +488,6 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
   the same in micromod (`modplay_note`). Checked: the effects are called
   on Beat Box in play (a trace build) and micromod plays a sample then;
   portcmp on Beat Box equal at st_play#100, the drain and the next
-  ball. Not checked: heard in the window (the user's test), and how the
-  driver's own mixing of an effect against the module's next row on
+  ball. Heard in the window on the Mac (the user, 2026-09-28). Not
+  checked: how the driver's own mixing of an effect against the module's next row on
   channel 4 compares with micromod's beyond using the same cell.

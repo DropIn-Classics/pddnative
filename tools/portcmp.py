@@ -38,10 +38,12 @@ line PICTURE:HEX per keyboard byte) instead of a keys file: a run of the
 port with those keys gives each its last checkpoint pass, and the keys
 file made so is written to build/portcmp_record.txt.
 
---poke writes the bytes HEX ("0400") at the DATA variable NAME in both,
-the Nth time they pass WHERE (the runner's -poke, the port's PD_POKE):
-a way into a state the keys do not easily reach (game_state 4 at
-st_play#100).  It may be given more than once.
+--poke writes the bytes HEX ("0400") at the DATA variable NAME (or
+NAME+HEX) in both, the Nth time they pass WHERE (the runner's -poke, the
+port's PD_POKE): a way into a state the keys do not easily reach
+(game_state 4 at st_play#100; an event object onto the stack: event_stack
+0000 and the object's offset, event_sp the stack + 4).  It may be given
+more than once.
 
 With each stop the tool prints the notes of the port's trace since the
 stop before (the event objects' handlers run, the level switches).
@@ -172,11 +174,13 @@ def run_original(args, keyfile, stop, ram=None, vram=None):
 
 
 def data_offset(args, name):
-    """the offset of the DATA variable `name` in the program's hints"""
+    """the offset of the DATA variable `name` (NAME or NAME+HEX) in the
+    program's hints"""
     h = Hints(os.path.join(ROOT, EXES[args.prog][1]))
+    name, _, plus = name.partition('+')
     for (seg, off), n in h.names.items():
         if n == name and seg == 'DATA':
-            return off
+            return (off + int(plus or '0', 16)) & 0xFFFF
     raise SystemExit('portcmp.py: no DATA name %s in %s' % (name, EXES[args.prog][1]))
 
 
