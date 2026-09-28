@@ -16,7 +16,9 @@ DDPCMAIN run in tools/run, a table run from it included.
   else.
 - CI (2026-09-28): `.github/workflows/build.yml` builds and packs the
   port for Windows, Linux and macOS (port/README.md, "Build and run"); it
-  does not run tools/check.py, which needs the game unpacked.
+  does not run tools/check.py, which needs the game unpacked. v1.0 was
+  released with it on 2026-09-29 (tag `v1.0`, 39ed828); the packages
+  not tried on Windows, Linux or a Steam Deck yet.
 - Also builds and runs on macOS (2026-09-28): `port/build.sh` and
   `tools/run/build.sh` (cc), the window on SDL2 (`port/src/plat_sdl.c`,
   SDL2.framework in ~/Library/Frameworks), `python3` with capstone. On the

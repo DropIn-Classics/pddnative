@@ -191,7 +191,7 @@ before its mode set and so gives way to 0-199. With the mouse (headless,
 the start screen's box, Torpedo Alley's row clicked, one click on the
 browser's back button one table back (The Machine), the arrow where the
 mouse is. The window build (SDL, macOS) and the Windows build not tried
-with a mouse; the Windows build not compiled.
+with a mouse.
 
 The box (the quality of life fix "menu box", `-menu -qol`; the port's
 own): in place of the pointer while the keys or a controller are used, a
@@ -308,8 +308,9 @@ SDL2.framework, which the package has beside `pdd`: `build.sh` adds
 `dist/README.txt` (for the player) and the licences of micromod and
 SDL2; they are the run's artifacts, and a pushed tag `v*` makes a
 release of them. The macOS packing and the framework beside the program
-tried on a Mac; the Linux packing and the workflow itself not run
-before they were committed, and the package not tried on a Steam Deck.
+tried on a Mac. The first release, v1.0 (2026-09-29), built on all
+three (the user's word; the run's log not read here); none of the
+packages started on Windows, Linux or a Steam Deck yet.
 
 The sound in the window: `-fx BASS,TREBLE,OOMPH,HEADPHONE` shapes it
 (`src/audiofx.c`: bass and treble shelves -12 to 12 dB at 200 Hz and
