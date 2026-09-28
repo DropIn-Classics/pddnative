@@ -271,11 +271,11 @@ static const char *const table_names[8] = {
 };
 
 static const Item table_items[] = {
-    { K_HEADING, 0, "PD.EXE", NULL },
+    { K_HEADING, 0, "Pinball Dreams", NULL },
     { K_ITEM, I_TABLE + 0, NULL, NULL }, { K_ITEM, I_TABLE + 1, NULL, NULL },
     { K_ITEM, I_TABLE + 2, NULL, NULL }, { K_ITEM, I_TABLE + 3, NULL, NULL },
     { K_GAP, 0, NULL, NULL },
-    { K_HEADING, 0, "PD2.EXE", NULL },
+    { K_HEADING, 0, "Pinball Dreams 2", NULL },
     { K_ITEM, I_TABLE + 4, NULL, NULL }, { K_ITEM, I_TABLE + 5, NULL, NULL },
     { K_ITEM, I_TABLE + 6, NULL, NULL }, { K_ITEM, I_TABLE + 7, NULL, NULL },
 };
@@ -633,7 +633,7 @@ static void draw_page(void)
         if (it->kind == K_CHOICE) {
             int vx = x + 24;
             value_text(it->id, value, sizeof value);
-            if (i == p->cursor && capturing == it->id - I_KEY)
+            if (i == p->cursor && capturing >= 0 && capturing == it->id - I_KEY)
                 snprintf(value, sizeof value, "press a key ...");
             if (cur) {
                 tm_put(vx - 2, row, TM_LEFT_TRIANGLE, A_CURSOR);
@@ -704,9 +704,9 @@ static void draw(const char *game)
         if (it->help)
             snprintf(line, sizeof line, "%s", it->help);
         else
-            snprintf(line, sizeof line, "%s: %s's table %d. Esc in the table comes back here.",
-                     table_names[it->id - I_TABLE], it->id - I_TABLE < 4 ? "PD.EXE" : "PD2.EXE",
-                     (it->id - I_TABLE) % 4 + 1);
+            snprintf(line, sizeof line, "%s, from %s. Esc in the table comes back here.",
+                     table_names[it->id - I_TABLE],
+                     it->id - I_TABLE < 4 ? "Pinball Dreams" : "Pinball Dreams 2");
         centred(0, TM_COLS, 22, line, TM_ATTR(TM_LIGHTCYAN, TM_BLUE));
     }
     /* the game's folder, the start of a long path left out */
