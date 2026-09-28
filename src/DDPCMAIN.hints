@@ -215,6 +215,140 @@ name CODE:19CA pixel_video_offsets
 name CODE:22CA pixel_source_offsets
 comment CODE:19CA two 24-by-48 word offset tables used together by the dead pixel-copy routine at 1979
 name CODE:421B sound_cfg_path
+
+; ---- the menu's own routines (named for the port, read from the code)
+name CODE:007B menu_loop
+comment CODE:007B the list: 870h passes the first time, then the high score show; after the show 2D0h passes (the count of the fade_in before), after a table chosen in the show 3C0h: CX is set to 2D0h before show_menu_start there too, which leaves menu_start (3C0h) in CX, and no fade follows (checked in tools/run: both counts)
+name CODE:00D5 hiscore_show_loop
+comment CODE:00D5 the high score show: 5A0h passes, ended by a click (Enter) or F1-F10
+name CODE:0193 menu_unused_word
+comment CODE:0193 set to 1 by menu, read nowhere
+name CODE:02D0 read_menu_keys
+comment CODE:02D0 the keyboard as a mouse: CF when Esc is down (leave the menu); else the E0 arrows move the pointer 2 pixels (not above 0 on the left and the top), Enter clicks (mouse_buttons 1, then waits until no key is down), F1-F10 set selection 1-0Ah with mouse_buttons 2 and wait likewise; the pointer is given to the mouse driver (INT 33h AX=4), menu_key_seen set; only the first key found in this order counts
+name CODE:0412 edge_scroll
+comment CODE:0412 the pointer at the top (mouse_y <= 10h) scrolls the list up a row (menu_start - 50h) until menu_start is 3C0h, at the bottom (mouse_y >= 0A4h) down until 5780h; menu_row follows, kept in 0..118h
+name CODE:045E select_at_pointer
+comment CODE:045E a selection already made (F1-F10) is run; else the list row under the pointer (menu_row + mouse_y against the y ranges of menu_ranges) becomes the selection and is run
+name CODE:049B draw_pointer
+comment CODE:049B AX = a pointer record (pointer_table): mouse_x kept at most 130h, the record's x/y set to the pointer, the picture under it saved and the pointer drawn
+name CODE:04CF remove_pointer
+comment CODE:04CF AX = a pointer record: the picture saved under it put back
+name CODE:04E5 ticker_step
+comment CODE:04E5 each tick: the ticker line moves a pixel: every eighth pixel the next character is put into ticker_buffer (ticker_next_char), the column at ticker_x + 140h copied to ticker_x - 1 (for ticker_x 0 one byte before the buffer, the high byte of char_y), 80 bytes of each of 10 rows drawn to video memory from offset 50h, four pixels apart per plane; ticker_x runs 0..140h; nothing moves once ticker_state is 1
+name CODE:0586 ticker_next_char
+comment CODE:0586 the next character of the ticker text (ticker_ptr; a 0 starts the text again from ticker_text, '@' stops the ticker): its 8x10 glyph from FONTS (8 bytes a row, rows 140h apart) into ticker_buffer at ticker_x + 140h; a character not in char_set draws nothing
+name CODE:05E7 hiscore_scroll
+comment CODE:05E7 the high score show: menu_start moves by hiscore_scroll_step between 9240h and menu_start_end and rests 0D8h passes at each end
+name CODE:063E hiscore_pause
+name CODE:0640 hiscore_resting
+name CODE:0691 draw_hiscores
+comment CODE:0691 both HISCORES files drawn into the picture below the list: PD1's tables at hiscore_places_pd1, PD2's at hiscore_places_pd2, 3200h bytes (160 rows) further down
+name CODE:06BF hiscore_program
+comment CODE:06BF 0 while drawing PD1's high scores, 1 for PD2's
+name CODE:06C1 draw_hiscore_tables
+comment CODE:06C1 SI = four x/y word pairs, DI = 4 tables of 4 entries of 9 bytes (three initials, then the score as 6 BCD bytes: the first byte's low digit, then two digits a byte, 11 digits); an initial not in char_set draws nothing and the same byte is read again for the next one (DI does not move on); a row 0Bh lower each entry
+name CODE:073C draw_hiscore_char
+comment CODE:073C DX = the character's index in char_set: its glyph from FONTS:0C80 (index * 8; 10 rows 140h apart, two bytes a plane four apart, colour 0 transparent) at char_x/char_y of the picture (from menu offset 9240h + 3C0h, PD2's 3200h lower); char_x + 8. The plane loop starts with AX = the FONTS segment (just loaded into DS), not char_x: the glyph lands at char_x rounded down to 4 plus (FONTS AND 3), which depends on where DOS loaded the program (checked: under tools/run -loadfix FONTS is 177Eh, the first plane 2)
+name CODE:07F7 char_index
+comment CODE:07F7 BX = the index of DL in char_set (27h characters); DL = 0 when it is not there
+name CODE:0903 detect_mouse
+comment CODE:0903 INT 33h AX=0: mouse_present 1 when a driver answers FFFFh, else 0FEh
+name CODE:0923 alloc_pointer_buffers
+comment CODE:0923 for each pointer record: a DOS block of width * height / 16 paragraphs for the picture under it (+0Ch segment, +0Eh offset 0)
+name CODE:095B draw_pointer_sprite
+comment CODE:095B BX = pointer record: the picture under it saved (save_under_pointer), then its image (+8 segment, +0Ah offset, width x height, a byte a pixel in four plane runs) drawn at x/y + menu_start, the byte at +12h transparent
+name CODE:0A2D sprite_x
+name CODE:0A2F sprite_plane_wrap
+name CODE:0A31 restore_under_pointer
+comment CODE:0A31 BX = pointer record: the saved picture back at x/y + the start address it was saved at (+10h)
+name CODE:0AE3 save_under_pointer
+comment CODE:0AE3 the picture under the pointer (x/y + menu_start) copied to its buffer, menu_start kept at +10h
+name CODE:0B55 sprite_w
+name CODE:0B57 sprite_h
+name CODE:0B58 sprite_key
+name CODE:3DAE mouse_range
+comment CODE:3DAE INT 33h AX=8 (y from BX to DX) and AX=7 (x from AX to CX)
+name CODE:0BBE exec_ss
+name CODE:0BC0 exec_sp
+name CODE:12EE image_block
+comment CODE:12EE the DOS block load_vga_image reads the picture into
+name CODE:4341 sound_exec_ss
+name CODE:4343 sound_exec_sp
+name CODE:0DD2 tick_remove_pointer
+name CODE:0DD9 tick_draw_pointer
+name CODE:0DE0 tick_nothing
+name CODE:0EE5 fade_out_screen
+comment CODE:0EE5 the DAC read into palette_work and faded out from there, in place (each step scales the last step's values)
+name CODE:0F6B set_split
+comment CODE:0F6B CRTC line compare 178h: the screen's last 12 rows show video memory from offset 0 (the ticker)
+name CODE:0FF5 set_planes
+comment CODE:0FF5 DL = map mask, DH = read map
+name CODE:100C wait_frames
+name CODE:1080 fade_in
+comment CODE:1080 ES:DI = CX bytes of DAC values: shown at 0/32 to 31/32 of them in 32 frames (the last step 31/32, not full)
+name CODE:10D9 fade_out
+comment CODE:10D9 ES:DI = CX bytes of DAC values: shown at 31/32 down to 0/32 of them in 32 frames, through palette_work
+name CODE:1132 show_menu_start
+comment CODE:1132 the CRTC start address from menu_start, then wait_retrace; CX is left holding menu_start
+name CODE:11BB read_dac
+comment CODE:11BB CX colours from AL on read from the DAC into ES:DI
+name CODE:13C3 kbd_e0
+name CODE:13C4 wait_keys_up
+name CODE:13DF wait_key_down
+name CODE:13FA any_key_down
+comment CODE:13FA ZF clear when a key is down
+name CODE:4403 saved_drive
+name CODE:4405 module_index
+name CODE:4474 in_callback
+name CODE:4475 pointer_on
+comment CODE:4475 sound_callback moves the pointer (tick_remove, tick_draw) only when this is not 0
+
+name DATA:003A ticker_state
+comment DATA:003A 1: the ticker stands (an '@' in the text); menu_init sets 0FEh
+name DATA:003B ticker_x
+name DATA:003D ticker_ptr
+name DATA:003F ticker_text
+name DATA:0043 pointer_0
+comment DATA:0043 the pointer records, 13h bytes: x, y, width, height (byte), image segment and offset, save buffer segment and offset, the start address it was saved at, the transparent colour (+12h); 0 is the language screen's, 1 the menu's, 2 not used by the menu
+name DATA:0056 pointer_1
+name DATA:0069 pointer_2
+name DATA:007C pointer_table
+name DATA:0084 hiscores_pd1_default
+name DATA:0114 hiscores_pd2_default
+name DATA:01A8 exit_messages
+name DATA:0C87 char_set
+comment DATA:0C87 the characters of the ticker and high score fonts, in their order
+name DATA:0D4C menu_ranges
+comment DATA:0D4C the list's entries: a count (0Ah), then x1, y1, x2, y2 words each, y in the whole list (menu_row + the pointer's y)
+name DATA:0D9D language_ranges
+name DATA:0DC6 hiscore_places_pd1
+name DATA:0DD6 hiscore_places_pd2
+name DATA:134A menu_unused_byte
+name DATA:134D menu_key_seen
+name DATA:1350 menu_start
+comment DATA:1350 the CRTC start address of the view into SELECT.VGA (3C0h the top of the list)
+name DATA:1352 hiscore_scroll_step
+name DATA:1354 menu_start_end
+name DATA:135E menu_unused_word2
+name DATA:1360 menu_row
+comment DATA:1360 the list's row at the top of the view (0..118h)
+name DATA:1362 key_map
+comment DATA:1362 keyboard_handler's map: bit n = scancode n down, E0-prefixed keys + 80h
+name DATA:1382 old_int9
+name DATA:148E palette_work
+name DATA:178E fade_level
+name DATA:178F hiscores_pd1
+name DATA:181F hiscores_pd2
+name DATA:18AF char_x
+name DATA:18B1 char_y
+name DATA:18B3 ticker_buffer
+comment DATA:18B3 10 rows of 280h bytes: the ticker line, twice over
+name DATA:31B7 last_scancode
+name DATA:31C5 tick_remove
+name DATA:31C7 tick_draw
+name DATA:31C9 tick_ticker
+name FONTS:0000 ticker_font
+name FONTS:0C80 hiscore_font
 name CODE:4225 sound_driver_name
 name CODE:4233 sound_exec_params
 name CODE:4241 sound_exec_buffer
