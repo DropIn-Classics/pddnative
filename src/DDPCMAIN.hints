@@ -47,6 +47,15 @@ ds CODE:3E09-3E3D HISTORY
 ds CODE:3EE1-3F81 HISTORY
 ds CODE:4394-43D2 HISTORY
 
+; options_screen sets DS=OPTIONS; these callees inherit it (calls reset the
+; analysis to DATA).  Routines which set DS themselves need no override.
+ds CODE:1474-14A8 OPTIONS
+ds CODE:159C-1611 OPTIONS
+ds CODE:1681-186F OPTIONS
+ds CODE:2BCA-2BEB OPTIONS
+ds CODE:2F04-2F5C OPTIONS
+ds CODE:2FD0-2FEA OPTIONS
+
 ; near-pointer tables in DATA read with BX in L0B59 (CHDIR/EXEC for tables)
 words DATA:0D19 2 DATA
 words DATA:0D1D 2 DATA

@@ -11,50 +11,51 @@ no palette bytes are kept in this source tree.
 
 ``FLIPPERS.SPR`` is shared by four tables, whose palette colours differ.
 Its PNG uses the first table by default; ``--table`` selects another
-three-letter table extension.
+three-letter table extension.  Table and flipper previews use the game's
+default colour setting (``opt_palette`` 2); they do not apply the optional
+grey-palette conversion selected by ``opt_palette`` 1.
 """
 import argparse
 from dataclasses import dataclass
+import os
 from pathlib import Path
 import struct
+import sys
 import zlib
+
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.normpath(os.path.join(HERE, '..'))
+sys.path.insert(0, HERE)
+from disasm import Hints
 
 
 PICTURE_WIDTH = 320
 TABLE_HEIGHT = 512
 PALETTE_BYTES = 0x300
 
-# File name: (program, segment frame, palette offset, description).
+# File name: (hints file, palette name).
 VGA_PALETTES = {
-    '21STLOGO.VGA': ('DDPCINTR.EXE', 0x0097, 0x0000,
-                     'DDPCINTR PALSEG:0000 (griflogo)'),
-    'SPIDER.VGA': ('DDPCINTR.EXE', 0x0097, 0x0300,
-                   'DDPCINTR PALSEG:0300 (spiderlogo)'),
-    'PRESENTS.VGA': ('DDPCINTR.EXE', 0x0097, 0x0600,
-                     'DDPCINTR PALSEG:0600 (presents)'),
-    'TITLE.VGA': ('DDPCINTR.EXE', 0x0097, 0x0900,
-                  'DDPCINTR PALSEG:0900 (titl)'),
-    'SELECT.VGA': ('DDPCMAIN.EXE', 0x0448, 0x02F9,
-                   'DDPCMAIN DATA:02F9 (select_palette)'),
-    'DDPCLANG.VGA': ('DDPCMAIN.EXE', 0x0448, 0x05F9,
-                     'DDPCMAIN DATA:05F9 (language_palette)'),
-    'DDPCBKGD.VGA': ('DDPCMAIN.EXE', 0x0B5E, 0x0301,
-                     'DDPCMAIN OPTIONS:0301 (options_palette)'),
+    '21STLOGO.VGA': ('DDPCINTR.hints', 'griflogo'),
+    'SPIDER.VGA': ('DDPCINTR.hints', 'spiderlogo'),
+    'PRESENTS.VGA': ('DDPCINTR.hints', 'presents'),
+    'TITLE.VGA': ('DDPCINTR.hints', 'titl'),
+    'SELECT.VGA': ('DDPCMAIN.hints', 'select_palette'),
+    'DDPCLANG.VGA': ('DDPCMAIN.hints', 'language_palette'),
+    'DDPCBKGD.VGA': ('DDPCMAIN.hints', 'options_palette'),
 }
 
-# Directory: (program, TDATA frame, table extension ->
-#             (name, palette offset, light count)).  set_palette first
-# uploads the 40h base colours and the initially-off lamp colours, fills
-# the rest through colour 7Fh with black, then uploads two more 40h-colour
-# ranges from the same source.
+# Directory: (hints file, table extension ->
+#             (name, palette offset, light count)).  The offsets have no
+# names in the hints; program names and segment frames are read from them.
 TABLE_PALETTES = {
-    'DREAMS1': ('PD.EXE', 0x0570, {
+    'DREAMS1': ('PD.hints', {
         'IGN': ('Ignition', 0x1EA8, 0x3D),
         'STW': ('Steel Wheel', 0x20D6, 0x2E),
         'BBX': ('Beat Box', 0x22AA, 0x33),
         'NTM': ('Nightmare', 0x249C, 0x3E),
     }),
-    'DREAMS2': ('PD2.EXE', 0x054B, {
+    'DREAMS2': ('PD2.hints', {
         'UND': ('Neptune', 0x1EB8, 0x3D),
         'SFR': ('Safari', 0x2278, 0x2E),
         'MNG': ('Revenge of the Robot Warriors', 0x2638, 0x33),
@@ -176,12 +177,30 @@ def companion(asset, program):
     return path
 
 
+def program_hints(filename):
+    return Hints(os.path.join(ROOT, 'src', filename))
+
+
+def named_location(hints, name):
+    locations = [(segment, offset) for (segment, offset), found
+                 in hints.names.items() if found == name]
+    if len(locations) != 1:
+        raise ValueError(f'{name} is not a unique name in {hints.path}')
+    segment, offset = locations[0]
+    frame = next(s.frame for s in hints.segs if s.name == segment)
+    return segment, frame, offset
+
+
 def vga_palette(asset):
     try:
-        program, frame, offset, source = VGA_PALETTES[asset.name.upper()]
+        hints_file, palette_name = VGA_PALETTES[asset.name.upper()]
     except KeyError as e:
         raise ValueError(f'no program palette known for {asset.name}') from e
+    hints = program_hints(hints_file)
+    segment, frame, offset = named_location(hints, palette_name)
+    program = Path(hints.exe).name
     program_path = companion(asset, program)
+    source = f'{program} {segment}:{offset:04X} ({palette_name})'
     return dac_colours(mz_bytes(program_path, frame, offset, PALETTE_BYTES)), source
 
 
@@ -194,21 +213,38 @@ def table_info(asset):
 
 
 def table_palette(asset, extension):
-    program, frame, tables = table_info(asset)
+    hints_file, tables = table_info(asset)
+    hints = program_hints(hints_file)
+    program = Path(hints.exe).name
+    frame = next(s.frame for s in hints.segs if s.name == 'TDATA')
     extension = extension.upper()
     try:
         table_name, offset, light_count = tables[extension]
     except KeyError as e:
         choices = ', '.join(tables)
         raise ValueError(f'unknown table {extension}; expected {choices}') from e
-    # set_palette consumes 80h consecutive source colours over its three
-    # passes.  The first 40h are the base colours and the rest begin with
-    # the initially-off lamp colours.
-    source_data = mz_bytes(companion(asset, program), frame, offset, 0x180)
-    source = dac_colours(source_data)
-    palette = (source[:0x40] + source[0x40:0x40 + light_count] +
-               ((0, 0, 0),) * (0x40 - light_count) +
-               source[:0x40] + source[0x40:0x80])
+    program_path = companion(asset, program)
+    if hints_file == 'PD.hints':
+        source = dac_colours(mz_bytes(program_path, frame, offset, 0x180))
+        # PD uploads the 40h base colours, the off-lamp colours followed by
+        # black through 7Fh, and then the same base colours twice.  The last
+        # two entries are overwritten according to opt_palette; previews use
+        # its default colour value 2.
+        palette = list(source[:0x40] +
+                       source[0x40:0x40 + light_count] +
+                       ((0, 0, 0),) * (0x40 - light_count) +
+                       source[:0x40] + source[:0x40])
+        palette[0xFE] = (0x14, 0x0A, 0x05)
+        palette[0xFF] = (0x3C, 0x1E, 0x0F)
+        palette = tuple(palette)
+    else:
+        # PD2 uploads a full 300h-byte palette.  Before that, each setup
+        # routine derives colours 40h..7Fh (lights_off_pal) by halving the
+        # corresponding components at colours 80h..BFh (lights_on_pal).
+        source = bytearray(mz_bytes(program_path, frame, offset, PALETTE_BYTES))
+        source[0x0C0:0x180] = bytes(value // 2
+                                    for value in source[0x180:0x240])
+        palette = dac_colours(source)
     description = (f'{program} TDATA:{offset:04X} '
                    f'({table_name}, {light_count} lamp colours)')
     return palette, description
@@ -307,13 +343,15 @@ def command_sprites(asset, data, png_path, selected_table):
 
     if asset.name.upper() == 'DDPCICON.SPR':
         print('  record 0 treats colour 00 as transparent; records 1-14 are opaque')
-        main = companion(asset, 'DDPCMAIN.EXE')
-        palette = dac_colours(mz_bytes(main, 0x0B5E, 0x0301,
-                                       PALETTE_BYTES))
-        source = 'DDPCMAIN OPTIONS:0301 (options_palette)'
+        hints = program_hints('DDPCMAIN.hints')
+        segment, frame, offset = named_location(hints, 'options_palette')
+        program = Path(hints.exe).name
+        main = companion(asset, program)
+        palette = dac_colours(mz_bytes(main, frame, offset, PALETTE_BYTES))
+        source = f'{program} {segment}:{offset:04X} (options_palette)'
     elif asset.name.upper() == 'FLIPPERS.SPR':
         print('  colour 00 is transparent')
-        _program, _frame, tables = table_info(asset)
+        _hints_file, tables = table_info(asset)
         extension = selected_table.upper() if selected_table else next(iter(tables))
         palette, source = table_palette(asset, extension)
     else:
