@@ -32,6 +32,8 @@ void pd_fatal(const char *what);
 void not_ported(const char *name);
 /* PD_STOP=where#N ends the program the Nth time it gets here */
 void checkpoint(const char *where);
+/* PD_TRACE: something worth knowing happened (a handler, a level switch) */
+void trace_note(const char *what);
 /* one picture (frame_wait); the program ends when the window was closed */
 void pump_frame(void);
 

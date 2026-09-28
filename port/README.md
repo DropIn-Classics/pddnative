@@ -104,7 +104,8 @@ not translated yet or, with `PD_STOP=where#N`, the Nth time it passes
 2's loop), `ball_start_loop` (state 3's), `st_play`, `st_ball_lost`,
 `st_ball_start`, `st_game_over`, `st_tilt`, `st_ball_locked`,
 `ball_locked_loop` (state 4's loop). `PD_TRACE` prints each checkpoint
-passed with the pictures shown so far; `PD_POKE="where#N OFF HEX"` writes
+passed with the pictures shown so far, and as `note` lines each event
+object's handler run and each switch of the ball's level; `PD_POKE="where#N OFF HEX"` writes
 bytes at DATA:OFF the Nth time `where` is passed (the runner's `-poke`);
 `PD_DATA_DIR` is where the saved files are looked for and written
 (`save/` in it).

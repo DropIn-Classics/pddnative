@@ -99,6 +99,12 @@ void checkpoint(const char *where)
         pd_exit();
 }
 
+void trace_note(const char *what)
+{
+    if (getenv("PD_TRACE"))
+        fprintf(stderr, "note %s picture %lu\n", what, frame_count());
+}
+
 void not_ported(const char *name)
 {
     char msg[200];

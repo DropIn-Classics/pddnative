@@ -244,6 +244,7 @@ static uint8_t map_code(uint8_t a)
         ww(V(hit_rects), rw(V(td_rects_upper)));
         index_map(V(upper_map));
         wb(V(ball_level), 0xFF);
+        trace_note("upper_level");
         return 0xFF;
     case 0xFD:
         ww(V(lanes_a), rw(V(td_lanes_a_lower)));
@@ -251,6 +252,7 @@ static uint8_t map_code(uint8_t a)
         ww(V(hit_rects), rw(V(td_rects_lower)));
         index_map(V(lower_map));
         wb(V(ball_level), 0x80);
+        trace_note("lower_level");
         return 0xFF;
     case 0xFB:
         ww(V(gravity), 9);

@@ -20,9 +20,10 @@ The keys file has a line per key event, in the order they happen:
     ball_start_loop#49 E050+ the Down key (E0 50) ...
 
 The key is a scan code in hex (E0xx for the extended keys), + down, -
-up.  The tool finds where each event lands in both: it runs the port
-(with the keys before it) to that pass and takes its picture count; the
-runner's time is taken from a run of the original to the same pass,
+up.  The tool finds where each event lands in both: the port's picture
+is that of the pass in a run with the keys before it (all events are
+placed from one run as far as it reaches and checked by a run with them;
+from the first that moved on, again); the runner's time is taken from a run of the original to the same pass,
 unless the last such run was at the same checkpoint and the port passed
 it once a picture since (70.09 pictures a second): then the time is
 counted on from there (as is the port's picture for a pass the loop was
@@ -94,20 +95,33 @@ def fresh(args, which):
     return d
 
 
-def run_port(args, keys, stop, ram=None, vram=None):
-    """the port's picture count at `stop` (None when it does not get there)"""
-    env = dict(os.environ, PD_DATA_DIR=fresh(args, 'port'), PD_TRACE='1', PD_STOP=stop, PD_KEYS=' '.join(keys),
+def port_trace(args, keys, stop=None, ram=None, vram=None):
+    """the port's run: {(where, n): picture} for every checkpoint pass (and
+    for the notes: handlers, level switches)"""
+    env = dict(os.environ, PD_DATA_DIR=fresh(args, 'port'), PD_TRACE='1', PD_KEYS=' '.join(keys),
                PD_FRAMES=str(int(args.until * RATE)),
                PD_POKE=';'.join('%s %04X %s' % (w, data_offset(args, n), h) for w, n, h in args.poke))
-    for k in ('PD_RAM', 'PD_VRAM'):
+    for k in ('PD_STOP', 'PD_RAM', 'PD_VRAM'):
         env.pop(k, None)
+    if stop:
+        env['PD_STOP'] = stop
     if ram:
         env['PD_RAM'], env['PD_VRAM'] = ram, vram
-    where, n = stop.split('#')
     r = subprocess.run([PORT, '-game', game_dir(), '-prog', str(args.prog), '-table', str(args.table)],
                        env=env, capture_output=True, text=True)
-    passes = [int(l.split()[2]) for l in r.stderr.splitlines() if l.startswith(where + ' picture ')]
-    return passes[-1] if len(passes) >= int(n) else None
+    trace, count = {}, {}
+    for l in r.stderr.splitlines():
+        m = re.match(r'(?:note )?(\w+) picture (\d+)$', l)
+        if m:
+            count[m.group(1)] = count.get(m.group(1), 0) + 1
+            trace[m.group(1), count[m.group(1)]] = int(m.group(2))
+    return trace
+
+
+def run_port(args, keys, stop, ram=None, vram=None):
+    """the port's picture count at `stop` (None when it does not get there)"""
+    where, n = stop.split('#')
+    return port_trace(args, keys, stop, ram, vram).get((where, int(n)))
 
 
 def run_original(args, keyfile, stop, ram=None, vram=None):
@@ -138,23 +152,60 @@ def write_keys(path, lines):
         f.write('\n'.join(lines) + '\n')
 
 
+def picture_at(trace, where, n):
+    """the picture of where#n in trace; for a pass after the loop was left
+    (a key let go after it) counted on from its last pass"""
+    if (where, n) in trace:
+        return trace[where, n]
+    last = max([c for w, c in trace if w == where] or [0])
+    return trace[where, last] + n - last if last else None
+
+
+def place_port(args, events, pics=None, trace=None):
+    """the port's picture for each event, and the trace of a run with them
+    all.  The events are placed from the trace of a run with the keys
+    placed so far (pics: the first events', trace: that run's, when known),
+    as far as it reaches; a run with them all checks them: up to the first
+    that lands elsewhere they hold (a key changes only what comes after
+    it), from there on they are placed again from a run with the ones that
+    hold."""
+    pics = list(pics or [])
+    if trace is None:
+        trace = port_trace(args, keys_of(events, pics))
+    while len(pics) < len(events):
+        cand = []
+        for where, n, code, down in events[len(pics):]:
+            p = picture_at(trace, where, n)
+            if p is None:
+                break
+            cand.append(p)
+        if not cand:
+            raise SystemExit('portcmp.py: %s#%d is not reached by the port' % events[len(pics)][:2])
+        trace = port_trace(args, keys_of(events, pics + cand))
+        for p in cand:
+            e = events[len(pics)]
+            if picture_at(trace, e[0], e[1]) != p:
+                trace = port_trace(args, keys_of(events, pics))
+                break
+            pics.append(p)
+    return pics, trace
+
+
+def keys_of(events, pics):
+    return [port_key(p - 1, e[2], e[3]) for p, e in zip(pics, events)]
+
+
 def place(args, events, keyfile):
     """the events as port keys and runner key lines"""
     pk, rk, anchor = [], [], None
-    for where, n, code, down in events:
-        stop = '%s#%d' % (where, n)
-        pic = run_port(args, pk, stop)
-        if pic is None and anchor and anchor[0] == where:
-            pic = anchor[2] + n - anchor[1]         # the loop was left: a key up after it
-        if pic is None:
-            raise SystemExit('portcmp.py: %s is not reached by the port' % stop)
+    for (where, n, code, down), pic in zip(events, place_port(args, events)[0]):
         if anchor and anchor[0] == where and pic - anchor[2] == n - anchor[1]:
             t = anchor[3] + (n - anchor[1]) / RATE
         else:
             write_keys(keyfile, rk)
-            t = run_original(args, keyfile, stop)
+            t = run_original(args, keyfile, '%s#%d' % (where, n))
             if t is None:
-                raise SystemExit('portcmp.py: %s is not reached by the original' % stop)
+                raise SystemExit('portcmp.py: %s#%d is not reached by the original' % (where, n))
             anchor = (where, n, pic, t)
         pk.append(port_key(pic - 1, code, down))
         rk.append(runner_key(t - 0.5 / RATE, code, down))

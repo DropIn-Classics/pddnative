@@ -41,9 +41,10 @@ static uint16_t value(size_t field)
 typedef struct {
     size_t field;
     int (*fn)(uint16_t di);
+    const char *name;
 } HandlerFn;
 
-#define HN(name) {offsetof(PdNames, name), name}
+#define HN(name) {offsetof(PdNames, name), name, #name}
 static const HandlerFn handlers[] = {
     HN(obj_nop1), HN(obj_nop2), HN(obj_nop3), HN(obj_nop4), HN(obj_nop5),
     HN(obj_nop6), HN(mult_2), HN(mult_3), HN(mult_4), HN(mult_5), HN(mult_6),
@@ -60,8 +61,10 @@ int call_handler(uint16_t offset, uint16_t di)
     size_t i;
 
     for (i = 0; i < sizeof handlers / sizeof handlers[0]; i++)
-        if (value(handlers[i].field) == offset)
+        if (value(handlers[i].field) == offset) {
+            trace_note(handlers[i].name);
             return handlers[i].fn(di);
+        }
     call_code(offset);                  /* not ported: ends with its name */
     return 1;
 }
