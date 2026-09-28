@@ -1,5 +1,6 @@
 # Builds the port (port/) for Windows, Linux and macOS and packs each with
-# port/dist/README.txt and micromod's licence.  A push of a tag v* also
+# port/dist/README.txt and the licences of micromod (and of SDL2, which
+# the Linux and macOS packages carry).  A push of a tag v* also
 # makes a GitHub release with the three packages.  Nothing here needs the
 # game's data: the tools' checks (tools/check.py) run on a clone with the
 # game unpacked, not here.
@@ -36,19 +37,53 @@ jobs:
   linux:
     # the oldest runner there is, so that the program runs on older glibcs
     runs-on: ubuntu-22.04
+    env:
+      SDL2_VERSION: 2.32.10
     steps:
       - uses: actions/checkout@v4
-      - name: Install SDL2
-        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+      - name: Build SDL2
+        # SDL's release built here, not the distribution's: it loads X11,
+        # Wayland, PulseAudio, PipeWire and ALSA only when it finds them, so
+        # the package runs where no SDL2 is installed (the Steam Deck's
+        # read-only system among them); the headers are needed to build it
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libx11-dev libxext-dev libxrandr-dev \
+            libxcursor-dev libxi-dev libxfixes-dev libxss-dev libxkbcommon-dev \
+            libwayland-dev wayland-protocols libdecor-0-dev libegl1-mesa-dev \
+            libgles2-mesa-dev libdrm-dev libgbm-dev libasound2-dev libpulse-dev \
+            libpipewire-0.3-dev libudev-dev libdbus-1-dev patchelf
+          curl -fsSL https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VERSION/SDL2-$SDL2_VERSION.tar.gz | tar xz
+          cmake -S SDL2-$SDL2_VERSION -B sdl2build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$PWD/sdl2" -DSDL_STATIC=OFF -DSDL_TEST=OFF
+          cmake --build sdl2build -j4
+          cmake --install sdl2build
+          echo "$PWD/sdl2/bin" >> "$GITHUB_PATH"
       - name: Build
         run: sh port/build.sh
       - name: Pack
         run: |
+          test -x port/build/pdd
           d=pddnative-linux-x64
           mkdir $d
           cp port/build/pdd port/dist/README.txt $d/
+          cp -L sdl2/lib/libSDL2-2.0.so.0 $d/
+          # sdl2-config's search path is this machine's: only pdd's own folder
+          patchelf --set-rpath '$ORIGIN' $d/pdd
           cp port/third_party/micromod/LICENCE.txt $d/LICENCE-micromod.txt
+          cp SDL2-$SDL2_VERSION/LICENSE.txt $d/LICENCE-SDL2.txt
           tar czf $d.tar.gz $d
+      - name: Show what the package needs
+        # the libraries it links and the newest glibc symbol version it uses;
+        # ldd with the system's SDL2 absent must find libSDL2 beside pdd
+        run: |
+          d=pddnative-linux-x64
+          readelf -d $d/pdd $d/libSDL2-2.0.so.0 | grep -E 'NEEDED|RUNPATH|RPATH|^File'
+          objdump -T $d/pdd $d/libSDL2-2.0.so.0 | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1
+          mv sdl2 sdl2.away
+          ldd $d/pdd | tee ldd.txt
+          if grep -q 'not found' ldd.txt; then exit 1; fi
+          grep -q "libSDL2-2.0.so.0 => $PWD/$d/libSDL2-2.0.so.0" ldd.txt
       - uses: actions/upload-artifact@v4
         with:
           name: pddnative-linux-x64
@@ -68,6 +103,7 @@ jobs:
           hdiutil attach -nobrowse -mountpoint sdl2dmg SDL2.dmg
           mkdir -p ~/Library/Frameworks
           cp -R sdl2dmg/SDL2.framework ~/Library/Frameworks/
+          cp sdl2dmg/License.txt LICENCE-SDL2.txt
           hdiutil detach sdl2dmg
       - name: Build
         run: CC="cc -arch x86_64 -arch arm64" sh port/build.sh
@@ -79,6 +115,7 @@ jobs:
           cp port/build/pdd port/dist/README.txt $d/
           cp port/third_party/micromod/LICENCE.txt $d/LICENCE-micromod.txt
           cp -R ~/Library/Frameworks/SDL2.framework $d/
+          cp LICENCE-SDL2.txt $d/
           ditto -c -k --keepParent $d $d.zip
       - uses: actions/upload-artifact@v4
         with:

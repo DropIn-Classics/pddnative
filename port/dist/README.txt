@@ -33,10 +33,13 @@ quarantine with
 
     xattr -dr com.apple.quarantine pddnative-macos
 
-Linux: SDL2 must be installed (Debian and Ubuntu: libsdl2-2.0-0; Fedora:
-SDL2).
+Linux and the Steam Deck: keep libSDL2-2.0.so.0 next to pdd (the package
+brings SDL2 along; nothing needs to be installed). On the Deck the game
+starts fullscreen; in Game Mode add pdd as a non-Steam game. The GOG
+release installed with Heroic is looked for in ~/Games/Heroic.
 
 The source, and how the port was made and checked:
 https://github.com/mindphluxnet/pddnative
 
 MOD playback: micromod, by Martin Cameron (LICENCE-micromod.txt).
+Linux and macOS: SDL2, by Sam Lantinga and others (LICENCE-SDL2.txt).

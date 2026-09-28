@@ -5,7 +5,7 @@
 # ~/Library/Frameworks or /Library/Frameworks on a Mac, else through
 # sdl2-config or pkg-config; without it only pdd-headless is built.  On a
 # Mac pdd also looks for SDL2.framework in its own directory, as the
-# packages the CI makes have it.
+# packages the CI makes have it; on Linux it looks for libSDL2 there first.
 set -e
 cd "$(dirname "$0")"
 CC=${CC:-cc}
@@ -27,6 +27,9 @@ if [ -z "$sdl" ] && command -v sdl2-config >/dev/null 2>&1; then
     sdl="$(sdl2-config --cflags --libs)"
 elif [ -z "$sdl" ] && pkg-config --exists sdl2 2>/dev/null; then
     sdl="$(pkg-config --cflags --libs sdl2)"
+fi
+if [ -n "$sdl" ] && [ "$(uname)" != Darwin ]; then
+    sdl="$sdl -Wl,-rpath,\$ORIGIN"
 fi
 if [ -z "$sdl" ]; then
     echo "SDL2 not found: built build/pdd-headless only." >&2

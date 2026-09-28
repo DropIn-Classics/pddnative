@@ -296,14 +296,20 @@ the setup screen and the animations; Esc in the menu ends the program).
 
 The packages: `.github/workflows/build.yml` builds `pdd` on GitHub for
 Windows (windows-latest, `build.bat`; the C runtime linked in, `/MT`),
-Linux (ubuntu-22.04, SDL2 from the distribution, which the player needs
-installed) and macOS (x86_64 and arm64 in one program, with SDL's own
+Linux (ubuntu-22.04, for older glibcs; SDL2 built from SDL's release
+source there, its X11, Wayland and sound backends loaded only when
+present, and `libSDL2-2.0.so.0` put beside `pdd`, whose search path is
+only `$ORIGIN`: nothing to install, also on the Steam Deck's read-only
+system; the job prints the libraries and the newest glibc version the
+package needs and checks with `ldd` that the SDL2 beside it is taken)
+and macOS (x86_64 and arm64 in one program, with SDL's own
 SDL2.framework, which the package has beside `pdd`: `build.sh` adds
 `@executable_path` to its search path). Each package holds `pdd`,
-`dist/README.txt` (for the player) and micromod's licence; they are the
-run's artifacts, and a pushed tag `v*` makes a release of them. The
-packing and the framework beside the program tried on a Mac; the
-workflow itself not run before it was committed.
+`dist/README.txt` (for the player) and the licences of micromod and
+SDL2; they are the run's artifacts, and a pushed tag `v*` makes a
+release of them. The macOS packing and the framework beside the program
+tried on a Mac; the Linux packing and the workflow itself not run
+before they were committed, and the package not tried on a Steam Deck.
 
 The sound in the window: `-fx BASS,TREBLE,OOMPH,HEADPHONE` shapes it
 (`src/audiofx.c`: bass and treble shelves -12 to 12 dB at 200 Hz and
