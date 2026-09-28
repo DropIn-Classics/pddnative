@@ -431,7 +431,8 @@ static void alloc_pointer_buffers(void)
 
 /* ---- the mouse driver (INT 33h): the port's, with no mouse behind it yet.
  * The keyboard moves the pointer the programs give it (AX=4), within the
- * ranges they set (AX=7, 8); no button is ever down.  In the history's
+ * ranges they set (AX=7, 8) or a mode set gives (mouse_new_mode); no
+ * button is ever down.  In the history's
  * 640x480 screens the program has it show its pointer (AX=1), which the
  * port draws over the picture (mouse_overlay), not into video memory.
  * menu_mouse 0: no driver, as in tools/run. */
@@ -508,6 +509,32 @@ static void mouse_overlay(VgaFrame *f)
             if (arrow[r][c] != ' ' && x < f->width && y < f->height)
                 f->pixels[y * f->width + x] = (uint8_t)best[arrow[r][c] == 'W'];
         }
+}
+
+/* what the driver does when INT 10h sets a mode: the ranges the whole
+ * screen, 640 wide in both modes (as DOSBox's driver does, from memory,
+ * not checked with a real one).  The program sets no range for the
+ * history's lists, which need the 480 rows of mode 12h. */
+static void mouse_new_mode(int height)
+{
+    if (!drv.present)
+        return;
+    drv.x1 = drv.y1 = 0;
+    drv.x2 = 639;
+    drv.y2 = height - 1;
+    mouse_clamp();
+}
+
+static void menu_mode_x(void)
+{
+    set_mode_x();
+    mouse_new_mode(200);
+}
+
+static void menu_mode_12(void)
+{
+    vga_set_mode(0x12);
+    mouse_new_mode(480);
 }
 
 /* INT 33h AX=0: mouse_present 1 when a driver answers (the pointer
@@ -1050,7 +1077,7 @@ static int language_screen(void)
     mouse_set(0x140, 0x64);
     screen_off();
     clear_vram();
-    set_mode_x();
+    menu_mode_x();
     screen_off();
     clear_palette(0x300);
     screen_on();
@@ -1478,7 +1505,7 @@ static uint16_t browse_history_tables(void)
 {
     uint16_t ax, sel;
 
-    vga_set_mode(0x12);                     /* set_history_mode: no VESA */
+    menu_mode_12();                     /* set_history_mode: no VESA */
     mouse_range(0, 0x276, 0, 0x1D0);
     cww(M_picture_number, 1);
     dwb(M_mouse_buttons, 0);
@@ -1532,7 +1559,7 @@ static void run_history_menus(void)
 
     screen_off();
     clear_vram();
-    vga_set_mode(0x12);
+    menu_mode_12();
     block = dos_alloc(0xFF0);
     if (!block)
         fatal("Not enough memory for the history.");
@@ -1545,7 +1572,7 @@ static void run_history_menus(void)
     if (ax != 4) {
         history_action(ax);
         while ((ax = browse_history_tables()) != 4) {
-            vga_set_mode(0x12);
+            menu_mode_12();
             history_action(ax);
         }
         if (dos_free(hw(M_history_font_segment)) || dos_free(hw(M_hop_segment)))
@@ -1597,7 +1624,7 @@ static void history_screen(void)
     dos_dir = "HISTORY";                    /* CHDIR ..\history */
     screen_off();
     clear_vram();
-    set_mode_x();
+    menu_mode_x();
     screen_off();
     load_vga_image(s_history, M_history_vga_path, 0);
     clear_palette(0x300);
@@ -1698,7 +1725,7 @@ static void menu_video_init(void)
 {
     screen_off();
     clear_vram();
-    set_mode_x();
+    menu_mode_x();
     screen_off();
     load_vga_image(s_data, M_select_vga_path, 0x3C0);
     load_hiscores();

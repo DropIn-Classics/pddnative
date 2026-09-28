@@ -158,7 +158,9 @@ the program changed to (`dos_dir`, pd_files.c).
 
 The mouse driver (`menu_mouse`, on unless `-nomouse`) is the port's: the
 programs give it the pointer the arrow keys move (INT 33h AX=4), it keeps
-it in the ranges they set (AX=7, 8) and answers AX=3 with it and no
+it in the ranges they set (AX=7, 8), the whole screen again after each
+mode set (mode X 640x200, mode 12h 640x480; presumably as DOSBox's
+driver does, from memory, not checked with a real driver), and answers AX=3 with it and no
 button down (no mouse behind it yet); where the program has it show its
 pointer (AX=1: the history's 640x480 screens) the port draws an arrow
 over the picture, not into video memory. Without it (as in tools/run,
@@ -167,7 +169,12 @@ keyboard: Enter leaves `mouse_buttons` set, so on the start screen the
 box the pointer is in (or first enters) is taken at once, in the browser
 a button is pressed again each picture, and in mode 12h no pointer is
 seen. With it the menu's pointer starts in the middle and no longer
-leaves the screen at the bottom.
+leaves the screen at the bottom. The program sets no range for the
+history's lists: kept at the menu's (y to 0ACh), the pointer stopped at
+Harley Davidson in the table list; with the ranges a mode set gives it
+reaches Torpedo Alley, the last row, and a click shows its page
+(headless, `PD_DUMP` pictures). The menu's range (y to 0ACh) is set
+before its mode set and so gives way to 0-199.
 
 The box (the quality of life fix "menu box", `-menu -qol`; the port's
 own): no pointer; a frame (a dark line, three pixels of yellow and white

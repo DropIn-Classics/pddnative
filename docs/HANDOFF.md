@@ -356,6 +356,17 @@ attribute registers pick 14h and 38h-3Fh), so its colours are wrong
 there; the port loads the BIOS's 64 EGA colours (not checked against a
 real VGA BIOS beyond the usual rgbRGB layout).
 
+The program sets the driver's ranges (mouse_range) only in menu_init
+(x 0-270h, y 0-0ACh), for the options (y to 0B8h) and in the browser
+(x 0-276h, y 0-1D0h), each time before INT 10h sets a mode (menu_init
+before menu_video_init's set_mode_x) or after it (the browser). The
+lists the start screen's boxes lead to come in mode 12h with no range of
+their own: with the menu's kept, rows below y 0ACh (from Harley Davidson
+on in the table list) cannot be reached. So the program counts on a
+driver that makes the ranges the whole screen when the mode is set, as
+DOSBox's does (from memory, not checked with a real driver); the port's
+driver does that (2026-09-28).
+
 ### The menu run and translated (2026-09-28)
 
 DDPCMAIN runs in tools/run with `-loadfix` (below): DDPCINTR (12.2 s,
@@ -523,7 +534,7 @@ a C compiler and the CD).
    mouse behind the port's driver (the platform has none yet; without a
    driver the arrows move `mouse_y` down without a limit, and the
    pointer leaves the screen at the bottom; the port's driver keeps it
-   in the range the program sets), the intro DDPCINTR (pictures
+   in the range the program or the last mode set gives), the intro DDPCINTR (pictures
    and a CD track; the GOG release has the tracks as ogg). To try in the
    window: the menu, the intro's animations before it, a table and back.
    The table programs' `wait_keys_up` waits a picture with its tick

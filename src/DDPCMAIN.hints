@@ -321,7 +321,7 @@ name CODE:0B55 sprite_w
 name CODE:0B57 sprite_h
 name CODE:0B58 sprite_key
 name CODE:3DAE mouse_range
-comment CODE:3DAE INT 33h AX=8 (y from BX to DX) and AX=7 (x from AX to CX)
+comment CODE:3DAE INT 33h AX=8 (y from CX to DX) and AX=7 (x from AX to BX)
 name CODE:0BBE exec_ss
 name CODE:0BC0 exec_sp
 name CODE:12EE image_block
