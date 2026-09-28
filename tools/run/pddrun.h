@@ -142,6 +142,7 @@ void bios_tty(uint8_t c);
  * there, else from the CD; anything opened for writing is copied into the
  * layer first.  The CD is never written. */
 void dos_init(const char *game_dir, const char *state_dir);
+void dos_loadfix(void);               /* -loadfix: load above 64 KB */
 int  dos_start(const char *dospath, const char *tail, uint16_t *load_seg);
 int  dos_host_path(const char *dospath, char *out, size_t n, int for_write);
 extern int dos_done;                  /* the first program has exited */

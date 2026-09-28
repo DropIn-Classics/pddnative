@@ -20,6 +20,9 @@
  *                    write C:\DELUXE\SOUND.CFG into the layer: NOSOUND.SDR,
  *                    or SBLASTER.SDR at 220h, IRQ 7, quality 0 (default
  *                    none; keep = leave what is there)
+ *   -loadfix         the programs load above the first 64 KB (DOS's LOADFIX;
+ *                    the sound driver's unpacker fails below it, as under
+ *                    DDPCMAIN.EXE)
  *   -until T         stop at T (default 30)
  *   -ips N           emulated instructions per second (default 6000000)
  *   -key T KEY       a key at T: tapped (down, up 0.15 s later), or KEY+ /
@@ -294,7 +297,7 @@ int main(int argc, char **argv){
     char prog[260] = "", tail[128] = "";
     const char *stop = "until";
     uint16_t load;
-    int i, r;
+    int i, r, loadfix = 0;
     clock_t c0;
 
     for(i=1;i<argc;i++){
@@ -367,6 +370,7 @@ int main(int argc, char **argv){
         else if(!strcmp(a,"-vram")){ NEED(1); vram_file = argv[++i]; }
         else if(!strcmp(a,"-wav")){ NEED(1); wav_file = argv[++i]; }
         else if(!strcmp(a,"-dos")) dos_log = 1;
+        else if(!strcmp(a,"-loadfix")) loadfix = 1;
         else if(!strcmp(a,"-intwatch")){ NEED(1); int_watch = (int)strtol(argv[++i], NULL, 16); }
         else if(!strcmp(a,"-prof")) prof_on = 1;
         else if(!strcmp(a,"-v")) trace_level = 1;
@@ -388,6 +392,7 @@ int main(int argc, char **argv){
     dev_init();
     bios_init();
     dos_init(game, state);
+    if(loadfix) dos_loadfix();
     dos_on_load = on_load;
     write_sound_cfg(sound);
     if(wav_file) sound_wav_open(wav_file);
@@ -465,14 +470,18 @@ int main(int argc, char **argv){
                 cpu.cycles += step;
                 dev_tick();
             } else {
-                /* up to 256 instructions, never past the timer's deadline:
-                 * IRQ0 lands on the instruction it is due on */
+                /* up to 256 cycles (an instruction is one, a REP string
+                 * instruction one per element), never past the timer's
+                 * deadline: IRQ0 lands on the instruction it is due on, not
+                 * up to 256 REPs later (a loop of REPE SCASB, as DDPCMAIN's
+                 * key wait, got its timer interrupt 1.4 ms late) */
+                uint64_t end;
                 dl = dev_next_deadline();
                 if(until_c < dl) dl = until_c;
                 lim = 256;
                 if(dl <= cpu.cycles) lim = 1;
                 else if(dl - cpu.cycles < 256) lim = (int)(dl - cpu.cycles);
-                for(n=0;n<lim && !cpu.shutdown;n++) cpu_step();
+                for(end = cpu.cycles + (uint64_t)lim; cpu.cycles < end && !cpu.shutdown; ) cpu_step();
                 dev_tick();
             }
             if(brk_hit >= 0){

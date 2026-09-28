@@ -1076,6 +1076,15 @@ static void dos_int20(void){ dos_terminate2(0, -1); }
 static void dos_int27(void){ dos_terminate2(0, -1); }
 static void dos_nop(void){ }
 
+/* -loadfix: a DOS block over the first 64 KB, as LOADFIX leaves it, so the
+ * programs load above it.  EXEPACK's unpacker (SBLASTER.SDR) says "Packed
+ * file is corrupt" when it is loaded below 64 KB, which it is under the
+ * menu (DDPCMAIN) otherwise. */
+void dos_loadfix(void){
+    uint16_t largest;
+    mcb_alloc((uint16_t)(0x1000 - MEM_FIRST), 8, &largest);
+}
+
 void dos_init(const char *game_dir, const char *state_dir){
     size_t l;
     snprintf(game_root, sizeof(game_root), "%s", game_dir);

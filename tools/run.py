@@ -15,9 +15,11 @@ top of tools/run/main.c); run.py only
       SEG:OFF   with SEG a segment of the hints (CODE:4CEE, DATA:8A8A),
       a label   of the generated source (L4CEE, D8A8A, C4F05) or a `name`
                 or `code` name of the hints,
-    optionally with +N (hex) added: DATA:9A9A+4.  An address in the
-    runner's own form (a linear address, SEG:OFF with a hex segment,
-    PROG+SEG:OFF) is passed on as it is.
+    optionally with +N (hex) added: DATA:9A9A+4.  EXE:ADDR takes the
+    names of another program's hints, one PROGRAM starts (the menu's
+    tables: PD.EXE:idle_loop#100).  An address in the runner's own form
+    (a linear address, SEG:OFF with a hex segment, PROG+SEG:OFF) is passed
+    on as it is.
 """
 import os, re, subprocess, sys
 
@@ -32,7 +34,7 @@ ADDR_OPTS = {'-break': 1, '-log': 1, '-watch': 1, '-dump': 1, '-poke': 2}
 # options and how many arguments they take (to find PROGRAM)
 OPTS = {'-game': 1, '-state': 1, '-sound': 1, '-until': 1, '-ips': 1, '-key': 2, '-keys': 1,
         '-shot': 2, '-shotevery': 2, '-break': 1, '-log': 1, '-watch': 1, '-trace': 2,
-        '-dump': 2, '-poke': 3, '-dumpevery': 1, '-ram': 1, '-vram': 1, '-wav': 1, '-dos': 0, '-intwatch': 1, '-prof': 0,
+        '-dump': 2, '-poke': 3, '-dumpevery': 1, '-ram': 1, '-vram': 1, '-wav': 1, '-dos': 0, '-loadfix': 0, '-intwatch': 1, '-prof': 0,
         '-v': 0}
 
 
@@ -51,16 +53,28 @@ def build():
         raise SystemExit('run.py: the runner did not build')
 
 
-def hints_for(program):
-    """The hints file whose `exe` is this program, or None."""
+def hints_for(program, base_only=False):
+    """The hints file whose `exe` is this program (or, base_only, whose
+    exe has this base name), or None."""
     want = program.replace('\\', '/').upper()
     src = os.path.join(ROOT, 'src')
     for f in sorted(os.listdir(src)):
         if f.endswith('.hints'):
             h = Hints(os.path.join(src, f))
-            if h.exe and h.exe.replace('\\', '/').upper() == want:
+            exe = (h.exe or '').replace('\\', '/').upper()
+            if exe and (exe == want or base_only and os.path.basename(exe) == want):
                 return h
     return None
+
+
+def translate(names, t):
+    """ADDR or EXE:ADDR -> the runner's form"""
+    m = re.fullmatch(r'(\w+\.EXE):(.+)', t, re.I)
+    if m:
+        h = hints_for(m.group(1), base_only=True)
+        if h:
+            return Names(h, h.exe).translate(m.group(2))
+    return names.translate(t) if names else t
 
 
 class Names:
@@ -132,9 +146,9 @@ def main():
         if i < pi and a in OPTS:
             n = OPTS[a]
             vals = args[i+1:i+1+n]
-            if a in ADDR_OPTS and names:
+            if a in ADDR_OPTS:
                 for k in range(ADDR_OPTS[a]):
-                    vals[k] = names.translate(vals[k])
+                    vals[k] = translate(names, vals[k])
             out += [a] + vals
             i += 1 + n
         else:
