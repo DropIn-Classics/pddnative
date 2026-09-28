@@ -46,6 +46,14 @@ ds CODE:3DBF-3DE1 HISTORY
 ds CODE:3E09-3E3D HISTORY
 ds CODE:3EE1-3F81 HISTORY
 ds CODE:4394-43D2 HISTORY
+; history_loop is called from history_init (DS=HISTORY) and its hit test,
+; browse_history_tables after its MOV DS, select_history_filter and its
+; helpers up to the row inversion (which sets DS=A000h) run with it too
+ds CODE:31C8-3234 HISTORY
+ds CODE:3347-3390 HISTORY
+ds CODE:3473-3508 HISTORY
+ds CODE:3713-382E HISTORY
+ds CODE:3909-3963 HISTORY
 
 ; options_screen sets DS=OPTIONS; these callees inherit it (calls reset the
 ; analysis to DATA).  Routines which set DS themselves need no override.
@@ -204,8 +212,54 @@ comment CODE:3E09 read the selected language's 265-byte .IDX into history_text_i
 name CODE:3E3D draw_history_record
 comment CODE:3E3D use table record +0 as the .IDX record number, then draw count+1 NUL-terminated strings from the HOP start offset
 name CODE:3EE1 draw_history_line
-comment CODE:3EE1 draw one HOP string; in 16-colour mode skip all following NULs and add a row for each following 0Dh,0Ah, while VESA skips CR/LF within strings and following NULs so they add no row; the two-NUL loop at L3F53 is dead
+comment CODE:3EE1 draw one HOP string; in 16-colour mode skip the NULs and 0Dh,0Ah pairs after it (the rows they add to DX are lost with its POP), while VESA skips CR/LF within strings and following NULs; the two-NUL loop at L3F53 is dead
 name CODE:3F81 render_history_glyph
+name CODE:3234 detect_vesa
+comment CODE:3234 vesa_available 1 when INT 10h AX=4F00h answers and lists mode 101h
+name CODE:32AA leave_history
+comment CODE:32AA the DAC faded out, video memory cleared, CHDIR ..\deluxe, the sound stopped
+name CODE:32DA run_history_menus
+comment CODE:32DA mode 12h, the .HOP loaded, the start screen's choice run, then the browser until its exit (4); the font and .HOP released
+name CODE:3347 hit_test
+comment CODE:3347 AX = the index of the rectangle (count byte, then x1, y1, x2, y2 words at BX) that mouse_x, mouse_y are in, else 0FFh
+name CODE:3390 set_history_mode
+comment CODE:3390 mode 12h, or VESA 101h when vesa_available (back to 12h and 0 when its mode information fails)
+name CODE:344A shown_table
+comment CODE:344A show_history_table's table last shown (0FFFFh: none); the filters set it to 0FFFFh
+name CODE:3506 picture_number
+comment CODE:3506 which of the record's pictures is shown (1 or 2)
+name CODE:3595 string_end
+name CODE:3597 string_inverted
+name CODE:377A choose_history_row
+comment CODE:377A the list's row under mouse_y inverted until a click (AX = its index) or the pointer leaves it (0FFFFh; Esc too)
+name CODE:3822 history_row
+name CODE:382A history_row_y
+name CODE:382C history_rows_left
+name CODE:382E invert_history_row
+comment CODE:382E plane 0 of CX bytes in eight lines at AX, BX (640x480, 50h bytes a line) inverted, the mouse driver's pointer hidden meanwhile
+name CODE:387A read_history_keys
+comment CODE:387A as read_menu_keys without the F keys: CF when Esc is down (after wait_keys_up), the arrows 2 pixels, Enter a click
+name CODE:3909 centre_string
+comment CODE:3909 AX = (50h - the length of the string at SI) / 2, DX = the length
+name CODE:3923 centre_list
+comment CODE:3923 AX, BX: the list of CX strings (their offsets at DI) centred on 80x480; DI moves on only when a string is at least as long as the longest so far, so mostly the first string is measured
+name CODE:3A0A picture_block
+name CODE:3A22 draw_vesa_pointer
+name CODE:3B28 remove_vesa_pointer
+name CODE:3B8C poll_history_mouse
+name CODE:3BB0 hide_mouse_pointer
+comment CODE:3BB0 INT 33h AX=2 unless vesa_available
+name CODE:3BC6 show_mouse_pointer
+comment CODE:3BC6 INT 33h AX=1 unless vesa_available
+name CODE:3EDF drawn_table
+name HISTORY:1731 history_rows
+comment HISTORY:1731 select_history_filter's rows, six bytes each: x, y, length
+name CODE:0878 language_loop
+name CODE:31D9 history_start_loop
+name CODE:3489 history_browse_loop
+name CODE:3593 string_planes
+name CODE:3787 history_row_loop
+name CODE:37D5 history_row_wait
 name CODE:41E5 load_sound
 comment CODE:41E5 save drive/directory, load the SDR named by SOUND.CFG and register sound_callback
 name CODE:4407 stop_sound

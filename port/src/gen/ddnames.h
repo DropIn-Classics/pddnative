@@ -42,6 +42,7 @@
     X(CODE, draw_hiscore_char, 0x073C) \
     X(CODE, char_index, 0x07F7) \
     X(CODE, language_screen, 0x0826) \
+    X(CODE, language_loop, 0x0878) \
     X(CODE, detect_mouse, 0x0903) \
     X(CODE, alloc_pointer_buffers, 0x0923) \
     X(CODE, draw_pointer_sprite, 0x095B) \
@@ -106,10 +107,22 @@
     X(CODE, history_screen, 0x3140) \
     X(CODE, history_init, 0x3158) \
     X(CODE, history_loop, 0x31C8) \
+    X(CODE, history_start_loop, 0x31D9) \
+    X(CODE, detect_vesa, 0x3234) \
+    X(CODE, leave_history, 0x32AA) \
+    X(CODE, run_history_menus, 0x32DA) \
+    X(CODE, hit_test, 0x3347) \
+    X(CODE, set_history_mode, 0x3390) \
     X(CODE, load_history_font, 0x33D3) \
     X(CODE, show_history_table, 0x33FF) \
+    X(CODE, shown_table, 0x344A) \
     X(CODE, browse_history_tables, 0x344C) \
+    X(CODE, history_browse_loop, 0x3489) \
+    X(CODE, picture_number, 0x3506) \
     X(CODE, draw_history_string, 0x3508) \
+    X(CODE, string_planes, 0x3593) \
+    X(CODE, string_end, 0x3595) \
+    X(CODE, string_inverted, 0x3597) \
     X(CODE, filter_manufacturer, 0x3599) \
     X(CODE, filter_designer, 0x35DC) \
     X(CODE, filter_year, 0x361F) \
@@ -117,9 +130,25 @@
     X(CODE, leave_history_menu, 0x36A4) \
     X(CODE, next_history_picture, 0x36A8) \
     X(CODE, select_history_filter, 0x3713) \
+    X(CODE, choose_history_row, 0x377A) \
+    X(CODE, history_row_loop, 0x3787) \
+    X(CODE, history_row_wait, 0x37D5) \
+    X(CODE, history_row, 0x3822) \
+    X(CODE, history_row_y, 0x382A) \
+    X(CODE, history_rows_left, 0x382C) \
+    X(CODE, invert_history_row, 0x382E) \
+    X(CODE, read_history_keys, 0x387A) \
+    X(CODE, centre_string, 0x3909) \
+    X(CODE, centre_list, 0x3923) \
     X(CODE, select_history_picture_format, 0x3963) \
     X(CODE, load_history_picture_16, 0x39AB) \
+    X(CODE, picture_block, 0x3A0A) \
     X(CODE, copy_history_picture_plane, 0x3A0C) \
+    X(CODE, draw_vesa_pointer, 0x3A22) \
+    X(CODE, remove_vesa_pointer, 0x3B28) \
+    X(CODE, poll_history_mouse, 0x3B8C) \
+    X(CODE, hide_mouse_pointer, 0x3BB0) \
+    X(CODE, show_mouse_pointer, 0x3BC6) \
     X(CODE, filter_history_records, 0x3BDC) \
     X(CODE, load_history_picture_256, 0x3C61) \
     X(CODE, copy_history_picture_bank, 0x3D39) \
@@ -127,6 +156,7 @@
     X(CODE, load_history_hop, 0x3DBF) \
     X(CODE, load_history_idx, 0x3E09) \
     X(CODE, draw_history_record, 0x3E3D) \
+    X(CODE, drawn_table, 0x3EDF) \
     X(CODE, draw_history_line, 0x3EE1) \
     X(CODE, render_history_glyph, 0x3F81) \
     X(CODE, load_sound, 0x41E5) \
@@ -254,6 +284,7 @@
     X(HISTORY, history_action_keys, 0x16D7) \
     X(HISTORY, history_palette_tail, 0x16DC) \
     X(HISTORY, history_filter_mask, 0x1730) \
+    X(HISTORY, history_rows, 0x1731) \
     X(HISTORY, history_font_segment, 0x1875) \
     X(HISTORY, manufacturer_filter, 0x1877) \
     X(HISTORY, designer_filter, 0x1878) \
