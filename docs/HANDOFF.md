@@ -14,6 +14,9 @@ DDPCMAIN run in tools/run, a table run from it included.
   user pushes, push only when the user asks.
 - AGENTS.md has permanent provenance rules: read them before anything
   else.
+- CI (2026-09-28): `.github/workflows/build.yml` builds and packs the
+  port for Windows, Linux and macOS (port/README.md, "Build and run"); it
+  does not run tools/check.py, which needs the game unpacked.
 - Also builds and runs on macOS (2026-09-28): `port/build.sh` and
   `tools/run/build.sh` (cc), the window on SDL2 (`port/src/plat_sdl.c`,
   SDL2.framework in ~/Library/Frameworks), `python3` with capstone. On the

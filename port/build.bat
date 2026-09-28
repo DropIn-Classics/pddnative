@@ -2,6 +2,7 @@
 rem Builds build\pdd.exe (the window) and build\pdd-headless.exe (for tests
 rem and scripted runs) with MSVC.  If cl.exe is not on PATH, vcvars64.bat
 rem is looked for: the VS2019 Build Tools first, then whatever vswhere finds.
+rem The C runtime is linked in (/MT): pdd.exe needs no redistributable.
 setlocal
 cd /d "%~dp0"
 
@@ -22,7 +23,7 @@ if %errorlevel% neq 0 (
 )
 
 if not exist build\obj\headless mkdir build\obj\headless
-set CFLAGS=/nologo /W4 /O2 /D_CRT_SECURE_NO_WARNINGS
+set CFLAGS=/nologo /W4 /O2 /MT /D_CRT_SECURE_NO_WARNINGS
 set ENGINE=src\pd_main.c src\pd1.c src\pd2.c src\pd_video.c src\pd_sprite.c src\pd_text.c src\pd_keys.c src\pd_files.c src\pd_sound.c src\pd_idle.c src\pd_ball.c src\pd_lights.c src\pd_game.c src\pd_events.c src\pd_play.c src\pd_rules.c src\pd_bcd.c src\pd_lost.c src\pd_handlers.c src\pd_over.c src\code.c src\mem.c src\menu.c
 set CORE=src\main.c src\pad.c src\fli.c src\frame.c src\sound.c src\audiofx.c src\hud.c src\launcher.c src\gog.c src\textmode.c src\modplay.c src\vga.c src\sys.c src\sha256.c
 

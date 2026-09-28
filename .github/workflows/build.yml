@@ -1,0 +1,104 @@
+# Builds the port (port/) for Windows, Linux and macOS and packs each with
+# port/dist/README.txt and micromod's licence.  A push of a tag v* also
+# makes a GitHub release with the three packages.  Nothing here needs the
+# game's data: the tools' checks (tools/check.py) run on a clone with the
+# game unpacked, not here.
+name: build
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        shell: cmd
+        run: call port\build.bat
+      - name: Pack
+        shell: pwsh
+        run: |
+          $d = "pddnative-windows-x64"
+          New-Item -ItemType Directory $d | Out-Null
+          Copy-Item port\build\pdd.exe, port\dist\README.txt $d
+          Copy-Item port\third_party\micromod\LICENCE.txt $d\LICENCE-micromod.txt
+          Compress-Archive $d "$d.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pddnative-windows-x64
+          path: pddnative-windows-x64.zip
+
+  linux:
+    # the oldest runner there is, so that the program runs on older glibcs
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SDL2
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+      - name: Build
+        run: sh port/build.sh
+      - name: Pack
+        run: |
+          d=pddnative-linux-x64
+          mkdir $d
+          cp port/build/pdd port/dist/README.txt $d/
+          cp port/third_party/micromod/LICENCE.txt $d/LICENCE-micromod.txt
+          tar czf $d.tar.gz $d
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pddnative-linux-x64
+          path: pddnative-linux-x64.tar.gz
+
+  macos:
+    runs-on: macos-latest
+    env:
+      SDL2_VERSION: 2.32.10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get SDL2.framework
+        # SDL's own release (x86_64 and arm64, signed); build.sh finds it
+        # in ~/Library/Frameworks, pdd finds it beside itself
+        run: |
+          curl -fsSL -o SDL2.dmg https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VERSION/SDL2-$SDL2_VERSION.dmg
+          hdiutil attach -nobrowse -mountpoint sdl2dmg SDL2.dmg
+          mkdir -p ~/Library/Frameworks
+          cp -R sdl2dmg/SDL2.framework ~/Library/Frameworks/
+          hdiutil detach sdl2dmg
+      - name: Build
+        run: CC="cc -arch x86_64 -arch arm64" sh port/build.sh
+      - name: Pack
+        run: |
+          test -x port/build/pdd
+          d=pddnative-macos
+          mkdir $d
+          cp port/build/pdd port/dist/README.txt $d/
+          cp port/third_party/micromod/LICENCE.txt $d/LICENCE-micromod.txt
+          cp -R ~/Library/Frameworks/SDL2.framework $d/
+          ditto -c -k --keepParent $d $d.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pddnative-macos
+          path: pddnative-macos.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, linux, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY"
+          --title "$GITHUB_REF_NAME" --generate-notes
+          pddnative-windows-x64.zip pddnative-linux-x64.tar.gz pddnative-macos.zip

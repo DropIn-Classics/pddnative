@@ -294,6 +294,17 @@ unpacked CD (`python tools/gogx.py`), `-prog 1` PD.EXE's tables, `-prog 2`
 PD2.EXE's, `-table` 0-3. `-menu` starts the game's menu instead (without
 the setup screen and the animations; Esc in the menu ends the program).
 
+The packages: `.github/workflows/build.yml` builds `pdd` on GitHub for
+Windows (windows-latest, `build.bat`; the C runtime linked in, `/MT`),
+Linux (ubuntu-22.04, SDL2 from the distribution, which the player needs
+installed) and macOS (x86_64 and arm64 in one program, with SDL's own
+SDL2.framework, which the package has beside `pdd`: `build.sh` adds
+`@executable_path` to its search path). Each package holds `pdd`,
+`dist/README.txt` (for the player) and micromod's licence; they are the
+run's artifacts, and a pushed tag `v*` makes a release of them. The
+packing and the framework beside the program tried on a Mac; the
+workflow itself not run before it was committed.
+
 The sound in the window: `-fx BASS,TREBLE,OOMPH,HEADPHONE` shapes it
 (`src/audiofx.c`: bass and treble shelves -12 to 12 dB at 200 Hz and
 4 kHz, oomph 0 to 12 dB at 120 Hz, a headphone mode that gives the mono
