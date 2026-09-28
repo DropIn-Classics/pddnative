@@ -21,6 +21,7 @@ task's branch (see AGENTS.md).
 | T11 | Claude | review | port: the launcher, a setup program in text mode before the game (options, sound, start) |
 | T12 | Sol | later | port: game controllers (after T11) |
 | T13 | Claude | open | port: the menu (DDPCMAIN) in C as the hub between the tables |
+| T14 | Claude | review | port: the FLI animations, and "quality of life fixes" in the launcher (no animations, shorter waits) |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
@@ -412,7 +413,9 @@ and a table started directly. After the launcher the original menu
 (DDPCMAIN, translated: T13) is the hub. Esc from a table goes back to
 where the table was started from: the menu, or the launcher when it was
 started from there. Game controllers. The FLI animations (DDFLIPLY) are
-left out. T10 is `later`: the port plays the music with micromod, and
+played, unless the launcher's "quality of life fixes" are on (the user,
+later on 2026-09-28: those who want them shall have them; the fixes also
+take out the long waits between the balls and at the bonus: T14). T10 is `later`: the port plays the music with micromod, and
 what it needs of SBLASTER.SDR's timing is in docs/HANDOFF.md.
 
 ## T11: the launcher (Claude; first meant for Sol)
@@ -487,8 +490,21 @@ DDPCMAIN.EXE's menu translated as the tables were: the program loaded
 into the port's memory model beside the table programs, its names from
 `src/DDPCMAIN.hints` through `tools/portmap.py`, the menu loop (Mode X,
 SELECT.VGA, the mouse, F1-F8, the high scores shown), F1-F8 running the
-table in the same process (without the FLI) and coming back to the menu
-with the high scores read again (`menu_init`). F9 (the history viewer)
-and F10 (the options screen) later. Checked against runs of DDPCMAIN in
-tools/run where the runner can run it.
+table in the same process and coming back to the menu with the high
+scores read again (`menu_init`). Unless the quality of life fixes are on
+(`launcher_qol`): the intro's animations at the menu's start
+(`fli_play` with SPIN21ST, INTRO_P1, INTRO_P2, INTRO_P3, as DDFLIPLY
+plays for `0`) and the table's before it (`fli_before_table`, T14). F9
+(the history viewer) and F10 (the options screen) later. Checked against
+runs of DDPCMAIN in tools/run where the runner can run it.
+
+## T14: the FLI animations and the quality of life fixes (Claude)
+
+Asked for by the user (2026-09-28): the FLI animations are played after
+all, but a launcher option "quality of life fixes" turns them off, and
+takes out the waits between a lost ball and the next one, at the game's
+start and at the bonus ("several seconds where not even sound plays").
+Done on master; notes in docs/tasks/T14.md, the details in port/README.md
+(the setup screen). Waiting for a try in the window.
+
 

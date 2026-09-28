@@ -44,6 +44,15 @@ int pd_run(int table, const char *game_dir, char *err, size_t n);
 
 extern const char *pd_game_dir;
 
+/* The launcher's "quality of life fixes" (main.c sets it before pd_run):
+ * the game waits less where the original holds it still between balls
+ * and at the bonus count, and not after a jingle has ended.  0 in the
+ * headless build and with -prog/-table, so what is compared with the
+ * original is unchanged. */
+extern int pd_qol;
+/* `original` frames, or `shorter` with pd_qol */
+int qol_frames(int original, int shorter);
+
 /* ---- code addresses: routines stored in the program's data (the state
  * table, frame_callback, the event objects' handlers) */
 void call_code(uint16_t offset);
@@ -212,6 +221,9 @@ int load_sound_driver(void);        /* 1 = failed */
 int start_music(void);              /* 1 = failed */
 void stop_sound(void);
 void timer_callback(void);
+/* a jingle was started and has not reached its end (the pattern jump
+ * that ends it, module_callback) */
+int jingle_playing(void);
 
 /* ---- pd_text.c: the display */
 void show_text(uint16_t text);

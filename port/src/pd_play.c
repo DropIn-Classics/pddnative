@@ -167,16 +167,29 @@ void st_ball_start(void)
     ball_start();
 }
 
-/* "player n" and the jingles, the ball shown; then the ball is played in
- * the plunger lane until it leaves it (sprite x below lane_exit_x): state 5.
- * Esc: back to state 2 */
+/* up to `n` frames; with pd_qol only while a jingle asked for is still
+ * to start or playing (the original waits the same time whether the
+ * jingle has ended or not, in silence then) */
+static void wait_jingle(int n)
+{
+    while (n-- > 0) {
+        wait_frame();
+        if (pd_qol && rb(V(jingle_request)) == 0xFF && !jingle_playing())
+            break;
+    }
+}
+
+/* "player n" and the jingles (with pd_qol each wait ends with the jingle
+ * before it), the ball shown; then the ball is played in the plunger lane
+ * until it leaves it (sprite x below lane_exit_x): state 5.  Esc: back to
+ * state 2 */
 void ball_start(void)
 {
     ww(V(player_rec), rw((uint16_t)(V(player_recs) + 2 * rb(V(player)))));
     wb(V(ball_held), 0);
-    wait_frames(0x69);
+    wait_jingle(0x69);
     wb(V(jingle_request), 3);
-    wait_frames(0xB4);
+    wait_jingle(0xB4);
     wb(V(sound_request), 5);
     wait_frames(0x2D);
     wb(V(jingle_request), 1);

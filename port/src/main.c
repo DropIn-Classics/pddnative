@@ -1,8 +1,8 @@
 /* main.c - Pinball Dreams: a native compatibility implementation that
  * needs an installed copy of the game.
  *
- *     pdd [-game DIR | -gog FILE] [-prog 1|2] [-table 0-3] [-record FILE]
- *         [-fx BASS,TREBLE,OOMPH,HEADPHONE]
+ *     pdd [-game DIR | -gog FILE] [-prog 1|2] [-table 0-3] [-qol]
+ *         [-record FILE] [-fx BASS,TREBLE,OOMPH,HEADPHONE]
  *
  * DIR is the unpacked CD (the folders DELUXE, DREAMS1, DREAMS2 ...):
  * -game, else $PDD_GAME, else the first folder `game` with a DREAMS1 in
@@ -14,7 +14,10 @@
  * each.  -prog 1 runs PD.EXE's tables (Ignition, Steel Wheel, Beat Box,
  * Nightmare), 2 PD2.EXE's; -table picks one of the four, as the command
  * line digit did: with either, that table runs once, without the setup
- * screen (as the headless build always does).  -record writes each byte of
+ * screen (as the headless build always does), and as the original runs
+ * it unless -qol gives it the quality of life fixes (pd.h: pd_qol).  From
+ * the setup screen its setting decides: on, the fixes; off, the table's
+ * animation before it as the menu plays it (fli.h).  -record writes each byte of
  * the keyboard as the program gets it, with the number of the picture
  * (PICTURE:HEX, a line each): a game played in the window replays in the
  * headless build (PD_KEYS) and, through tools/portcmp.py --record, in the
@@ -31,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "fli.h"
 #include "frame.h"
 #include "launcher.h"
 #include "pd.h"
@@ -98,6 +102,9 @@ static int with_launcher(const char *game)
 
     while (launcher_run(game, &prog, &table, err)) {
         err[0] = 0;
+        pd_qol = launcher_qol();
+        if (!pd_qol && !fli_before_table(game, 4 * (prog - 1) + table))
+            break;                      /* the window was closed */
         if (mem_load(prog, game, err, sizeof err) != 0)
             continue;
         pd_run(table, game, err, sizeof err);
@@ -129,7 +136,9 @@ int main(int argc, char **argv)
         } else if (!strcmp(argv[i], "-table") && i + 1 < argc) {
             table = atoi(argv[++i]) & 3;
             direct = 1;
-        } else if (!strcmp(argv[i], "-record") && i + 1 < argc)
+        } else if (!strcmp(argv[i], "-qol"))
+            pd_qol = 1;
+        else if (!strcmp(argv[i], "-record") && i + 1 < argc)
             frame_record(argv[++i]);
         else if (!strcmp(argv[i], "-fx") && i + 1 < argc) {
             sscanf(argv[++i], "%d,%d,%d,%d", &fx[0], &fx[1], &fx[2], &fx[3]);

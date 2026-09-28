@@ -6,8 +6,8 @@
  * The game's options go into DDPCOPTN.BIN in the save folder
  * (sys_data_dir()/save/DELUXE), where the table programs read it, in the
  * 13 bytes the menu writes.  The port's own settings (volume, sound
- * shaping, full screen, the last table) go into sys_data_dir()/pdd.cfg,
- * a line "name = value" each. */
+ * shaping, full screen, the last table, the quality of life fixes) go
+ * into sys_data_dir()/pdd.cfg, a line "name = value" each. */
 #ifndef PD_LAUNCHER_H
 #define PD_LAUNCHER_H
 
@@ -17,6 +17,10 @@ void launcher_load_settings(void);
 
 /* the shaping as -fx gives it, kept like one set in the launcher */
 void launcher_set_fx(int bass, int treble, int oomph, int headphone);
+
+/* the setting "quality of life fixes": 1 for the shorter waits (pd_qol)
+ * and no animation before a table */
+int launcher_qol(void);
 
 /* pdd.cfg written, with what the sound keys and Alt+Enter left */
 void launcher_save_settings(void);

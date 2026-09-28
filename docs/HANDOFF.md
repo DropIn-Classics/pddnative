@@ -32,9 +32,11 @@ translated and matches the original through a whole game on Steel Wheel.
   animations and DDFLIPLY; docs/tasks/T9.md) are merged; T10 (the sound
   drivers) is `later`. Where the port is going (the user, 2026-09-28:
   a launcher like a DOS setup program, the translated menu as the hub,
-  controllers, no FLIs) is in docs/TASKS.md; T11 (the launcher, done by
-  Claude, docs/tasks/T11.md: not yet tried in the window) and T13 (the
-  menu) for Claude. Sol's branches are on the Windows machine: the user pushes one to
+  controllers; the FLIs played unless the launcher's "quality of life
+  fixes" are on) is in docs/TASKS.md; T11 (the launcher, done by
+  Claude, docs/tasks/T11.md: not yet tried in the window), T14 (the FLI
+  player `port/src/fli.c` and the quality of life fixes, `pd_qol`:
+  docs/tasks/T14.md, port/README.md) and T13 (the menu) for Claude. Sol's branches are on the Windows machine: the user pushes one to
   `origin` for a review from the Mac. When the user says
   "Review Tn", follow CLAUDE.md (review steps) and AGENTS.md (who writes
   what where).

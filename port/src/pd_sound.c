@@ -14,6 +14,16 @@ static uint16_t xrw(uint16_t off) { return frw(seg_xdata, off); }
 static void xww(uint16_t off, uint16_t v) { fww(seg_xdata, off, v); }
 static uint8_t table(void) { return rb(V(table_num)); }
 
+/* a jingle playing (jingle_playing); set on the program's thread, cleared
+ * also on the audio thread's (module_callback).  The port's own: not in
+ * the program's memory. */
+static volatile int jingle_on;
+
+int jingle_playing(void)
+{
+    return jingle_on;
+}
+
 /* drive C:, \DELUXE, SOUND.CFG names the driver, EXEC of it: the port's
  * driver is sound.c, always there; the program's variable as after the
  * EXEC */
@@ -28,6 +38,7 @@ int load_sound_driver(void)
 static void play_tune(void)
 {
     uint16_t pos = xrw((uint16_t)(V(main_tunes) + 2 * (table() + 2)));
+    jingle_on = 0;
     xww(V(music_pos), (uint16_t)(snd_position(pos) & 0xFF));
 }
 
@@ -35,10 +46,14 @@ static void play_tune(void)
  * on the audio thread): AX = the jump's target in both halves, the module
  * goes on at AL.  Jingle 6 back to the main tune, jingle 5 asks for tune
  * 0, another jingle back to where the tune was (music_pos); the tune's own
- * jumps as they are. */
+ * jumps as they are.  A jingle's first jump is its end (the jingles end
+ * with one: seen in PD_TRACE runs of all eight tables, not read from the
+ * modules). */
 static int module_callback(int target)
 {
     int ax = target << 8 | target;
+
+    jingle_on = 0;
 
     if (xrb(V(jingle_num)) == 6) {
         play_tune();
@@ -78,6 +93,7 @@ void stop_sound(void)
     if (rb(V(sound_on)) == 0)
         return;
     snd_stop();
+    jingle_on = 0;
     frame_set_tick(NULL);
     wb(V(sound_on), 0);
     ww(V(frame_callback), V(no_callback));
@@ -128,6 +144,7 @@ static void tune_request_run(void)
     }
     bx = (uint16_t)(V(music_files) + 4 * (table() + 2));
     snd_position(xrb((uint16_t)(bx + rb(V(tune_request)) + 2)));
+    jingle_on = 0;
     wb(V(tune_request), 0xFF);
     xww(V(music_pos), 0xFFFF);
     xww(V(tune_playing), 1);
@@ -155,11 +172,14 @@ static void jingle_request_run(void)
         xww(V(music_pos), pos);
         snd_position(pos);
         fww(seg_code, V(tune_saved), 0);
+        jingle_on = 0;                  /* 0 and 1: the music of play, no jingle */
     } else if (frw(seg_code, V(tune_saved)) == 0) {
         xww(V(music_pos), (uint16_t)(snd_position(pos) & 0xFF));
         fww(seg_code, V(tune_saved), 1);
+        jingle_on = 1;
     } else {
         snd_position(pos);
+        jingle_on = 1;
     }
     wb(V(jingle_request), 0xFF);
 }

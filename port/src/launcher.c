@@ -17,7 +17,8 @@ static struct {
     int bass, treble, oomph, headphone; /* audiofx.h's */
     int fullscreen;                     /* -1: as the platform starts (the Steam Deck: full) */
     int table;                          /* the last table started, 0-7 (F1-F8) */
-} cfg = { HUD_VOLUME_MAX, 1, 0, 0, 0, 0, -1, 0 };
+    int qol;                            /* the quality of life fixes (pd_qol, no animations) */
+} cfg = { HUD_VOLUME_MAX, 1, 0, 0, 0, 0, -1, 0, 1 };
 
 static const struct {
     const char *name;
@@ -31,6 +32,7 @@ static const struct {
     { "headphone", &cfg.headphone, 0, 1 },
     { "fullscreen", &cfg.fullscreen, 0, 1 },
     { "table", &cfg.table, 0, 7 },
+    { "qol", &cfg.qol, 0, 1 },
 };
 #define NCFG (int)(sizeof cfg_keys / sizeof cfg_keys[0])
 
@@ -74,6 +76,11 @@ void launcher_set_fx(int bass, int treble, int oomph, int headphone)
     cfg.oomph = oomph < 0 ? 0 : oomph > 12 ? 12 : oomph;
     cfg.headphone = headphone != 0;
     apply_fx();
+}
+
+int launcher_qol(void)
+{
+    return cfg.qol;
 }
 
 void launcher_save_settings(void)
@@ -246,7 +253,7 @@ enum {
     I_TABLE, I_TABLE_LAST = I_TABLE + 7,
     I_BALLS, I_MUSIC, I_COLOURS, I_ANGLE, I_SCREEN,
     I_KEY, I_KEY_LAST = I_KEY + 3, I_DEFAULTS, I_BACK,
-    I_VOLUME, I_SHAPING, I_BASS, I_TREBLE, I_OOMPH, I_HEADPHONE, I_FULLSCREEN
+    I_VOLUME, I_SHAPING, I_BASS, I_TREBLE, I_OOMPH, I_HEADPHONE, I_FULLSCREEN, I_QOL
 };
 enum { K_GAP, K_HEADING, K_ITEM, K_CHOICE };
 enum { P_MAIN, P_TABLES, P_OPTIONS, P_SOUND };
@@ -262,6 +269,7 @@ static const Item main_items[] = {
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_OPTIONS, "Game options", "Balls, music, colours, angle, screen, keys: the menu's F10 options." },
     { K_ITEM, I_SOUND, "Sound and window", "The volume, the sound's shaping, full screen." },
+    { K_CHOICE, I_QOL, "Quality of life fixes", "On: no animation before a table; shorter waits between balls, at the bonus." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_QUIT, "Quit", "Back to the system." },
 };
@@ -404,6 +412,7 @@ static void value_text(int id, char *out, size_t n)
     case I_OOMPH:      db(out, n, cfg.oomph); break;
     case I_HEADPHONE:  snprintf(out, n, "%s", cfg.headphone ? "On" : "Off"); break;
     case I_FULLSCREEN: snprintf(out, n, "%s", plat_fullscreen() ? "On" : "Off"); break;
+    case I_QOL:        snprintf(out, n, "%s", cfg.qol ? "On" : "Off"); break;
     default:
         if (id >= I_KEY && id <= I_KEY_LAST)
             snprintf(out, n, "%s", key_name(key_code(id - I_KEY)));
@@ -442,6 +451,7 @@ static void change(int id, int dir, int wrap)
     case I_OOMPH:      cfg.oomph = step(cfg.oomph, dir, 0, 12, wrap); apply_fx(); break;
     case I_HEADPHONE:  cfg.headphone = !cfg.headphone; apply_fx(); break;
     case I_FULLSCREEN: plat_set_fullscreen(!plat_fullscreen()); break;
+    case I_QOL:        cfg.qol = !cfg.qol; break;
     default:
         return;
     }
@@ -632,7 +642,7 @@ static void draw_page(void)
         if (it->id == I_MENU)
             tm_text(x + 26, row, "(later)", A_OFF);
         if (it->kind == K_CHOICE) {
-            int vx = x + 24;
+            int vx = x + 24 > x + 8 + (int)strlen(it->label) ? x + 24 : x + 8 + (int)strlen(it->label);
             value_text(it->id, value, sizeof value);
             if (i == p->cursor && capturing >= 0 && capturing == it->id - I_KEY)
                 snprintf(value, sizeof value, "press a key ...");

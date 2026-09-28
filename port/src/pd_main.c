@@ -9,6 +9,13 @@
 #include "vga.h"
 
 const char *pd_game_dir;
+int pd_qol;
+
+int qol_frames(int original, int shorter)
+{
+    return pd_qol ? shorter : original;
+}
+
 static jmp_buf exit_jmp;
 static char *exit_err;
 static size_t exit_err_n;
