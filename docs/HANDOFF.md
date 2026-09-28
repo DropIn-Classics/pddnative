@@ -15,8 +15,8 @@ translated and matches the original through a whole game on Steel Wheel.
 - T1 (DDPCINTR.EXE, by Muse) and T2 (DDPCMAIN.EXE, begun by Muse and
   finished by Sol) are merged, see below. Sol, the second agent now,
   works in `../pddnative-muse` on `sol/*` (older branches `muse/*`); do
-  not touch that checkout. T5 (`tools/pdfiles.py`) is merged; T7 is open for
-  Sol. When the user says
+  not touch that checkout. T5 (`tools/pdfiles.py`) and T7 (`tools/ddfiles.py`) are
+  merged; T8 (the pictures and sprites) is open for Sol. When the user says
   "Review Tn", follow CLAUDE.md (review steps) and AGENTS.md (who writes
   what where).
 - T3 (the runner) and T4 (PD.EXE's engine into the hints) are done; see
@@ -281,6 +281,20 @@ designer, the filters), STACK. From the code, not run:
   resolution byte) when options are saved, not before every EXEC.
 - The menu loads the sound driver itself (SOUND.CFG, EXEC of the .SDR)
   and gives it a tick callback (INT 66h AL=0Bh, CODE:4421).
+- F9, the history viewer (T7, `tools/ddfiles.py`; docs/tasks/T7.md):
+  `history_init` changes to `..\HISTORY`, shows DDPCHIST.VGA in Mode X
+  (its palette is `history_palette` in the program), detects VESA mode
+  101h (`vesa_available`), loads HISTORY.FNT (256 8x8 glyphs) and the
+  language's .IDX (53 five-byte records: HOP offset, end marker offset,
+  strings minus one); `load_history_hop` loads the .HOP when the table
+  browser is entered. A nine-byte table record in HISTORY selects the
+  IDX record and one or two picture names: `.016` (four VGA planes,
+  640x480, mode 12h with the default palette) or, with VESA, the same
+  name as `.256` (768-byte DAC palette, then 640x480 bytes). CR/LF after
+  a HOP string adds a row only in the 16-colour view. Not opened by any
+  path: BIGBRAVE.025, LIZARD_1.1, CLRFILE.CV4, INTRO2.MOD (the only
+  `load_sound` call passes index 0). All from the code and the files,
+  not run.
 
 ## DDPCINTR.EXE (T1)
 
@@ -386,9 +400,10 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    (T1). The FLI player needs no disassembly (FLI is documented).
 2. Understanding, into the hints: PD.EXE's engine is done (T4, "Not
    understood" above lists what is left); the formats FLIPPERS.SPR,
-   DDPCICON.SPR, HISTORY *.HOP/*.IDX (T7) are not described yet; the
-   collision maps, HISCORES.PD* and DDPCOPTN.BIN are (T5,
-   `tools/pdfiles.py`). The table data is still DB lines apart from the handler words: a
+   DDPCICON.SPR, the DELUXE .VGA pictures and TABLE2M (T8) are not
+   described yet; the collision maps, HISCORES.PD* and DDPCOPTN.BIN are
+   (T5, `tools/pdfiles.py`), the history viewer's files too (T7,
+   `tools/ddfiles.py`). The table data is still DB lines apart from the handler words: a
    `struct`/`dw` hint kind will be needed before data can move.
 3. The runner (done, T3) for comparing the C port with the original
    frame by frame will want savestates (start both at the same moment)
