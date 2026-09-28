@@ -21,6 +21,16 @@ void modplay_render(int16_t *out, int frames);
 /* row 0 of the order list's position `pos` */
 void modplay_set_position(int pos);
 
+/* after the row it plays, the module goes on at position `pos` (as a
+ * pattern jump); the position it plays now */
+int modplay_jump(int pos);
+
+/* a pattern jump (Bxx) goes on at the position `hook` returns for its
+ * target, and is ignored while a jump is pending in the row (as
+ * SBLASTER.SDR does); the hook runs on the audio thread.  NULL: micromod's
+ * own jumps */
+void modplay_set_jump_hook(int (*hook)(int pos));
+
 /* 0-64; 64 is the loudest a 4-channel module plays without clipping */
 void modplay_set_gain(int value);
 

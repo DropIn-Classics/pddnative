@@ -18,10 +18,14 @@ void snd_stop(void);
 /* AL=6: the volume, CX = 0-100h (music_fade's steps; presumably 100h is
  * full, not checked) */
 void snd_volume(int cx);
-/* AL=10h: the module goes on at order position BX.  The driver returns a
- * position in AL (PD.EXE keeps it in music_pos); which one is not
- * established yet: 0 here. */
+/* AL=10h: the module goes on at order position BX after the row it plays
+ * (SBLASTER.SDR: the position counter BX - 1, a jump pending); returns in
+ * AL the position it was playing (PD.EXE keeps it in music_pos) */
 int snd_position(int bx);
+/* AL=13h: the program's routine the driver calls at a pattern jump (Bxx)
+ * with AL = AH = the jump's target; the module goes on at the position in
+ * AL it returns (SBLASTER.SDR; not called while a jump is pending) */
+void snd_jump_callback(int (*callback)(int target));
 /* AL=11h: a sound effect with BL, BH, CL, DL from the table's effect
  * list.  Not implemented yet: what the four bytes mean has to be found
  * from the driver. */

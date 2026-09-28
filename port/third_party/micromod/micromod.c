@@ -52,6 +52,8 @@ static struct instrument instruments[ 32 ];
 
 static long sample_rate, gain, c2_rate, tick_len, tick_offset;
 static long pattern, break_pattern, row, next_row, tick;
+/* pddnative: a pattern jump (Bxx) asks this for its target (see modplay.h) */
+static long ( *jump_hook )( long pos );
 static long speed, pl_count, pl_channel, random_seed;
 
 static struct channel channels[ MAX_CHANNELS ];
@@ -224,7 +226,12 @@ static void channel_row( struct channel *chan ) {
 			}
 			break;
 		case 0xB: /* Pattern Jump.*/
-			if( pl_count < 0 ) {
+			if( jump_hook ) { /* pddnative: ignored while a jump is pending */
+				if( pl_count < 0 && break_pattern < 0 ) {
+					break_pattern = jump_hook( param );
+					next_row = 0;
+				}
+			} else if( pl_count < 0 ) {
 				break_pattern = param;
 				next_row = 0;
 			}

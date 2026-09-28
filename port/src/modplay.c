@@ -1,7 +1,8 @@
 /* modplay.c - see modplay.h.
  *
  * micromod.c is included here rather than compiled on its own: it stays
- * as upstream wrote it, and its warnings are not ours to fix. */
+ * as upstream wrote it apart from the pattern jump's hook (marked
+ * "pddnative"), and its warnings are not ours to fix. */
 #include <stdlib.h>
 #include <string.h>
 #include "modplay.h"
@@ -68,6 +69,30 @@ void modplay_set_position(int pos)
 {
     if (module)
         micromod_set_position(pos);
+}
+
+int modplay_jump(int pos)
+{
+    int was = (int)pattern;
+
+    if (module) {
+        break_pattern = pos < song_length ? pos : 0;
+        next_row = 0;
+    }
+    return was;
+}
+
+static int (*program_hook)(int pos);
+
+static long call_hook(long pos)
+{
+    return program_hook((int)pos) & 0xFF;
+}
+
+void modplay_set_jump_hook(int (*hook)(int pos))
+{
+    program_hook = hook;
+    jump_hook = hook ? call_hook : NULL;
 }
 
 void modplay_set_gain(int value)

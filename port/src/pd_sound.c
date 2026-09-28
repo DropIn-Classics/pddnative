@@ -31,6 +31,26 @@ static void play_tune(void)
     xww(V(music_pos), (uint16_t)(snd_position(pos) & 0xFF));
 }
 
+/* module_callback, the driver's at a pattern jump (INT 66h AL=13h; called
+ * on the audio thread): AX = the jump's target in both halves, the module
+ * goes on at AL.  Jingle 6 back to the main tune, jingle 5 asks for tune
+ * 0, another jingle back to where the tune was (music_pos); the tune's own
+ * jumps as they are. */
+static int module_callback(int target)
+{
+    int ax = target << 8 | target;
+
+    if (xrb(V(jingle_num)) == 6) {
+        play_tune();
+        ax = xrw(V(music_pos));
+    } else if (xrb(V(jingle_num)) == 5) {
+        wb(V(tune_request), 0);
+    } else if (xrw(V(tune_playing)) == 0) {
+        ax = xrw(V(music_pos));
+    }
+    return ax & 0xFF;
+}
+
 /* the table's module (LEVELn.MOD) loaded by the driver, the tick callback
  * set, the music playing */
 int start_music(void)
@@ -46,8 +66,7 @@ int start_music(void)
     }
     wb(V(music_fade_dir), 0);
     frame_set_tick(timer_callback);                 /* AL=0Bh */
-    /* AL=13h hands the driver module_callback; when the driver calls it is
-     * not established yet, so it is not wired up. */
+    snd_jump_callback(module_callback);             /* AL=13h */
     snd_play();
     wb(V(sound_on), 1);
     return 0;

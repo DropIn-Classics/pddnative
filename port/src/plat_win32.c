@@ -44,6 +44,8 @@ static void push_key(int code, int extended, int up)
     int idx = (code & 0x7F) | (extended ? 0x80 : 0);
     if (!up && held[idx])
         return;                         /* Windows' auto-repeat */
+    if (up && !held[idx])
+        return;                         /* its release was sent already */
     held[idx] = (uint8_t)!up;
     if (extended)
         push_byte(0xE0);
@@ -214,6 +216,17 @@ void plat_message(const char *text)
     MessageBoxA(window, text, "Pinball Dreams", MB_OK | MB_ICONINFORMATION);
 }
 
+/* With both Shift keys down, Windows sends no WM_KEYUP for the one let go
+ * first (only when the second goes up): the flippers are the Shift keys,
+ * so each one's release is looked for in the keyboard's state */
+static void release_shifts(void)
+{
+    if (held[0x2A] && !(GetAsyncKeyState(VK_LSHIFT) & 0x8000))
+        push_key(0x2A, 0, 1);
+    if (held[0x36] && !(GetAsyncKeyState(VK_RSHIFT) & 0x8000))
+        push_key(0x36, 0, 1);
+}
+
 int plat_pump(void)
 {
     MSG m;
@@ -221,6 +234,7 @@ int plat_pump(void)
         TranslateMessage(&m);
         DispatchMessageA(&m);
     }
+    release_shifts();
     return !closed;
 }
 

@@ -70,10 +70,21 @@ void snd_volume(int cx)
 
 int snd_position(int bx)
 {
-    plat_audio_lock();
-    modplay_set_position(bx);
+    int was;
+
+    plat_audio_lock();          /* also taken by the jump callback's thread */
+    was = modplay_jump(bx);
+    if (!playing)
+        modplay_set_position(bx);   /* not started yet: from its first row */
     plat_audio_unlock();
-    return 0;
+    return was;
+}
+
+void snd_jump_callback(int (*callback)(int target))
+{
+    plat_audio_lock();
+    modplay_set_jump_hook(callback);
+    plat_audio_unlock();
 }
 
 void snd_effect(int bl, int bh, int cl, int dl)
