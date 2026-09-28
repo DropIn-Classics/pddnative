@@ -196,9 +196,9 @@ own): in place of the pointer while the keys or a controller are used, a
 frame (a dark line, three pixels of yellow and white
 in turn every 24 pictures, a dark line) drawn into the list's picture
 around the entry of `menu_ranges` chosen, the pixels under it kept and
-put back when it moves. Up and Down move it among the eight tables and
-the history (held, after 20 pictures every 6), Enter runs the entry,
-F1-F9 as before (the box goes to the entry); the list scrolls up to 6
+put back when it moves. Up and Down move it among the eight tables, the
+history and the options (held, after 20 pictures every 6), Enter runs the entry,
+F1-F10 as before (the box goes to the entry); the list scrolls up to 6
 rows a picture until the entry is on the screen, and at once after a
 table and the high score
 show. A move starts the count to the high score show anew; in the show
@@ -208,8 +208,10 @@ F1 at the start, five Downs to Safari with the list scrolled, F8 after
 nine, Enter on F2 runs Steel Wheel, on F8 Stall Turn and back (Esc, Y)
 with the box on F8, Down in the high score show back to the list; without
 `-qol` portcmp `--menu` still equal (Down held, menu_loop#100, #230,
-hiscore_show_loop#700). Ten Downs from F1: the box on the history (the
-tenth is not taken), Enter shows the language screen. The mouse moved
+hiscore_show_loop#700). Eight Downs from F1: the box on the history,
+Enter shows the language screen; ten Downs: the box on the options (the
+tenth is not taken), Enter fades out and back to the list, as F10 and a
+click there do (the options screen is not translated). The mouse moved
 or clicked (also in the high score show) takes the box away and shows
 the pointer, which the mouse moves and clicks as without the box; Up,
 Down or Enter bring the box back on the entry under the pointer (Up and
@@ -357,8 +359,8 @@ start a table from the first two pages.
   while AL=10h's jump still waited for the row's end). With `-prog`/`-table` the table runs as the
   original's unless `-qol` is given (both engine fixes); a game played
   with them does not replay in the original (`-record`). Menu box
-  (`menu_box`, menu.h): in the menu a frame around one table's or the
-  history's entry in place of the pointer, until the mouse is used
+  (`menu_box`, menu.h): in the menu a frame around one table's, the
+  history's or the options' entry in place of the pointer, until the mouse is used
   (below, "The menu").
 - Controller: what each button of a game controller does in a table
   (below), one line a button, Left and Right choose; a mark before a

@@ -884,8 +884,8 @@ static void edge_scroll(void)
 }
 
 /* ---- the box (menu_box): the port's own, in place of the pointer.  A
- * frame drawn into the list's picture around one of the first nine
- * entries of menu_ranges (the eight tables, the history), moved with Up
+ * frame drawn into the list's picture around one of the ten entries of
+ * menu_ranges (the eight tables, the history, the options), moved with Up
  * and Down; the list scrolls so that it stays on the screen; a dark line
  * either side of it, for the light entries.  The pixels under it are
  * kept and put back before it moves.  The mouse moved or clicked brings
@@ -894,10 +894,10 @@ static void edge_scroll(void)
 
 int menu_box;
 
-enum { BOX_ENTRIES = 9, BOX_EDGE = 5, BOX_VISIBLE = 0xBC, BOX_LAST_ROW = 0x118,
+enum { BOX_ENTRIES = 10, BOX_EDGE = 5, BOX_VISIBLE = 0xBC, BOX_LAST_ROW = 0x118,
        BOX_SCROLL = 6, BOX_PULSE = 24, BOX_DELAY = 20, BOX_REPEAT = 6 };
 
-static int box_entry;                   /* 0-8, kept while the program runs */
+static int box_entry;                   /* 0-9, kept while the program runs */
 static int box_drawn, box_x1, box_y1, box_x2, box_y2;
 static int box_held, box_hold, box_moved, box_pulse;
 static int box_back;                    /* back to the list from the high score show */
@@ -1014,7 +1014,7 @@ static void box_scroll(int jump)
     dww(M_menu_start, (uint16_t)(0x3C0 + want * 0x50));
 }
 
-/* the list's entry (0-8) under the pointer, else -1 */
+/* the list's entry (0-9) under the pointer, else -1 */
 static int box_under_pointer(void)
 {
     int y = dw(M_menu_row) + dw(M_mouse_y), i;
