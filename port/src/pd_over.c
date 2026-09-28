@@ -29,6 +29,7 @@ static void enter_initials(void)
     wb(V(initial_index), 0);
     wb(V(display_col), 0x10);
     for (;;) {
+        checkpoint("initials_loop");
         if (key_down(0x01)) {
             int i;
             wait_keys_up();

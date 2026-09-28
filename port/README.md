@@ -87,6 +87,14 @@ space of the driver's EXEC in CODE, the stack)
   six trips to the upper level; 187 s), PD2.EXE's table 3, .STT (seed 2:
   the roulette, locks, an extra ball, four balls lost; 300 s) and table 1,
   .SFR (seed 1: `count_message`).
+- games played by hand in the window (`pdd -record`, replayed with
+  `portcmp.py --record`), equal at each drain, the game over and the
+  700th idle frame after the initials: Nightmare (three locks, seven
+  trips to the upper level, 8,845 frames of play) and Steel Wheel (eight
+  trips up, `mult_3`, `count_message`, 11,850 frames; its third ball
+  alone 10,700 frames: equal also at the frame where a key had first been
+  placed a picture late in the original, before portcmp counted a key's
+  time on over 1000 passes at most).
 - A ball can come to rest in the original: on Steel Wheel at (279, 25),
   top right, its speed changing while it stays (random taps, from the
   1,100th frame of play on); the port equal at the 1,000th, 1,100th and
@@ -115,7 +123,8 @@ not translated yet or, with `PD_STOP=where#N`, the Nth time it passes
 `-break where#N` stops the original at the same place: `idle_loop` (state
 2's loop), `ball_start_loop` (state 3's), `st_play`, `st_ball_lost`,
 `st_ball_start`, `st_game_over`, `st_tilt`, `st_ball_locked`,
-`ball_locked_loop` (state 4's loop). `PD_TRACE` prints each checkpoint
+`ball_locked_loop` (state 4's loop), `initials_loop` (the high score
+entry's, a pass every 6 pictures). `PD_TRACE` prints each checkpoint
 passed with the pictures shown so far, and as `note` lines each event
 object's handler run and each switch of the ball's level (`PD_TRACE_BALL`:
 the ball's pixel and speed at each frame of play); `PD_POKE="where#N OFF HEX"` writes
@@ -177,7 +186,7 @@ from nothing saved, as portcmp's runs do (an empty `PD_DATA_DIR`):
   frame_callback, later the objects' handlers).
 - `src/vga.c`: the part of a VGA the programs use (planar memory, the
   registers, the DAC) and its picture; `src/frame.c`: one picture per
-  tick of the sound driver (70.09 a second in the 320x200 mode, measured
+  tick of the sound driver (70.087 a second in the 320x200 mode, measured
   in tools/run), which the program's `timer_callback` gets.
 - `src/sound.c`, `src/modplay.c`: the INT 66h functions the programs call,
   on micromod (`third_party/micromod`). Loading a module, playing,

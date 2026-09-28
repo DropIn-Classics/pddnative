@@ -428,8 +428,25 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    reached. Not reached by any compared game yet: collect_jackpot,
    lock_jackpot, add_hurry_value, countdown, double_score, double_bonus,
    score_to_best, nightmare_switch, mult_4 and up, light_locks.
-   Next: those (more portplay seeds, or --poke into the state before
-   them), Nightmare (portplay's zone does not suit it); then the sound: the driver's tick is 70.09 a second in the
+   The user plays games by hand in the window (`pdd -record`) and hands
+   over the recordings (`build/play*.rec`); `portcmp.py --record` replays
+   them in the original (port/README.md). Equal so far: Nightmare
+   (play1.rec) and Steel Wheel (play-table1.rec) to the attract show after
+   the initials, Ignition (play-table0.rec) to the game over. Ignition's
+   high score entry was not reached by the original: its keys were then
+   placed as st_game_over#1+K over 1,460 pictures, and the picture rate
+   there is not 70.087 (Steel Wheel: 70.155 from the game over to the
+   700th idle frame), so a key lands a picture off. The checkpoint
+   `initials_loop` (a pass every 6 pictures, CODE:269A) was added for
+   that; the recompare with it (`portcmp.py --table 0 --record
+   build/play-table0.rec --until 900 st_game_over#1 initials_loop#100
+   idle_loop#700`) was running at the handover, its result not seen.
+   Fixed on the way: jingles (the driver's pattern-jump callback, AL=13h,
+   and AL=10h's return value, from SBLASTER.SDR), stuck flippers in the
+   window (Windows sends no key-up for the first of two Shift keys), and
+   portcmp's key times over long spans (re-anchored every 1000 passes).
+   Next: that recompare; those handlers (more recordings, portplay
+   seeds, or --poke into the state before them); then the sound: the driver's tick is 70.087 a second in the
    320x200 mode (measured, SBLASTER.SDR); what AL=11h (effects) and
    AL=13h (`module_callback`) do for the driver is still to be found, and
    the port's player does not advance in the headless build (XDATA's

@@ -1155,6 +1155,8 @@ comment DATA:67A9 check_hiscores writes the player's digit here, in the high sco
 name CODE:2647 cmp_score
 name CODE:266C enter_initials
 comment CODE:266C the flipper keys choose a letter, the nudge key takes it (three), Esc leaves them blank
+name CODE:2689 initials_loop
+comment CODE:2689 a pass every 6 frames (two wait_frames of 3): a flipper key held steps the letter once a pass
 name CODE:0DE8 clear_player
 name CODE:29FC clear_players_lights
 comment CODE:29FC at a new game: the eight players' lamp bytes cleared, all lamps out, objects and sequences reset (reset_objects_all), object timers stopped, table_game_objects

@@ -8,7 +8,7 @@ same keys, stop both at the same places and compare their memory.
 
 WHERE is a checkpoint of the port (a name of the hints: idle_loop,
 ball_start_loop, st_play, st_ball_lost, st_ball_start, st_game_over,
-st_tilt, st_ball_locked; the port's PD_STOP and the runner's -break take
+st_tilt, st_ball_locked, ball_locked_loop, initials_loop; the port's PD_STOP and the runner's -break take
 the same name); WHERE#N its Nth pass.  Each is compared with
 tools/memcmp.py; the differences the port has no reason to share (the
 stack, the driver's EXEC scratch in CODE, the saved INT 9 vector,
@@ -64,7 +64,7 @@ RECOUNT = 1000       # passes at most that a time is counted on over (RATE is no
 EXES = {1: ('DREAMS1/PD.EXE', 'src/PD.hints'), 2: ('DREAMS2/PD2.EXE', 'src/PD2.hints')}
 # the port's checkpoints (the trace's other names are notes)
 CHECKPOINTS = ('idle_loop', 'ball_start_loop', 'st_play', 'st_ball_lost', 'st_ball_start', 'st_game_over',
-               'st_tilt', 'st_ball_locked', 'ball_locked_loop')
+               'st_tilt', 'st_ball_locked', 'ball_locked_loop', 'initials_loop')
 # memcmp lines of differences that are expected (see the docstring)
 EXPECTED = re.compile(r'^\s+(STACK:|CODE:\S+ load_sound_driver\+|DATA:\S+ old_int9\+|XDATA:\S+ music_pos\+)')
 

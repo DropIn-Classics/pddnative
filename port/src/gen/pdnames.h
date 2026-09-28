@@ -117,6 +117,7 @@
     X(CODE, insert_hiscore, 0x2576, 0x2565) \
     X(CODE, cmp_score, 0x2658, 0x2647) \
     X(CODE, enter_initials, 0x267D, 0x266C) \
+    X(CODE, initials_loop, 0x269A, 0x2689) \
     X(CODE, save_hiscores, 0x275E, 0x274D) \
     X(CODE, load_hiscores, 0x277E, 0x276D) \
     X(CODE, write_file, 0x27AC, 0x279B) \
