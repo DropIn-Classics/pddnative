@@ -103,6 +103,8 @@ name CODE:02A4 poll_mouse
 comment CODE:02A4 read mouse position and buttons with INT 33h when a mouse was found
 name CODE:0642 load_hiscores
 comment CODE:0642 load HISCORES.PD1 and HISCORES.PD2, using compiled defaults when absent
+name CODE:0826 language_screen
+comment CODE:0826 load raw 320x200 DDPCLANG.VGA through load_vga_image, show it with language_palette and return the selected language
 name CODE:0B59 run_table
 comment CODE:0B59 CHDIR to DREAMS1/2, EXEC PD.EXE/PD2.EXE with digit 0-3, then CHDIR back
 name CODE:0BF0 run_selection
@@ -112,6 +114,7 @@ comment CODE:0C76 EXEC DDFLIPLY.EXE with the selected digit in the DOS command t
 name CODE:0CD0 run_intro
 comment CODE:0CD0 EXEC DDPCINTR.EXE with CD track digit 2 or 3 chosen from PIT channel 1 bit 0
 name CODE:0E81 menu_video_init
+comment CODE:0E81 load raw 320x790 SELECT.VGA through load_vga_image at Mode X offset 03C0h; menu_init shows it with select_palette
 name CODE:0F0C set_mode_x
 comment CODE:0F0C set mode 13h and unchain its VGA planes
 name CODE:0F55 clear_palette
@@ -125,7 +128,7 @@ comment CODE:11D1 read a file through DOS into consecutive 8000h-byte far-memory
 name CODE:1205 write_file_far
 comment CODE:1205 create and write a far-memory buffer through DOS
 name CODE:128E load_vga_image
-comment CODE:128E allocate memory, read a 320x200 VGA image (one byte per pixel) and copy every fourth byte to one Mode X plane; history_init uses it for DDPCHIST.VGA
+comment CODE:128E read a raw 320-pixel-wide indexed VGA image in at most 0FA00h-byte chunks and copy every fourth byte to one Mode X plane, advancing 3E80h plane bytes per chunk; SELECT.VGA is 320x790, the other callers' files 320x200
 name CODE:12F0 copy_vga_image_planes
 comment CODE:12F0 CX groups of four chunky pixels at DS:0000 to the four Mode X planes at ES:DI
 name CODE:1329 install_keyboard
@@ -135,7 +138,15 @@ name CODE:1364 keyboard_handler
 name CODE:142D options_screen
 comment CODE:142D run the F10 options screen in OPTIONS until its exit flag is set
 name CODE:16D3 options_init
-comment CODE:16D3 initialize option graphics and mouse, load DDPCBKGD.VGA/DDPCICON.SPR and current options
+comment CODE:16D3 initialize option graphics and mouse, load raw 320x200 DDPCBKGD.VGA and pointer-table DDPCICON.SPR, copy the background, set options_palette and load current options
+name CODE:186F draw_options_cursor
+comment CODE:186F draw DDPCICON.SPR record 0 (16x16) at the mouse position, treating colour 0 as transparent and saving the old background after the sprite file
+name CODE:18EC restore_options_cursor
+comment CODE:18EC restore the 16x16 background saved after DDPCICON.SPR
+name CODE:2DC8 draw_option_icon
+comment CODE:2DC8 draw DDPCICON.SPR record BX: its pointer-table record is width, height and indexed pixels; records 1-14 are 48x24 option icons (record 0 is the 16x16 cursor)
+name CODE:30B8 copy_options_background
+comment CODE:30B8 copy the 64000 raw indexed bytes of DDPCBKGD.VGA to mode 13h video memory
 name CODE:2BEB load_options
 comment CODE:2BEB read the 13-byte DDPCOPTN.BIN or install defaults, then copy it to options_buffer
 name CODE:2CFE save_options
@@ -201,6 +212,7 @@ name CODE:4241 sound_exec_buffer
 
 ; ---- clear paths, buffers and state
 name DATA:0CBB select_vga_path
+name DATA:0CAE language_vga_path
 name DATA:0CC6 hiscores_pd1_path
 name DATA:0CDD hiscores_pd2_path
 name DATA:0CF4 pd_program
@@ -227,14 +239,21 @@ name DATA:135B mouse_y
 name DATA:135D mouse_buttons
 name DATA:31B8 options_buffer
 comment DATA:31B8 menu-side mirror of the current 13-byte DDPCOPTN.BIN options
-name OPTIONS:0191 icon_path
-name OPTIONS:019E background_path
+name DATA:02F9 select_palette
+comment DATA:02F9 300h-byte VGA DAC palette shown with SELECT.VGA
+name DATA:05F9 language_palette
+comment DATA:05F9 300h-byte VGA DAC palette shown with DDPCLANG.VGA
+name OPTIONS:0191 background_path
+name OPTIONS:019E icon_path
 name OPTIONS:01AB options_path
 name OPTIONS:005A options_file_data
 comment OPTIONS:005A 13 bytes: four choice bytes, four key words, one resolution byte
 name OPTIONS:0610 option_keys
 name OPTIONS:0620 options_mouse_present
-name OPTIONS:0625 background_segment
+name OPTIONS:0301 options_palette
+comment OPTIONS:0301 300h-byte VGA DAC palette shown with DDPCBKGD.VGA and DDPCICON.SPR
+name OPTIONS:0625 icon_segment
+name OPTIONS:0632 background_segment
 name OPTIONS:0629 options_mouse_x
 name OPTIONS:062B options_mouse_y
 name OPTIONS:062F options_exit

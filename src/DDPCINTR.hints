@@ -146,9 +146,13 @@ name CODE:0956 mfree
 name CODE:0961 msize
 ; palettes (four 768-byte palettes 0300 apart, plus a 16-byte table)
 name PALSEG:0000 griflogo
+comment PALSEG:0000 300h-byte VGA DAC palette shown with 21STLOGO.VGA
 name PALSEG:0300 spiderlogo
+comment PALSEG:0300 300h-byte VGA DAC palette shown with SPIDER.VGA
 name PALSEG:0600 presents
+comment PALSEG:0600 300h-byte VGA DAC palette shown with PRESENTS.VGA
 name PALSEG:0900 titl
+comment PALSEG:0900 300h-byte VGA DAC palette shown with TITLE.VGA
 name PALSEG:0C00 paltable
 ; variables (debug calls the segment VARIABLES)
 name DATA:0000 scrst
@@ -262,10 +266,10 @@ words PALSEG:0C00 4 PALSEG
 
 ; ---- what the routines do (one line each, presumably where noted)
 comment CODE:0000 main: mstart2, get PSP via AH=62h, getcmdline, malloc 0FA1h, init320200, setkbdint, load_pics, mfree, disply_pics, then fall through into ldfail
-comment CODE:004B show pictures with fades and CD audio via GetSNL, DoPlayTrack, fadedn/fadeup and waitframe (presumably)
-comment CODE:010A load the four VGA files from introfnames via fload into picmem, then copy each into VRAM with mvscr
+comment CODE:004B show the four pictures with the matching PALSEG palettes, fades and CD audio via GetSNL, DoPlayTrack, fadedn/fadeup and waitframe (presumably)
+comment CODE:010A load 21STLOGO.VGA, SPIDER.VGA, PRESENTS.VGA and TITLE.VGA from introfnames via fload into picmem, then copy each 320x200 raw indexed picture into VRAM with mvscr
 comment CODE:015F copy memory to VGA Mode X planes via srdwr, SI+=4 (presumably)
-comment CODE:019B load 64000-byte VGA file via DOS open (AH=3Dh) and read (presumably)
+comment CODE:019B load a 64000-byte raw 320x200 indexed VGA file via DOS open (AH=3Dh) and read (presumably)
 comment CODE:01DE shrink memory via msize with ES=CS-10h DX=0500h (INT 21h AH=4Ah)
 comment CODE:01F0 get digit from PSP cmdline: BX is the PSP segment (from INT 21h AH=62h in intro), reads ES:0080h with ES=BX; BL is the first non-blank character minus 30h, CF set if that is negative as a signed byte (JNS: below 30h or from B0h up) or the tail is empty (length byte 0); a tail of blanks only reaches the CR and returns CF clear with BL = AL as the caller left it
 comment CODE:021D set VGA mode 13h then Mode X 320x200 via ports 3CE/3C4
