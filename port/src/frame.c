@@ -12,6 +12,8 @@ static KeyHandler key_handler;
 static unsigned long frames;
 static uint64_t next_due;
 static int closed;
+static int tick_due;                    /* the keys came, the tick not yet */
+static int handed;                      /* bytes handed to the program this picture */
 static VgaFrame picture;
 static FILE *record;
 
@@ -33,6 +35,7 @@ static void hand_over_byte(int b)
     }
     if (key_handler)
         key_handler((unsigned char)b);
+    handed++;
 }
 
 void frame_record(const char *path)
@@ -77,7 +80,22 @@ static void hand_over(int b)
     hand_over_byte(b);
 }
 
-int frame_wait(void)
+/* the tick, the picture shown */
+static void finish(void)
+{
+    tick_due = 0;
+    if (tick_routine)
+        tick_routine();
+    vga_frame_start();
+    vga_render(&picture);
+    hud_draw(&picture);
+    plat_present(picture.pixels, picture.width, picture.height, picture.palette);
+    frames++;
+}
+
+/* the next picture's time, its keys handed over; 0 once the window was
+ * closed */
+static int next_picture(void)
 {
     int b;
 
@@ -88,17 +106,38 @@ int frame_wait(void)
         closed = 1;
         return 0;
     }
+    handed = 0;
     while ((b = plat_read_scancode()) >= 0)
         hand_over(b);
     while ((b = plat_read_control()) >= 0)
         hud_control(b);
-    if (tick_routine)
-        tick_routine();
-    vga_frame_start();
-    vga_render(&picture);
-    hud_draw(&picture);
-    plat_present(picture.pixels, picture.width, picture.height, picture.palette);
-    frames++;
+    return 1;
+}
+
+int frame_wait(void)
+{
+    if (tick_due) {
+        finish();
+        return 1;
+    }
+    if (!next_picture())
+        return 0;
+    finish();
+    return 1;
+}
+
+int frame_wait_keys(void)
+{
+    if (tick_due) {
+        finish();
+        return 1;
+    }
+    if (!next_picture())
+        return 0;
+    if (handed)
+        tick_due = 1;
+    else
+        finish();
     return 1;
 }
 

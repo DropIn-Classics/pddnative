@@ -1,7 +1,7 @@
 /* main.c - Pinball Dreams: a native compatibility implementation that
  * needs an installed copy of the game.
  *
- *     pdd [-game DIR | -gog FILE] [-prog 1|2] [-table 0-3] [-qol]
+ *     pdd [-game DIR | -gog FILE] [-prog 1|2] [-table 0-3] [-menu] [-qol]
  *         [-record FILE] [-fx BASS,TREBLE,OOMPH,HEADPHONE]
  *
  * DIR is the unpacked CD (the folders DELUXE, DREAMS1, DREAMS2 ...):
@@ -15,8 +15,11 @@
  * Nightmare), 2 PD2.EXE's; -table picks one of the four, as the command
  * line digit did: with either, that table runs once, without the setup
  * screen (as the headless build always does), and as the original runs
- * it unless -qol gives it the quality of life fixes (pd.h: pd_qol).  From
- * the setup screen its settings decide: the engine's fixes each, and
+ * it unless -qol gives it the quality of life fixes (pd.h: pd_qol).  -menu
+ * starts the game's menu (menu.h) instead, without the setup screen and
+ * the animations, its tables as with -prog/-table; Esc there ends the
+ * program.  From the setup screen (its "Play from the menu" too) its
+ * settings decide: the engine's fixes each, and
  * unless the animation is skipped, the table's animation before it as the
  * menu plays it (fli.h).  -record writes each byte of
  * the keyboard as the program gets it, with the number of the picture
@@ -38,6 +41,7 @@
 #include "fli.h"
 #include "frame.h"
 #include "launcher.h"
+#include "menu.h"
 #include "pd.h"
 #include "platform.h"
 #include "sound.h"
@@ -93,25 +97,53 @@ static int find_game(const char *given, char *out, size_t n)
     return has_game(out);
 }
 
-/* The setup screen, the table chosen there, back to the screen: until it
- * is left or the window closed.  What went wrong in a table is shown on
- * the screen. */
-static int with_launcher(const char *game)
-{
-    char err[512] = "";
-    int prog, table;
+static const char *game_dir;
+static int with_setup;                  /* started from the setup screen */
 
-    while (launcher_run(game, &prog, &table, err)) {
-        err[0] = 0;
+/* a table: its animation first (from the setup screen, unless skipped),
+ * then the table; 1 when it ended, 0 when the window was closed, -1 with
+ * a message in err */
+static int play_table(int prog, int table, char *err, size_t n)
+{
+    int r;
+
+    if (with_setup) {
         pd_qol = launcher_qol();
-        if (!launcher_skip_animation() && !fli_before_table(game, 4 * (prog - 1) + table))
-            break;                      /* the window was closed */
-        if (mem_load(prog, game, err, sizeof err) != 0)
-            continue;
-        pd_run(table, game, err, sizeof err);
-        snd_stop();                     /* the table's music, if it still plays */
+        if (!launcher_skip_animation() && !fli_before_table(game_dir, 4 * (prog - 1) + table))
+            return 0;                   /* the window was closed */
+    }
+    if (mem_load(prog, game_dir, err, n) != 0)
+        return -1;
+    r = pd_run(table, game_dir, err, n);
+    snd_stop();                         /* the table's music, if it still plays */
+    if (plat_has_window())
         launcher_save_settings();       /* what the sound keys and Alt+Enter set */
-        if (!plat_pump())
+    if (r != 0)
+        return -1;
+    return plat_pump();
+}
+
+/* the intro's animations before the menu, unless skipped */
+static int menu_intro(void)
+{
+    return launcher_skip_animation() || fli_intro(game_dir);
+}
+
+/* The setup screen, the table or the menu chosen there, back to the
+ * screen: until it is left or the window closed.  What went wrong in a
+ * table is shown on the screen. */
+static int with_launcher(void)
+{
+    MenuHooks hooks = { menu_intro, play_table };
+    char err[512] = "";
+    int prog, table, r;
+
+    with_setup = 1;
+    while (launcher_run(game_dir, &prog, &table, err)) {
+        err[0] = 0;
+        r = prog == 0 ? menu_run(game_dir, &hooks, err, sizeof err)
+                      : play_table(prog, table, err, sizeof err);
+        if (r == 0 && !plat_pump())
             break;                      /* the window was closed */
     }
     launcher_save_settings();
@@ -123,7 +155,7 @@ int main(int argc, char **argv)
 {
     const char *given = NULL, *image = NULL;
     char game[SYS_PATH], err[512];
-    int prog = 1, table = 0, direct = 0, fx_given = 0, i, r;
+    int prog = 1, table = 0, direct = 0, menu = 0, fx_given = 0, i, r;
     int fx[4] = { 0, 0, 0, 0 };
 
     for (i = 1; i < argc; i++) {
@@ -137,7 +169,9 @@ int main(int argc, char **argv)
         } else if (!strcmp(argv[i], "-table") && i + 1 < argc) {
             table = atoi(argv[++i]) & 3;
             direct = 1;
-        } else if (!strcmp(argv[i], "-qol"))
+        } else if (!strcmp(argv[i], "-menu"))
+            menu = 1;
+        else if (!strcmp(argv[i], "-qol"))
             pd_qol = QOL_NEXT_BALL | QOL_BONUS;
         else if (!strcmp(argv[i], "-record") && i + 1 < argc)
             frame_record(argv[++i]);
@@ -170,9 +204,21 @@ int main(int argc, char **argv)
     }
     if (fx_given)
         launcher_set_fx(fx[0], fx[1], fx[2], fx[3]);
-    if (plat_has_window() && !direct)
-        return with_launcher(game);
+    game_dir = game;
+    if (plat_has_window() && !direct && !menu)
+        return with_launcher();
 
+    if (menu) {
+        MenuHooks hooks = { NULL, play_table };
+        r = menu_run(game, &hooks, err, sizeof err);
+        dump();
+        if (r != 0)
+            plat_message(err);
+        if (plat_has_window())
+            launcher_save_settings();
+        plat_shutdown();
+        return r != 0;
+    }
     if (mem_load(prog, game, err, sizeof err) != 0) {
         plat_message(err);
         plat_shutdown();

@@ -2,7 +2,7 @@
 """Run the C implementation (port/) and the original (tools/run) with the
 same keys, stop both at the same places and compare their memory.
 
-    portcmp.py [--prog 1|2] [--table N] [--keys FILE | --record FILE]
+    portcmp.py [--prog 1|2] [--table N] [--menu] [--keys FILE | --record FILE]
                [--until T] [--all] [--poke WHERE#N NAME HEX] [--options HEX]
                WHERE#N ...
 
@@ -48,6 +48,19 @@ more than once.
 With each stop the tool prints the notes of the port's trace since the
 stop before (the event objects' handlers run, the level switches).
 
+--menu runs the menu (DDPCMAIN.EXE; the port's -menu, the runner's
+-loadfix) instead of a table: its checkpoints are menu_loop and
+hiscore_show_loop, its memory is compared at each stop; the keys may be
+placed at the checkpoints of the table the menu runs too (a table of
+--prog's program; the runner stops in it at PD.EXE:WHERE or PD2.EXE:WHERE).
+The runner's run gets a Space at 13 s, which ends the intro's animations
+(DDPCINTR ends at 12.2 s): the port has none, and the menu's count of
+passes starts after them in both.  Expected differences are then the
+DOS-level ones: the EXECs' command tail and saved stack, SOUND.CFG's
+driver name, the directory and drive load_sound keeps, the saved INT 9
+vector, last_scancode (the Space) and image_block (DOS places the
+picture's block behind the drivers the runner leaves resident).
+
 Every run starts from nothing written: the port's saved files
 (PD_DATA_DIR) and the runner's layer over C: (-state) are made afresh in
 build/portcmp/PID/ (this process's: runs of the tool side by side do not
@@ -71,11 +84,18 @@ WORK = os.path.join(BUILD, 'portcmp', str(os.getpid()))    # this run's files: r
 RATE = 70.087        # pictures a second in the 320x200 mode (the runner's times of 6000 frames of play)
 RECOUNT = 1000       # passes at most that a time is counted on over (RATE is not exact)
 EXES = {1: ('DREAMS1/PD.EXE', 'src/PD.hints'), 2: ('DREAMS2/PD2.EXE', 'src/PD2.hints')}
+MENU = ('DELUXE/DDPCMAIN.EXE', 'src/DDPCMAIN.hints')
+MENU_LOAD = '1018'   # the menu's CODE under the runner's -loadfix (and the port's)
+MENU_INTRO_KEYS = ['13.00000 39+', '13.15000 39-']     # a Space ends the intro's animations
 # the port's checkpoints (the trace's other names are notes)
+MENU_CHECKPOINTS = ('menu_loop', 'hiscore_show_loop')
 CHECKPOINTS = ('idle_loop', 'ball_start_loop', 'st_play', 'st_ball_lost', 'st_ball_start', 'st_game_over',
-               'st_tilt', 'st_ball_locked', 'ball_locked_loop', 'initials_loop')
+               'st_tilt', 'st_ball_locked', 'ball_locked_loop', 'initials_loop') + MENU_CHECKPOINTS
 # memcmp lines of differences that are expected (see the docstring)
 EXPECTED = re.compile(r'^\s+(STACK:|CODE:\S+ load_sound_driver\+|DATA:\S+ old_int9\+)')
+EXPECTED_MENU = re.compile(r'^\s+(STACK:|CODE:\S+ (exec_s[sp]|sound_exec_s[sp]|sound_driver_name|saved_drive|'
+                           r'image_block)\+|DATA:\S+ (old_int9|command_tail|last_scancode)\+|'
+                           r'HISTORY:\S+ saved_dir_path\+)')
 
 
 def parse_keys(path):
@@ -134,8 +154,8 @@ def port_trace(args, keys, stop=None, ram=None, vram=None):
         env['PD_STOP'] = stop
     if ram:
         env['PD_RAM'], env['PD_VRAM'] = ram, vram
-    r = subprocess.run([PORT, '-game', game_dir(), '-prog', str(args.prog), '-table', str(args.table)],
-                       env=env, capture_output=True, text=True)
+    what = ['-menu'] if args.menu else ['-prog', str(args.prog), '-table', str(args.table)]
+    r = subprocess.run([PORT, '-game', game_dir()] + what, env=env, capture_output=True, text=True)
     trace, count = {}, {}
     for l in r.stderr.splitlines():
         m = re.match(r'(?:note )?(\w+) picture (\d+)$', l)
@@ -161,6 +181,8 @@ def run_port(args, keys, stop, ram=None, vram=None, since=None):
 
 def run_original(args, keyfile, stop, ram=None, vram=None):
     """the runner's time at `stop` (None when it does not get there)"""
+    if args.menu and stop.split('#')[0] not in MENU_CHECKPOINTS:
+        stop = '%s:%s' % (os.path.basename(EXES[args.prog][0]), stop)     # in the table the menu runs
     cmd = [sys.executable, os.path.join(HERE, 'run.py'), '-state', fresh(args, 'run'), '-sound', 'sb',
            '-until', str(args.until),
            '-keys', keyfile, '-break', stop]
@@ -168,7 +190,8 @@ def run_original(args, keyfile, stop, ram=None, vram=None):
         cmd += ['-poke', w, n, h]
     if ram:
         cmd += ['-ram', ram, '-vram', vram]
-    r = subprocess.run(cmd + [EXES[args.prog][0], str(args.table)], capture_output=True, text=True)
+    what = ['-loadfix', MENU[0]] if args.menu else [EXES[args.prog][0], str(args.table)]
+    r = subprocess.run(cmd + what, capture_output=True, text=True)
     m = re.search(r'^stop break t=([\d.]+)', r.stdout, re.M)
     return float(m.group(1)) if m else None
 
@@ -176,7 +199,7 @@ def run_original(args, keyfile, stop, ram=None, vram=None):
 def data_offset(args, name):
     """the offset of the DATA variable `name` (NAME or NAME+HEX) in the
     program's hints"""
-    h = Hints(os.path.join(ROOT, EXES[args.prog][1]))
+    h = Hints(os.path.join(ROOT, (MENU if args.menu else EXES[args.prog])[1]))
     name, _, plus = name.partition('+')
     for (seg, off), n in h.names.items():
         if n == name and seg == 'DATA':
@@ -184,9 +207,9 @@ def data_offset(args, name):
     raise SystemExit('portcmp.py: no DATA name %s in %s' % (name, EXES[args.prog][1]))
 
 
-def write_keys(path, lines):
+def write_keys(path, lines, menu=False):
     with open(path, 'w') as f:
-        f.write('\n'.join(lines) + '\n')
+        f.write('\n'.join((MENU_INTRO_KEYS if menu else []) + lines) + '\n')
 
 
 def picture_at(trace, where, n):
@@ -242,7 +265,7 @@ def place(args, events, keyfile):
         if anchor and anchor[0] == where and pic - anchor[2] == n - anchor[1] <= RECOUNT:
             t = anchor[3] + (n - anchor[1]) / RATE
         else:
-            write_keys(keyfile, rk)
+            write_keys(keyfile, rk, args.menu)
             t = run_original(args, keyfile, '%s#%d' % (where, n))
             if t is None:
                 raise SystemExit('portcmp.py: %s#%d is not reached by the original' % (where, n))
@@ -294,11 +317,13 @@ def compare(args, pk, keyfile, stop, since=None):
     if pic is None or t is None:
         print('%s: not reached by %s' % (stop, 'the port' if pic is None else 'the original'))
         return False
-    r = subprocess.run([sys.executable, os.path.join(HERE, 'memcmp.py'), EXES[args.prog][1],
-                        f['oram'], f['pram'], '--vram', f['ovram'], f['pvram']],
+    hints, load = (MENU[1], ['--load', MENU_LOAD]) if args.menu else (EXES[args.prog][1], [])
+    r = subprocess.run([sys.executable, os.path.join(HERE, 'memcmp.py'), hints,
+                        f['oram'], f['pram'], '--vram', f['ovram'], f['pvram']] + load,
                        capture_output=True, text=True, cwd=ROOT)
+    expected = EXPECTED_MENU if args.menu else EXPECTED
     diffs = [l for l in r.stdout.splitlines()
-             if (l.startswith('   ') and (args.all or not EXPECTED.match(l))) or
+             if (l.startswith('   ') and (args.all or not expected.match(l))) or
              (l.startswith('vram') and not l.endswith(' 0 bytes differ'))]
     print('%s: port picture %d, original t=%.5f: %s' % (stop, pic, t, 'different' if diffs else 'equal'))
     for l in diffs:
@@ -312,6 +337,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--prog', type=int, default=1, choices=(1, 2))
     ap.add_argument('--table', type=int, default=0)
+    ap.add_argument('--menu', action='store_true', help='the menu (DDPCMAIN.EXE) instead of a table')
     ap.add_argument('--keys')
     ap.add_argument('--record', help='a game recorded with pdd -record, instead of --keys')
     ap.add_argument('--until', type=float, default=300, help='emulated seconds at most (default 300)')
@@ -329,7 +355,7 @@ def main():
         events = parse_record(args, args.record)
         write_events(os.path.join(BUILD, 'portcmp_record.txt'), events)
     pk, rk = place(args, events, keyfile)
-    write_keys(keyfile, rk)
+    write_keys(keyfile, rk, args.menu)
     ok = all([compare(args, pk, keyfile, stop, since)
               for since, stop in zip([None] + args.stops, args.stops)])
     shutil.rmtree(WORK, ignore_errors=True)

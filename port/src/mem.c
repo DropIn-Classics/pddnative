@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "mem.h"
+#include "gen/ddnames.h"
 #include "sha256.h"
 #include "sys.h"
 
@@ -23,18 +24,26 @@ static const PdNames names_pd2 = {PDN_NAMES(PDN_PD2)};
 #define LOAD_PSP 0x0067u
 #define PROG_PARAS (prog_id == 1 ? 0x1A40u : 0x1A4Au)
 #define MEM_TOP 0xA000u
+/* the menu, where pddrun -loadfix puts it (above 64 KB, which its sound
+ * driver's unpacker needs); it keeps 0F00h paragraphs (check_memory) */
+#define MENU_PSP 0x1008u
+#define MENU_PARAS 0x0F00u
+
+uint16_t mem_arena;
 
 static uint16_t sw(const uint8_t *p) { return (uint16_t)(p[0] | p[1] << 8); }
 
-int mem_load(int id, const char *game_dir, char *err, size_t n)
+/* the program `exe` (its path on the CD) checked against size and hash,
+ * its image loaded at PSP `psp` + 10h and relocated; memory cleared
+ * first, one free block from psp + paras to video memory */
+static int load_exe(const char *exe, size_t want_size, const char *want, uint16_t psp,
+                    uint16_t paras, const char *game_dir, char *err, size_t n)
 {
-    const char *exe = id == 1 ? PD1_EXE : PD2_EXE;
-    const char *want = id == 1 ? PD1_SHA256 : PD2_SHA256;
     char path[SYS_PATH], found[SYS_PATH], hex[65];
     uint8_t digest[32];
     size_t size, hdr, image, i;
     uint8_t *f;
-    uint16_t nrel, relofs;
+    uint16_t nrel, relofs, code = (uint16_t)(psp + 0x10);
 
     /* the name on the CD, DREAMS1/PD.EXE: the folder, then the file */
     snprintf(path, sizeof path, "%s", exe);
@@ -52,48 +61,59 @@ int mem_load(int id, const char *game_dir, char *err, size_t n)
     sha256(f, size, digest);
     for (i = 0; i < 32; i++)
         snprintf(hex + 2 * i, 3, "%02x", digest[i]);
-    if (size != (id == 1 ? PD1_SIZE : PD2_SIZE) || strcmp(hex, want) != 0) {
+    if (size != want_size || strcmp(hex, want) != 0) {
         snprintf(err, n, "%s is not the file of the GOG release (SHA-256 %s).", path, hex);
         free(f);
         return -1;
     }
 
     memset(mem, 0, sizeof mem);
+    /* the image: from the header's end to the size in the header */
+    hdr = (size_t)sw(f + 8) * 16;
+    image = (size_t)(sw(f + 4) - 1) * 512 + (sw(f + 2) ? sw(f + 2) : 512) - hdr;
+    memcpy(mem + (size_t)code * 16, f + hdr, image);
+    nrel = sw(f + 6);
+    relofs = sw(f + 0x18);
+    for (i = 0; i < nrel; i++) {
+        const uint8_t *r = f + relofs + 4 * i;
+        uint16_t off = sw(r), seg = (uint16_t)(sw(r + 2) + code);
+        fww(seg, off, (uint16_t)(frw(seg, off) + code));
+    }
+    free(f);
+
+    /* the arena: one free block from the program's end to video memory */
+    mem_arena = (uint16_t)(psp + paras);
+    fwb(mem_arena, 0, 'Z');
+    fww(mem_arena, 1, 0);
+    fww(mem_arena, 3, (uint16_t)(MEM_TOP - mem_arena - 1));
+    seg_psp = psp;
+    return 0;
+}
+
+int mem_load(int id, const char *game_dir, char *err, size_t n)
+{
     prog_id = id;
+    if (load_exe(id == 1 ? PD1_EXE : PD2_EXE, id == 1 ? PD1_SIZE : PD2_SIZE,
+                 id == 1 ? PD1_SHA256 : PD2_SHA256, LOAD_PSP, PROG_PARAS, game_dir, err, n))
+        return -1;
     nm = id == 1 ? names_pd1 : names_pd2;
-    seg_psp = LOAD_PSP;
     seg_code = (uint16_t)(LOAD_PSP + 0x10);
     seg_tdata = (uint16_t)(seg_code + (id == 1 ? PD1_TDATA : PD2_TDATA));
     seg_data = (uint16_t)(seg_code + (id == 1 ? PD1_DATA : PD2_DATA));
     seg_xdata = (uint16_t)(seg_code + (id == 1 ? PD1_XDATA : PD2_XDATA));
     seg_bss = (uint16_t)(seg_code + (id == 1 ? PD1_BSS : PD2_BSS));
-
-    /* the image: from the header's end to the size in the header */
-    hdr = (size_t)sw(f + 8) * 16;
-    image = (size_t)(sw(f + 4) - 1) * 512 + (sw(f + 2) ? sw(f + 2) : 512) - hdr;
-    memcpy(mem + (size_t)seg_code * 16, f + hdr, image);
-    nrel = sw(f + 6);
-    relofs = sw(f + 0x18);
-    for (i = 0; i < nrel; i++) {
-        const uint8_t *r = f + relofs + 4 * i;
-        uint16_t off = sw(r), seg = (uint16_t)(sw(r + 2) + seg_code);
-        fww(seg, off, (uint16_t)(frw(seg, off) + seg_code));
-    }
-    free(f);
-
-    /* the arena: one free block from the program's end to video memory */
-    {
-        uint16_t mcb = (uint16_t)(LOAD_PSP + PROG_PARAS);
-        fwb(mcb, 0, 'Z');
-        fww(mcb, 1, 0);
-        fww(mcb, 3, (uint16_t)(MEM_TOP - mcb - 1));
-    }
     return 0;
+}
+
+int mem_load_menu(const char *game_dir, char *err, size_t n)
+{
+    prog_id = PROG_MENU;
+    return load_exe(DDM_EXE, DDM_SIZE, DDM_SHA256, MENU_PSP, MENU_PARAS, game_dir, err, n);
 }
 
 /* The MCB chain as DOS keeps it: 'M' or 'Z' (the last), the owner (0 =
  * free), the size in paragraphs.  First fit, as DOS's default strategy. */
-static uint16_t first_mcb(void) { return (uint16_t)(LOAD_PSP + PROG_PARAS); }
+static uint16_t first_mcb(void) { return mem_arena; }
 
 uint16_t dos_alloc(uint16_t paras)
 {

@@ -16,9 +16,16 @@
  * was closed. */
 int fli_play(const char *game, const char *const *names, int count);
 
+/* the last picture shown held for `hold` frames of the menu's
+ * wait_retrace, then faded to black in 32 (DDPCMAIN's fade_out_screen).
+ * 0 when the window was closed. */
+int fli_hold_fade(int hold);
 /* before table `t` (0-7: F1-F8) as the menu runs it: its animation, the
- * last picture held for 46h frames, then faded to black in 32 (DDPCMAIN's
+ * last picture held for 46h frames, then faded out (DDPCMAIN's
  * run_selection).  0 when the window was closed. */
 int fli_before_table(const char *game, int t);
+/* at the menu's start (DDPCMAIN's `start`): the intro's animations
+ * (DDFLIPLY with 0), then faded out.  0 when the window was closed. */
+int fli_intro(const char *game);
 
 #endif

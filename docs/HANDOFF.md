@@ -4,7 +4,9 @@ State of 2026-09-28: stage 1 (source from the programs) done for the two
 table programs, the intro (T1) and the menu (T2); a headless runner (T3)
 runs them; PD.EXE's engine named, commented and its records described
 (T4); the implementation in C (T6, `port/`) has every game state
-translated and matches the original through a whole game on Steel Wheel.
+translated and matches the original through a whole game on Steel Wheel;
+the menu (DDPCMAIN) is translated too (`port/src/menu.c`) and matches
+DDPCMAIN run in tools/run, a table run from it included.
 
 ## Start here (next session)
 
@@ -21,7 +23,9 @@ translated and matches the original through a whole game on Steel Wheel.
   and docs have CRLF line ends; `xfer.py` writes LF on the Mac (convert
   back before committing). Checked there:
   check.py all ok; portcmp equal at idle_loop#3000 and through portplay's
-  Steel Wheel game (seed 1) at each drain and the game over.
+  Steel Wheel game (seed 1) at each drain and the game over (again after
+  the runner's change of 2026-09-28 below, with PD2's games of tables 1
+  and 3).
 - The work so far went in numbered items, T1-T14 (the T numbers in this
   file): stage 1 of DDPCINTR (T1) and DDPCMAIN (T2), the runner (T3),
   PD.EXE's engine in the hints (T4), the implementation in C (T6, under
@@ -33,8 +37,8 @@ translated and matches the original through a whole game on Steel Wheel.
   T9, T11, T14). One agent, Claude, works on `master`. The runner and the
   engine: "Running the originals" and "The engine" below; the C:
   port/README.md.
-- Where the port is going and what is left: "Next" below. The launcher
-  and the FLI animations are not yet tried in the window.
+- Where the port is going and what is left: "Next" below. The launcher,
+  the FLI animations and the menu are not yet tried in the window.
 - Before any change to `tools/` or the hints: `python tools/check.py`
   must stay `all ok` (the hook enforces it on commit). `game/` holds the
   unpacked CD (`python tools/gogx.py` if it is missing).
@@ -323,6 +327,48 @@ designer, the filters), STACK. From the code, not run:
   `load_sound` call passes index 0). All from the code and the files,
   not run.
 
+### The menu run and translated (2026-09-28)
+
+DDPCMAIN runs in tools/run with `-loadfix` (below): DDPCINTR (12.2 s,
+pictures; no CD audio), DDFLIPLY with `0` (a key ends it), then the menu
+with SBLASTER.SDR playing INTRO.MOD. Without `-loadfix` the driver ends
+with "Packed file is corrupt": the menu is small, the driver lands below
+64 KB (at 0FB1h), where EXEPACK's unpacker fails. `port/src/menu.c` is
+the menu in C (port/README.md), its names in `src/DDPCMAIN.hints` (the
+menu's part named for the port: list, pointer, ticker, high scores,
+fades). Found on the way, checked in tools/run:
+
+- `draw_hiscore_char` starts its plane loop with AX = the FONTS segment
+  (just loaded into DS), not char_x: a glyph lands at char_x rounded down
+  to 4 plus (FONTS AND 3), so the high scores' x depends on where DOS
+  loaded the menu (FONTS 177Eh under `-loadfix`: 2 pixels left of 1Fh).
+- `show_menu_start` leaves menu_start in CX: after the high score show
+  the list runs 2D0h passes (the fade_in's count, set after it), after a
+  table chosen in the show 3C0h (menu_start), not the 2D0h set before.
+- The first tick after `load_sound`: the driver's timer runs from its
+  loading, and its next tick calls the routine before the fade's first
+  wait (after AL=4 at the menu's start, between AL=0Bh and AL=4 at a
+  load after a table: at each of the loads looked at), so the ticker
+  moves once before the fade.
+
+#### The menu's tick
+
+The driver's tick moves the pointer and the ticker, so the ticker counts
+ticks. Where the menu waits on the keyboard alone (`wait_keys_up`, a
+REPE SCASB loop) it goes on as soon as the key's interrupt comes and runs
+into the fade's first step (768 MUL/DIV, 8,483 instructions, 1.41 ms at
+the runner's 6 M a second); if the driver's timer interrupt comes before
+that step reaches its wait, the tick is taken inside it and the wait gets
+the next one. portcmp places a key 0.5 pictures before a pass, and the
+menu's passes come 4.3 ms after the tick (AL=8 mixes that long in the
+runner), so a key let go lands about 2.9 ms before a tick, and the
+driver's INT 8 comes 0.15 to 1 ms before its callback: in two of the runs
+looked at the interrupt came first (F3 after the pointer moved, let go 5
+or 6 pictures after the pass: 51 instructions before the wait), in the
+others after. The port (`frame_wait_keys`) models the step as done before
+the tick, as a PC much faster than the runner's 6 MIPS would have it; not
+checked on a PC.
+
 ## DDPCINTR.EXE (T1)
 
 Built IDENTICAL from `src/DDPCINTR.hints` with 153 of the 155 names from
@@ -411,9 +457,24 @@ in parallel (8 runs of 200 emulated seconds take 1.5 minutes here), a
 `-log` on the routine that should be reached; then repeat the seed that
 hit with `-dump`/`-shot`. Found the level switch this way in 3 of 24.
 
-Not done: savestates, a window, the menu programs (DDPCMAIN, DDPCINTR:
-untried; DDPCINTR wants MSCDEX for CD audio, which the DOS layer does not
-have). The runner is not part of `check.py` (it needs MSVC and the CD).
+`-loadfix` (2026-09-28) puts a DOS block over the first 64 KB, as DOS's
+LOADFIX does, so the programs load above it: DDPCMAIN needs it (its
+EXEPACKed sound driver otherwise lands below 64 KB and its unpacker
+fails); the menu's CODE is then at 1018h. A timer interrupt used to be
+delivered after a batch of up to 256 instructions, a REP string
+instruction counted as one: in DDPCMAIN's key wait (REPE SCASB, 32
+elements) it came up to 1.4 ms late, and the sound driver's INT 8,
+which waits for the retrace's start, then waited a whole frame (a tick
+every other frame while a key was held). The batches are now 256
+cycles (a REP element one); after the change portcmp is equal again on
+Steel Wheel's whole game (portplay seed 1, each drain, the game over)
+and PD2's tables 1 and 3 (the games of `build/g21.txt`, `g23.txt`).
+`run.py` takes `EXE:NAME` for a name of another program's hints (the
+tables the menu runs: `PD.EXE:idle_loop#100`).
+
+Not done: savestates, a window. DDPCINTR runs but without CD audio (no
+MSCDEX in the DOS layer). The runner is not part of `check.py` (it needs
+a C compiler and the CD).
 
 ## Next
 
@@ -424,18 +485,17 @@ have). The runner is not part of `check.py` (it needs MSVC and the CD).
    original menu, translated, is the hub; Esc from a table goes back to
    where it was started from. Game controllers. The FLI animations are
    played unless the quality of life fix "skip animation" is on.
-2. The menu in C (DDPCMAIN): the program loaded into the port's memory
-   model beside the table programs, its names from `src/DDPCMAIN.hints`
-   through `tools/portmap.py`, the menu loop (Mode X, SELECT.VGA, the
-   mouse, F1-F8, the high scores shown), F1-F8 running the table in the
-   same process and coming back to the menu with the high scores read
-   again (`menu_init`). Unless "skip animation" is on
-   (`launcher_skip_animation`): the intro's animations at the menu's
-   start (`fli_play` with SPIN21ST, INTRO_P1, INTRO_P2, INTRO_P3, as
-   DDFLIPLY plays for `0`) and the table's before it
-   (`fli_before_table`). F9 (the history viewer) and F10 (the options
-   screen) later. Checked against runs of DDPCMAIN in tools/run where the
-   runner can run it. Then "Play from the menu" in the launcher.
+2. The menu in C (DDPCMAIN): done 2026-09-28 (`port/src/menu.c`, "Play
+   from the menu" in the launcher, `pdd -menu`; checked headless against
+   tools/run, port/README.md), apart from: F9 (the history viewer) and
+   F10 (the options screen; perhaps the launcher's options page instead),
+   the mouse (the platform has none yet), the intro DDPCINTR (pictures
+   and a CD track; the GOG release has the tracks as ogg). To try in the
+   window: the menu, the intro's animations before it, a table and back.
+   The table programs' `wait_keys_up` waits a picture with its tick
+   (pump_frame) where the menu's now goes on before the tick
+   (`frame_wait_keys`, "The menu's tick"); whether the tables need the
+   same is not checked (their comparisons are equal as they are).
 3. Game controllers: SDL2's game controller API in `plat_sdl.c`, XInput
    in `plat_win32.c`; the buttons become the scan codes of the keys the
    table reads (the two flippers, nudge, plunger, F1 to start, P for

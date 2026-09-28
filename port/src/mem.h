@@ -26,8 +26,10 @@
 
 extern uint8_t mem[MEM_SIZE];
 
-/* which program is loaded: 1 = PD.EXE (Pinball Dreams), 2 = PD2.EXE */
+/* which program is loaded: 1 = PD.EXE (Pinball Dreams), 2 = PD2.EXE,
+ * PROG_MENU = DDPCMAIN.EXE (menu.c) */
 extern int prog_id;
+enum { PROG_MENU = 3 };
 
 /* the segments of the loaded program (absolute, as DS would hold them) */
 extern uint16_t seg_psp, seg_code, seg_tdata, seg_data, seg_xdata, seg_bss;
@@ -48,6 +50,11 @@ extern PdNames nm;
  * and checks that it is the file the hints describe.  0 on success, else
  * -1 and a message in err. */
 int mem_load(int id, const char *game_dir, char *err, size_t n);
+/* Loads DDPCMAIN.EXE (the menu) where pddrun -loadfix loads it; seg_psp
+ * set, the other segments are menu.c's.  0, or -1 and a message in err. */
+int mem_load_menu(const char *game_dir, char *err, size_t n);
+/* the first MCB of the arena behind the program loaded (dos_alloc's) */
+extern uint16_t mem_arena;
 
 /* ---- access, segment:offset (the offset wraps at 64 KB as on the CPU) */
 

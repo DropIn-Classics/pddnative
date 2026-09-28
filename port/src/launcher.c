@@ -274,7 +274,7 @@ typedef struct {
 
 static const Item main_items[] = {
     { K_ITEM, I_PLAY, "Play a table", "One of the eight tables; Esc in the table comes back here." },
-    { K_ITEM, I_MENU, "Play from the menu", "The game's own menu, with the tables' pictures: not ready yet." },
+    { K_ITEM, I_MENU, "Play from the menu", "The game's own menu, F1-F8 there; Esc in the menu comes back here." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_OPTIONS, "Game options", "Balls, music, colours, angle, screen, keys: the menu's F10 options." },
     { K_ITEM, I_SOUND, "Sound and window", "The volume, the sound's shaping, full screen." },
@@ -354,7 +354,7 @@ static int page;
 
 static int selectable(const Item *it)
 {
-    return (it->kind == K_ITEM || it->kind == K_CHOICE) && it->id != I_MENU;
+    return it->kind == K_ITEM || it->kind == K_CHOICE;
 }
 
 static void move_cursor(int dir)
@@ -511,6 +511,10 @@ static int activate(int *prog, int *table)
         go(P_TABLES);
         cursor_to(I_TABLE + cfg.table);
         break;
+    case I_MENU:
+        launcher_save_settings();
+        *prog = 0;
+        return START;
     case I_OPTIONS: go(P_OPTIONS); break;
     case I_SOUND:   go(P_SOUND); break;
     case I_QOL:     go(P_QOL); break;
@@ -662,8 +666,6 @@ static void draw_page(void)
             continue;
         }
         tm_text(x + 4, row, it->label, label);
-        if (it->id == I_MENU)
-            tm_text(x + 26, row, "(later)", A_OFF);
         if (it->kind == K_CHOICE) {
             int vx = x + 24 > x + 8 + (int)strlen(it->label) ? x + 24 : x + 8 + (int)strlen(it->label);
             value_text(it->id, value, sizeof value);

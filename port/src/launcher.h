@@ -28,8 +28,9 @@ int launcher_skip_animation(void);
 /* pdd.cfg written, with what the sound keys and Alt+Enter left */
 void launcher_save_settings(void);
 
-/* The setup screen until a table is chosen: 1 with *prog (1 PD.EXE, 2
- * PD2.EXE) and *table (0-3), 0 to quit (or the window was closed).
+/* The setup screen until a table or the menu is chosen: 1 with *prog (1
+ * PD.EXE, 2 PD2.EXE) and *table (0-3), or *prog 0 for the menu (menu.h);
+ * 0 to quit (or the window was closed).
  * `game` is the game's folder (shown); `note`, if not NULL, is shown
  * first in a box (why the last table ended). */
 int launcher_run(const char *game, int *prog, int *table, const char *note);

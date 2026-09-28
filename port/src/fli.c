@@ -278,21 +278,14 @@ int fli_play(const char *game, const char *const *names, int count)
     return r != CLOSED;
 }
 
-int fli_before_table(const char *game, int t)
+int fli_hold_fade(int hold)
 {
-    static const char *const names[8] = {
-        "IGNITION.FLI", "STEELWHL.FLI", "BEATBOX.FLI", "NIGHTMRE.FLI",
-        "NEPTUNE.FLI", "SAFARI.FLI", "REVENGE.FLI", "STALLTRN.FLI",
-    };
-    uint64_t at;
+    uint64_t at = plat_micros();
     int f;
 
-    if (!fli_play(game, &names[t & 7], 1))
-        return 0;
     /* the menu's keyboard handler has the keys meanwhile: none reaches
-     * the table */
-    at = plat_micros();
-    if (show_until(at += (uint64_t)(0x46 * 1e6 / RETRACE_HZ), 0) == CLOSED)
+     * what comes next */
+    if (show_until(at += (uint64_t)(hold * 1e6 / RETRACE_HZ), 0) == CLOSED)
         return 0;
     for (f = 31; f >= 0; f--) {
         set_palette(f);
@@ -301,4 +294,23 @@ int fli_before_table(const char *game, int t)
     }
     drain_keys();
     return 1;
+}
+
+int fli_before_table(const char *game, int t)
+{
+    static const char *const names[8] = {
+        "IGNITION.FLI", "STEELWHL.FLI", "BEATBOX.FLI", "NIGHTMRE.FLI",
+        "NEPTUNE.FLI", "SAFARI.FLI", "REVENGE.FLI", "STALLTRN.FLI",
+    };
+
+    return fli_play(game, &names[t & 7], 1) && fli_hold_fade(0x46);
+}
+
+int fli_intro(const char *game)
+{
+    static const char *const names[4] = {
+        "SPIN21ST.FLI", "INTRO_P1.FLI", "INTRO_P2.FLI", "INTRO_P3.FLI",
+    };
+
+    return fli_play(game, names, 4) && fli_hold_fade(0);
 }

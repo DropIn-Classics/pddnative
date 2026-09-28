@@ -1,9 +1,9 @@
 # port: Pinball Dreams in C
 
 A native compatibility implementation requiring an installed copy of
-Pinball Dreams: the table programs PD.EXE and PD2.EXE translated to C,
-routine by routine, from the source that `tools/disasm.py` generates from
-the player's own copy. The game's data (the tables' records, pictures,
+Pinball Dreams: the table programs PD.EXE and PD2.EXE and the menu
+DDPCMAIN.EXE translated to C, routine by routine, from the source that
+`tools/disasm.py` generates from the player's own copy. The game's data (the tables' records, pictures,
 collision maps, music) is read from that copy at run time; none of it is
 in this repository.
 
@@ -128,6 +128,50 @@ space of the driver's EXEC in CODE, the stack)
   is equal at st_ball_start#1 and ball_start_loop#1 after F1 on all
   eight tables.
 
+### The menu (DDPCMAIN.EXE)
+
+Translated (2026-09-28, `src/menu.c`): the list of the tables with the
+pointer the keyboard moves (the arrows two pixels a picture, Enter a
+click; the list scrolls when the pointer is at its top or bottom), F1-F8,
+the ticker line, the high score show after 870h pictures without a choice
+(both programs' high scores, read from the HISCORES files anew after each
+table), the fades, the music (INTRO.MOD, as the menu's load_sound has
+the driver play it), a table run in the same process: the menu's memory
+is kept aside while the table's program runs where tools/run loads it,
+and put back after it, as under DOS the table ran above the menu. Not
+translated: the intro (DDPCINTR.EXE, a CD audio track and four
+pictures), the history (F9) and the options screen (F10; the setup
+screen has the options): chosen, the menu fades out and comes back, as
+it does when the history's language screen is left with Esc. No mouse
+(the program sees no mouse driver, as in tools/run).
+
+Checked with `tools/portcmp.py --menu` (below) against DDPCMAIN in
+tools/run (`-loadfix`), the menu's segments and all of video memory at
+the passes named: equal, apart from what DOS keeps for the program (the
+command tail and stack of its EXECs, the driver name from SOUND.CFG,
+the drive and directory load_sound keeps, the saved INT 9 vector, the
+block the picture is read into, the Space that ended the runner's
+intro), at
+
+- menu_loop#100, #2160, #2161, #2500, #2880, #2881 and
+  hiscore_show_loop#1, #700, #1440, #1441, #2000 without a key: the list,
+  the first high score show, the list for 2D0h passes, the second show;
+- with the Down arrow held for 100 passes (the list scrolls at the
+  bottom), Right, Up: at menu_loop#150, #230, #450;
+- the pointer on the first row and Enter: Ignition runs (Esc, Y in its
+  attract show), back in the menu at menu_loop#121 and #1500;
+- F6 in the high score show: Safari (PD2.EXE), back at menu_loop#2161,
+  the list for 3C0h passes to #3120, the next show at
+  hiscore_show_loop#301 and #1000;
+- F3 after the pointer moved (the list scrolled): Beat Box, back at
+  menu_loop#502 the ticker is a step apart (ticker_x, the ticker's
+  buffer and its pixels; the rest equal), with F3 let go 5 or 6 pictures
+  after the pass: in the runner the driver's timer interrupt came into
+  the fade's first step there, before its wait (docs/HANDOFF.md, "The
+  menu's tick").
+
+Not tried in the window: the menu, the intro's animations before it.
+
 ## Build and run
 
     port\build.bat
@@ -144,7 +188,8 @@ SDL2.framework in `~/Library/Frameworks` or `/Library/Frameworks` on a
 Mac, else what `sdl2-config` or `pkg-config sdl2` give. Without SDL2 it
 builds the headless program only. `-game` is the
 unpacked CD (`python tools/gogx.py`), `-prog 1` PD.EXE's tables, `-prog 2`
-PD2.EXE's, `-table` 0-3.
+PD2.EXE's, `-table` 0-3. `-menu` starts the game's menu instead (without
+the setup screen and the animations; Esc in the menu ends the program).
 
 The sound in the window: `-fx BASS,TREBLE,OOMPH,HEADPHONE` shapes it
 (`src/audiofx.c`: bass and treble shelves -12 to 12 dB at 200 Hz and
@@ -170,9 +215,12 @@ start a table from the first two pages.
   F1-F4 PD.EXE's tables 0-3, F5-F8 PD2.EXE's). Esc in the table (the
   game's own quit: Esc, then Y) comes back to the setup screen; the
   program is loaded anew for each table (`mem_load`, `pd_run`).
-- Play from the menu: greyed out until the menu is translated (T13;
-  then the intro's animations before it, unless the animation is
-  skipped).
+- Play from the menu: the game's menu (`src/menu.c`), the intro's
+  animations before it (`fli_intro`: SPIN21ST, INTRO_P1-P3, as DDFLIPLY
+  plays them for `0`, then faded out) unless the animation is skipped;
+  a table chosen there gets its animation as from the table page. Esc in
+  the menu (the menu's own: it ends DDPCMAIN) comes back to the setup
+  screen.
 - Game options: what the menu's F10 screen sets, with its ranges (its hit
   boxes at DDPCMAIN's OPTIONS:0009): balls (3 or 5), music (the tunes and
   jingles, or the main tune only), colours (colour or grey), table angle
@@ -257,6 +305,14 @@ with nothing saved (in `build/portcmp/`, a directory per run of the tool).
 The results listed under "State" were found by hand this way before the
 tool; it reproduces them.
 
+`--menu` does the same with the menu: the port's `-menu`, DDPCMAIN.EXE
+in the runner with `-loadfix` and a Space at 13 s that ends the intro's
+animations; the checkpoints `menu_loop` and `hiscore_show_loop`, and
+keys may be placed at the checkpoints of the table the menu runs (a
+table of `--prog`'s program):
+
+    python tools\portcmp.py --menu --prog 2 --keys keys.txt menu_loop#2161
+
 `tools/portplay.py` plays a game on the port with a simple player (both
 flippers tapped when the ball comes down over their tips) and writes its
 keys file; `portcmp.py --keys` then runs the original with it:
@@ -283,7 +339,8 @@ from nothing saved, as portcmp's runs do (an empty `PD_DATA_DIR`):
 - `src/mem.c`: the program's memory as under DOS: one megabyte, the
   program loaded from the player's PD.EXE or PD2.EXE (checked by SHA-256)
   where tools/run loads it, relocations applied, the DOS blocks it
-  allocates behind it. The tables are data in this memory (records that
+  allocates behind it; DDPCMAIN.EXE where tools/run loads it with
+  `-loadfix` (its CODE at 1018h). The tables are data in this memory (records that
   point at each other with 16-bit offsets), so they are used where they
   lie.
 - `src/gen/pdnames.h` (from `tools/portmap.py`, checked by
@@ -298,7 +355,15 @@ from nothing saved, as portcmp's runs do (an empty `PD_DATA_DIR`):
 - `src/vga.c`: the part of a VGA the programs use (planar memory, the
   registers, the DAC) and its picture; `src/frame.c`: one picture per
   tick of the sound driver (70.087 a second in the 320x200 mode, measured
-  in tools/run), which the program's `timer_callback` gets.
+  in tools/run), which the program's `timer_callback` gets;
+  `frame_wait_keys` for a loop that waits on the keyboard alone (the
+  menu's wait_keys_up): when a key came, the program goes on before the
+  tick, which the next wait gets.
+- `src/menu.c`: the menu, on DDPCMAIN.EXE's memory, under the names of
+  `src/DDPCMAIN.hints` (`src/gen/ddnames.h`, from `tools/portmap.py`);
+  it shares the engine's routines that are the same code in both
+  programs (the mode, the planes, the file names), and runs a table
+  through `main.c`'s `play_table`.
 - `src/sound.c`, `src/modplay.c`: the INT 66h functions the programs call,
   on micromod (`third_party/micromod`): loading a module, playing,
   positions, the volume, the pattern-jump callback (AL=13h) and the

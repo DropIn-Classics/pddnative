@@ -22,6 +22,12 @@ void frame_set_keyboard(KeyHandler handler);
 
 /* waits for the next picture; 0 once the window was closed */
 int frame_wait(void);
+/* For a loop that waits on the keyboard alone (the menu's wait_keys_up):
+ * the next picture's keys handed over, and when there were any, back to
+ * the program before the tick, which the next wait runs without waiting
+ * (under DOS the key's interrupt came before the tick, and such a loop
+ * went on at once).  0 once the window was closed. */
+int frame_wait_keys(void);
 
 /* each keyboard byte handed to the program is written to the file `path`
  * as PICTURE:HEX (the picture count when it was handed over) */
