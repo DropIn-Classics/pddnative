@@ -27,9 +27,9 @@ event lands in both: the port's picture is that of the pass in a run with
 the keys before it (all events are placed from one run as far as it
 reaches and checked by a run with them; from the first that moved on,
 again); the runner's time is taken from a run of the original to the
-same pass, unless the last such run was at the same checkpoint and the
-port passed it once a picture since (70.09 pictures a second): then the
-time is counted on from there (as is the port's picture for a pass the
+same pass, unless the last such run was at the same checkpoint, at most 1000
+passes before, and the port passed it once a picture since (70.087
+pictures a second): then the time is counted on from there (as is the port's picture for a pass the
 loop was left before: a key let go after it).  The port must be built
 (port/build.bat).
 
@@ -59,7 +59,8 @@ from disasm import Hints, game_dir
 
 PORT = os.path.join(ROOT, 'port', 'build', 'pdd-headless.exe')
 BUILD = os.path.join(ROOT, 'build')
-RATE = 70.09
+RATE = 70.087        # pictures a second in the 320x200 mode (the runner's times of 6000 frames of play)
+RECOUNT = 1000       # passes at most that a time is counted on over (RATE is not exact)
 EXES = {1: ('DREAMS1/PD.EXE', 'src/PD.hints'), 2: ('DREAMS2/PD2.EXE', 'src/PD2.hints')}
 # the port's checkpoints (the trace's other names are notes)
 CHECKPOINTS = ('idle_loop', 'ball_start_loop', 'st_play', 'st_ball_lost', 'st_ball_start', 'st_game_over',
@@ -219,7 +220,7 @@ def place(args, events, keyfile):
     for e, pic in zip(events, place_port(args, events)[0]):
         where, n, code, down, k = e[:4] + (after(e),)
         pic -= k                                # the pass's picture
-        if anchor and anchor[0] == where and pic - anchor[2] == n - anchor[1]:
+        if anchor and anchor[0] == where and pic - anchor[2] == n - anchor[1] <= RECOUNT:
             t = anchor[3] + (n - anchor[1]) / RATE
         else:
             write_keys(keyfile, rk)
