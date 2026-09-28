@@ -31,4 +31,10 @@ typedef struct {
  * pass, as the table programs' checkpoints do. */
 int menu_run(const char *game, const MenuHooks *hooks, char *err, size_t n);
 
+/* Not 0: the port's box in place of the pointer, a frame around one
+ * table's entry that Up and Down move (the list scrolls with it) and Enter
+ * chooses; in the high score show Enter and the arrows go back to the
+ * list.  0 (the default): the pointer, as the original has it. */
+extern int menu_box;
+
 #endif

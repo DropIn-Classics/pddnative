@@ -703,6 +703,205 @@ static void edge_scroll(void)
     }
 }
 
+/* ---- the box (menu_box): the port's own, in place of the pointer.  A
+ * frame drawn into the list's picture around one of the eight tables'
+ * entries (menu_ranges), moved with Up and Down; the list scrolls so that
+ * it stays on the screen; a dark line either side of it, for the light
+ * entries.  The pixels under it are kept and put back
+ * before it moves. */
+
+int menu_box;
+
+enum { BOX_TABLES = 8, BOX_EDGE = 5, BOX_VISIBLE = 0xBC, BOX_LAST_ROW = 0x118,
+       BOX_SCROLL = 6, BOX_PULSE = 24, BOX_DELAY = 20, BOX_REPEAT = 6 };
+
+static int box_entry;                   /* 0-7, kept while the program runs */
+static int box_drawn, box_x1, box_y1, box_x2, box_y2;
+static int box_held, box_hold, box_moved, box_pulse;
+static uint8_t box_colour[3];           /* two to pulse between, the dark lines' */
+static uint8_t box_saved[2 * BOX_EDGE * (320 + 480)];
+
+static uint16_t box_range(int entry, int word)
+{
+    return dw((uint16_t)(M_menu_ranges + 1 + 8 * entry + 2 * word));
+}
+
+/* the palette entry of select_palette nearest to r, g, b (0-63) */
+static uint8_t box_nearest(int r, int g, int b)
+{
+    long best = -1, d;
+    int i, dr, dg, db_;
+    uint8_t at = 0;
+
+    for (i = 0; i < 256; i++) {
+        dr = db((uint16_t)(M_select_palette + 3 * i)) - r;
+        dg = db((uint16_t)(M_select_palette + 3 * i + 1)) - g;
+        db_ = db((uint16_t)(M_select_palette + 3 * i + 2)) - b;
+        d = (long)dr * dr + (long)dg * dg + (long)db_ * db_;
+        if (best < 0 || d < best) {
+            best = d;
+            at = (uint8_t)i;
+        }
+    }
+    return at;
+}
+
+/* each pixel of the frame, x/y in the list; `ring` 0 the outermost */
+static void box_walk(void (*fn)(int x, int y, int ring, int n))
+{
+    int x, y, ring, n = 0;
+
+    for (y = box_y1; y <= box_y2; y++)
+        for (x = box_x1; x <= box_x2; x++) {
+            ring = x - box_x1;
+            if (box_x2 - x < ring) ring = box_x2 - x;
+            if (y - box_y1 < ring) ring = y - box_y1;
+            if (box_y2 - y < ring) ring = box_y2 - y;
+            if (ring < BOX_EDGE && n < (int)sizeof box_saved)
+                fn(x, y, ring, n++);
+        }
+}
+
+static uint16_t box_addr(int x, int y)
+{
+    return (uint16_t)(0x3C0 + y * 0x50 + (x >> 2));
+}
+
+static void box_save_pixel(int x, int y, int ring, int n)
+{
+    (void)ring;
+    set_planes(0, (uint8_t)(x & 3));
+    box_saved[n] = vga_read(box_addr(x, y));
+}
+
+static void box_restore_pixel(int x, int y, int ring, int n)
+{
+    (void)ring;
+    set_planes((uint8_t)(1 << (x & 3)), 0);
+    vga_write(box_addr(x, y), box_saved[n]);
+}
+
+static void box_draw_pixel(int x, int y, int ring, int n)
+{
+    (void)n;
+    set_planes((uint8_t)(1 << (x & 3)), 0);
+    vga_write(box_addr(x, y), ring == 0 || ring == BOX_EDGE - 1 ? box_colour[2]
+                              : box_colour[box_pulse / BOX_PULSE]);
+}
+
+static void box_remove(void)
+{
+    if (box_drawn)
+        box_walk(box_restore_pixel);
+    box_drawn = 0;
+}
+
+static void box_draw(void)
+{
+    box_remove();
+    box_x1 = box_range(box_entry, 0);
+    box_y1 = box_range(box_entry, 1);
+    box_x2 = box_range(box_entry, 2);
+    box_y2 = box_range(box_entry, 3);
+    box_walk(box_save_pixel);
+    box_walk(box_draw_pixel);
+    box_drawn = 1;
+}
+
+/* the list scrolled towards the box (at once when `jump`), menu_row
+ * following menu_start as edge_scroll keeps it */
+static void box_scroll(int jump)
+{
+    int row = dsw(M_menu_row), want = row;
+
+    if (box_y1 < want)
+        want = box_y1;
+    if (box_y2 >= want + BOX_VISIBLE)
+        want = box_y2 - BOX_VISIBLE + 1;
+    if (want < 0)
+        want = 0;
+    if (want > BOX_LAST_ROW)
+        want = BOX_LAST_ROW;
+    if (!jump && want > row + BOX_SCROLL)
+        want = row + BOX_SCROLL;
+    if (!jump && want < row - BOX_SCROLL)
+        want = row - BOX_SCROLL;
+    dww(M_menu_row, (uint16_t)want);
+    dww(M_menu_start, (uint16_t)(0x3C0 + want * 0x50));
+}
+
+/* the box drawn anew on the picture just loaded, the list at it */
+static void box_init(void)
+{
+    box_colour[0] = box_nearest(63, 63, 0);
+    box_colour[1] = box_nearest(63, 63, 63);
+    box_colour[2] = box_nearest(0, 0, 0);
+    box_drawn = 0;
+    box_pulse = 0;
+    box_draw();
+    box_scroll(1);
+}
+
+/* read_menu_keys with the box: Up and Down move it (held, they repeat),
+ * Enter chooses its table; in the high score show (`in_list` 0) Enter and
+ * the arrows go back to the list.  F1-F10 and Esc as there; 1 when Esc
+ * is down */
+static int box_keys(int in_list)
+{
+    static const uint8_t fkeys[10] = { 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x44 };
+    int dir = key_down(0xC8) ? -1 : key_down(0xD0) ? 1 : 0, step = 0, i;
+
+    box_moved = 0;
+    if (key_down(0x01))
+        return 1;
+    if (dir != box_held) {
+        box_held = dir;
+        box_hold = 0;
+        step = dir;
+    } else if (dir && ++box_hold >= BOX_DELAY) {
+        box_hold = BOX_DELAY - BOX_REPEAT;
+        step = dir;
+    }
+    if (!in_list && (step || key_down(0x1C))) {
+        dwb(M_mouse_buttons, 1);
+        box_held = 0;
+        wait_keys_up();
+        return 0;
+    }
+    if (step && box_entry + step >= 0 && box_entry + step < BOX_TABLES) {
+        box_entry += step;
+        box_pulse = 0;
+        box_draw();
+        box_moved = 1;
+    }
+    if (key_down(0x1C)) {
+        dwb(M_selection, (uint8_t)(box_entry + 1));
+        dwb(M_mouse_buttons, 2);
+        wait_keys_up();
+    } else {
+        for (i = 0; i < 10; i++)
+            if (key_down(fkeys[i])) {
+                dwb(M_selection, (uint8_t)(i + 1));
+                dwb(M_mouse_buttons, 2);
+                if (i < BOX_TABLES)
+                    box_entry = i;
+                wait_keys_up();
+                break;
+            }
+    }
+    return 0;
+}
+
+/* a pass of the list with the box: the pulse, the scroll */
+static void box_pass(void)
+{
+    if (++box_pulse == 2 * BOX_PULSE)
+        box_pulse = 0;
+    if (box_pulse % BOX_PULSE == 0)
+        box_draw();
+    box_scroll(0);
+}
+
 static void menu_init(void);
 
 /* the table run: its program loaded over the menu's memory, which is put
@@ -801,9 +1000,16 @@ static void menu_init(void)
     dww(M_char_y, 0);
     menu_video_init();
     poll_mouse();
-    draw_pointer(1);
-    dww(M_tick_draw, M_tick_draw_pointer);
-    dww(M_tick_remove, M_tick_remove_pointer);
+    if (menu_box) {
+        box_init();
+        show_menu_start();
+        dww(M_tick_draw, M_tick_nothing);
+        dww(M_tick_remove, M_tick_nothing);
+    } else {
+        draw_pointer(1);
+        dww(M_tick_draw, M_tick_draw_pointer);
+        dww(M_tick_remove, M_tick_remove_pointer);
+    }
     dww(M_tick_ticker, M_ticker_step);
     cww(M_pointer_on, 1);
     load_sound(0);
@@ -817,6 +1023,8 @@ static void list_again(void)
     dww(M_menu_row, 0);
     dww(M_menu_start, 0x3C0);
     dww(M_menu_start_end, 0x5780);
+    if (menu_box)
+        box_scroll(1);
     show_menu_start();
 }
 
@@ -833,9 +1041,17 @@ static void menu(void)
             checkpoint_menu("menu_loop");
             show_menu_start();
             poll_mouse();
-            if (read_menu_keys())
-                return;
-            edge_scroll();
+            if (menu_box) {
+                if (box_keys(1))
+                    return;
+                if (box_moved)
+                    cx = 0x870;
+                box_pass();
+            } else {
+                if (read_menu_keys())
+                    return;
+                edge_scroll();
+            }
             if (db(M_mouse_buttons))
                 select_at_pointer();
         } while (--cx);
@@ -857,7 +1073,7 @@ static void menu(void)
                 break;
             }
             if (any_key_down()) {
-                if (read_menu_keys())
+                if (menu_box ? box_keys(0) : read_menu_keys())
                     return;
                 if (db(M_selection) != 0) {
                     select_at_pointer();

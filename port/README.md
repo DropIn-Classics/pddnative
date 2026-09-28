@@ -145,6 +145,23 @@ screen has the options): chosen, the menu fades out and comes back, as
 it does when the history's language screen is left with Esc. No mouse
 (the program sees no mouse driver, as in tools/run).
 
+The box (the quality of life fix "menu box", `-menu -qol`; the port's
+own): no pointer; a frame (a dark line, three pixels of yellow and white
+in turn every 24 pictures, a dark line) drawn into the list's picture
+around the entry of `menu_ranges` chosen, the pixels under it kept and
+put back when it moves. Up and Down move it among the eight tables (held,
+after 20 pictures every 6), Enter runs the table, F1-F8 as before (the
+box goes to the table); the list scrolls up to 6 rows a picture until
+the entry is on the screen, and at once after a table and the high score
+show. A move starts the count to the high score show anew; in the show
+Enter and the arrows go back to the list. The box stays on its table
+while the program runs. Checked headless (`PD_DUMP` pictures): the box on
+F1 at the start, five Downs to Safari with the list scrolled, F8 after
+nine, Enter on F2 runs Steel Wheel, on F8 Stall Turn and back (Esc, Y)
+with the box on F8, Down in the high score show back to the list; without
+`-qol` portcmp `--menu` still equal (Down held, menu_loop#100, #230,
+hiscore_show_loop#700). Not tried in the window or with a controller.
+
 Checked with `tools/portcmp.py --menu` (below) against DDPCMAIN in
 tools/run (`-loadfix`), the menu's segments and all of video memory at
 the passes named: equal, apart from what DOS keeps for the program (the
@@ -237,8 +254,9 @@ start a table from the first two pages.
   last table started; what the sound keys and Alt+Enter change in the
   game is written there when the table ends. `-fx` is kept like a setting
   made on the screen.
-- Quality of life fixes, a page of three, each on its own and on by
-  default (`skipanimation`, `quickball`, `quickbonus` in `pdd.cfg`); off,
+- Quality of life fixes, a page of four, each on its own and on by
+  default (`skipanimation`, `quickball`, `quickbonus`, `menubox` in
+  `pdd.cfg`); off,
   the game as the original has it. Skip animation: off, before a table
   its animation, as the menu has DDFLIPLY.EXE play it (`src/fli.c`: the
   DELUXE folder's .FLI files, DDFLIPLY's timing, a key ends it; then the
@@ -261,7 +279,9 @@ start a table from the first two pages.
   429 pictures before, 259-384 with them (both engine fixes on; measured
   while AL=10h's jump still waited for the row's end). With `-prog`/`-table` the table runs as the
   original's unless `-qol` is given (both engine fixes); a game played
-  with them does not replay in the original (`-record`).
+  with them does not replay in the original (`-record`). Menu box
+  (`menu_box`, menu.h): in the menu a frame around one table's entry in
+  place of the pointer (below, "The menu").
 - Controller: what each button of a game controller does in a table
   (below), one line a button, Left and Right choose; a mark before a
   button while it is held shows which is which. Kept in `pdd.cfg`

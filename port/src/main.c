@@ -18,7 +18,8 @@
  * it unless -qol gives it the quality of life fixes (pd.h: pd_qol).  -menu
  * starts the game's menu (menu.h) instead, without the setup screen and
  * the animations, its tables as with -prog/-table; Esc there ends the
- * program.  From the setup screen (its "Play from the menu" too) its
+ * program (with -qol the menu has the box, menu.h: menu_box, in place of
+ * the pointer).  From the setup screen (its "Play from the menu" too) its
  * settings decide: the engine's fixes each, and
  * unless the animation is skipped, the table's animation before it as the
  * menu plays it (fli.h).  -record writes each byte of
@@ -144,8 +145,10 @@ static int with_launcher(void)
     with_setup = 1;
     while (launcher_run(game_dir, &prog, &table, err)) {
         err[0] = 0;
-        if (prog == 0)
+        if (prog == 0) {
             pad_set_context(PAD_MENU);
+            menu_box = launcher_menu_box();
+        }
         r = prog == 0 ? menu_run(game_dir, &hooks, err, sizeof err)
                       : play_table(prog, table, err, sizeof err);
         if (r == 0 && !plat_pump())
@@ -176,8 +179,10 @@ int main(int argc, char **argv)
             direct = 1;
         } else if (!strcmp(argv[i], "-menu"))
             menu = 1;
-        else if (!strcmp(argv[i], "-qol"))
+        else if (!strcmp(argv[i], "-qol")) {
             pd_qol = QOL_NEXT_BALL | QOL_BONUS;
+            menu_box = 1;
+        }
         else if (!strcmp(argv[i], "-record") && i + 1 < argc)
             frame_record(argv[++i]);
         else if (!strcmp(argv[i], "-fx") && i + 1 < argc) {

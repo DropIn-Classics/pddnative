@@ -19,8 +19,8 @@ static struct {
     int bass, treble, oomph, headphone; /* audiofx.h's */
     int fullscreen;                     /* -1: as the platform starts (the Steam Deck: full) */
     int table;                          /* the last table started, 0-7 (F1-F8) */
-    int skip_animation, quick_ball, quick_bonus;   /* the quality of life fixes */
-} cfg = { HUD_VOLUME_MAX, 1, 0, 0, 0, 0, -1, 0, 1, 1, 1 };
+    int skip_animation, quick_ball, quick_bonus, menu_box;  /* the quality of life fixes */
+} cfg = { HUD_VOLUME_MAX, 1, 0, 0, 0, 0, -1, 0, 1, 1, 1, 1 };
 
 static const struct {
     const char *name;
@@ -37,6 +37,7 @@ static const struct {
     { "skipanimation", &cfg.skip_animation, 0, 1 },
     { "quickball", &cfg.quick_ball, 0, 1 },
     { "quickbonus", &cfg.quick_bonus, 0, 1 },
+    { "menubox", &cfg.menu_box, 0, 1 },
 };
 #define NCFG (int)(sizeof cfg_keys / sizeof cfg_keys[0])
 
@@ -95,6 +96,11 @@ int launcher_qol(void)
 int launcher_skip_animation(void)
 {
     return cfg.skip_animation;
+}
+
+int launcher_menu_box(void)
+{
+    return cfg.menu_box;
 }
 
 void launcher_save_settings(void)
@@ -272,7 +278,7 @@ enum {
     I_BALLS, I_MUSIC, I_COLOURS, I_ANGLE, I_SCREEN,
     I_KEY, I_KEY_LAST = I_KEY + 3, I_DEFAULTS, I_BACK,
     I_VOLUME, I_SHAPING, I_BASS, I_TREBLE, I_OOMPH, I_HEADPHONE, I_FULLSCREEN,
-    I_QOL, I_SKIP_ANIMATION, I_QUICK_BALL, I_QUICK_BONUS,
+    I_QOL, I_SKIP_ANIMATION, I_QUICK_BALL, I_QUICK_BONUS, I_MENU_BOX,
     I_PAD, I_PAD_BUTTON, I_PAD_LAST = I_PAD_BUTTON + PAD_BUTTONS - 1, I_PAD_DEFAULTS
 };
 enum { K_GAP, K_HEADING, K_ITEM, K_CHOICE };
@@ -290,7 +296,7 @@ static const Item main_items[] = {
     { K_ITEM, I_OPTIONS, "Game options", "Balls, music, colours, angle, screen, keys: the menu's F10 options." },
     { K_ITEM, I_SOUND, "Sound and window", "The volume, the sound's shaping, full screen." },
     { K_ITEM, I_PAD, "Controller", "What a game controller's buttons do in a table." },
-    { K_ITEM, I_QOL, "Quality of life fixes", "Each on its own: no animation, a quicker next ball, a quicker bonus." },
+    { K_ITEM, I_QOL, "Quality of life fixes", "Each on its own: no animation, a quicker next ball and bonus, a box in the menu." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_QUIT, "Quit", "Back to the system." },
 };
@@ -343,6 +349,7 @@ static const Item qol_items[] = {
     { K_CHOICE, I_SKIP_ANIMATION, "Skip animation", "On: none before a table; off: the table's, as the menu plays it." },
     { K_CHOICE, I_QUICK_BALL, "Quick next ball", "On: before a ball only until the jingle ends; \"ball lost\" shorter." },
     { K_CHOICE, I_QUICK_BONUS, "Quick bonus", "On: the bonus counted twice as fast, shorter holds around it." },
+    { K_CHOICE, I_MENU_BOX, "Menu box", "On: a box around a table in the menu, Up/Down and Enter; off: the pointer." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_BACK, "Back", NULL },
 };
@@ -468,6 +475,7 @@ static void value_text(int id, char *out, size_t n)
     case I_SKIP_ANIMATION: snprintf(out, n, "%s", cfg.skip_animation ? "On" : "Off"); break;
     case I_QUICK_BALL:     snprintf(out, n, "%s", cfg.quick_ball ? "On" : "Off"); break;
     case I_QUICK_BONUS:    snprintf(out, n, "%s", cfg.quick_bonus ? "On" : "Off"); break;
+    case I_MENU_BOX:       snprintf(out, n, "%s", cfg.menu_box ? "On" : "Off"); break;
     default:
         if (id >= I_KEY && id <= I_KEY_LAST)
             snprintf(out, n, "%s", key_name(key_code(id - I_KEY)));
@@ -511,6 +519,7 @@ static void change(int id, int dir, int wrap)
     case I_SKIP_ANIMATION: cfg.skip_animation = !cfg.skip_animation; break;
     case I_QUICK_BALL:     cfg.quick_ball = !cfg.quick_ball; break;
     case I_QUICK_BONUS:    cfg.quick_bonus = !cfg.quick_bonus; break;
+    case I_MENU_BOX:       cfg.menu_box = !cfg.menu_box; break;
     default:
         if (id < I_PAD_BUTTON || id > I_PAD_LAST)
             return;

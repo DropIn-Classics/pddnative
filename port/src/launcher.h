@@ -25,6 +25,10 @@ int launcher_qol(void);
  * table (fli.h) */
 int launcher_skip_animation(void);
 
+/* the quality of life fix "menu box": 1 for the box in the menu in place
+ * of the pointer (menu.h: menu_box) */
+int launcher_menu_box(void);
+
 /* pdd.cfg written, with what the sound keys and Alt+Enter left */
 void launcher_save_settings(void);
 

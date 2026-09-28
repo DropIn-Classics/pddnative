@@ -490,7 +490,12 @@ a C compiler and the CD).
    from the menu" in the launcher, `pdd -menu`; checked headless against
    tools/run, port/README.md), apart from: F9 (the history viewer) and
    F10 (the options screen; perhaps the launcher's options page instead),
-   the mouse (the platform has none yet), the intro DDPCINTR (pictures
+   the mouse (the platform has none yet; the quality of life fix "menu
+   box" replaces the pointer: without a mouse driver the arrows move
+   `mouse_y` down without a limit, `read_menu_keys` stops it only at 0,
+   so the pointer leaves the screen at the bottom and stays below it;
+   presumably the driver's range, INT 33h AX=8, kept it there, not
+   checked), the intro DDPCINTR (pictures
    and a CD track; the GOG release has the tracks as ogg). To try in the
    window: the menu, the intro's animations before it, a table and back.
    The table programs' `wait_keys_up` waits a picture with its tick
