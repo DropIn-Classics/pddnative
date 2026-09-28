@@ -454,24 +454,23 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    The user plays games by hand in the window (`pdd -record`) and hands
    over the recordings (`build/play*.rec`); `portcmp.py --record` replays
    them in the original (port/README.md). Equal so far: Nightmare
-   (play1.rec) and Steel Wheel (play-table1.rec) to the attract show after
-   the initials, Ignition (play-table0.rec) to the game over. Ignition's
-   high score entry was not reached by the original: its keys were then
+   (play1.rec), Steel Wheel (play-table1.rec) and Ignition
+   (play-table0.rec) to the attract show after the initials. Ignition's
+   high score entry was at first not reached by the original: its keys were then
    placed as st_game_over#1+K over 1,460 pictures, and the picture rate
    there is not 70.087 (Steel Wheel: 70.155 from the game over to the
    700th idle frame), so a key lands a picture off. The checkpoint
    `initials_loop` (a pass every 6 pictures, CODE:269A) was added for
    that; the recompare with it (`portcmp.py --table 0 --record
    build/play-table0.rec --until 900 st_game_over#1 initials_loop#100
-   idle_loop#700`) was running at the handover, its result not seen.
+   idle_loop#700`) is equal at all three (on the Mac, 2026-09-28).
    Fixed on the way: jingles (the driver's pattern-jump callback, AL=13h,
    and AL=10h's return value, from SBLASTER.SDR), stuck flippers in the
    window (Windows sends no key-up for the first of two Shift keys), and
    portcmp's key times over long spans (re-anchored every 1000 passes).
    The user played all eight tables in the window on the Mac
    (2026-09-28), some for long, and found nothing wrong that the original
-   does not do as well (PD2's tables only started). Next: that recompare
-   (the recordings are on the Windows machine); the port's player does not
+   does not do as well (PD2's tables only started). Next: the port's player does not
    advance in the headless build (XDATA's music_pos differs; the driver's
    tick is 70.087 a second in the 320x200 mode, measured).
 - The sound effects (2026-09-28; the user heard none on Beat Box, the port
