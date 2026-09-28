@@ -1,7 +1,7 @@
 /* modplay.c - see modplay.h.
  *
  * micromod.c is included here rather than compiled on its own: it stays
- * as upstream wrote it apart from the pattern jump's hook (marked
+ * as upstream wrote it apart from the pattern jumps' hooks (marked
  * "pddnative"), and its warnings are not ours to fix. */
 #include <stdlib.h>
 #include <string.h>
@@ -87,13 +87,25 @@ void modplay_set_position(int pos)
         micromod_set_position(pos);
 }
 
+/* SBLASTER.SDR's AL=10h: the position one less than `pos` at once (and
+ * returned so by a second call before the next tick), the row counter to
+ * 1, so the next tick plays the row after the current one and then goes
+ * to `pos`; a jump the rows asked for is already the position */
 int modplay_jump(int pos)
 {
-    int was = (int)pattern;
+    int was;
 
+    if (set_pattern >= 0)
+        was = (int)set_pattern - 1;
+    else if (break_pattern >= 0)
+        was = (int)(break_pattern < song_length ? break_pattern : 0);
+    else if (next_row < 0)
+        was = (int)(pattern + 1 < song_length ? pattern + 1 : 0);
+    else
+        was = (int)pattern;
     if (module) {
-        break_pattern = pos < song_length ? pos : 0;
-        next_row = 0;
+        set_pattern = pos < song_length ? pos : 0;
+        tick = 1;
     }
     return was;
 }

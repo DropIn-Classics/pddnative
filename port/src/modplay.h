@@ -26,8 +26,8 @@ void modplay_skip_ticks(int ticks);
 /* row 0 of the order list's position `pos` */
 void modplay_set_position(int pos);
 
-/* after the row it plays, the module goes on at position `pos` (as a
- * pattern jump); the position it plays now */
+/* at the next tick the module plays its next row and then goes on at
+ * position `pos` (SBLASTER.SDR's AL=10h); the position it plays now */
 int modplay_jump(int pos);
 
 /* a pattern jump (Bxx) goes on at the position `hook` returns for its

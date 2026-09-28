@@ -517,7 +517,14 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
   vertical retrace and can mix itself when the buffer runs low; with AL=8
   every tick that did not happen in the runs looked at. Not modelled: the
   window build, where the audio device's buffer sets how far ahead
-  micromod plays.
+  micromod plays. AL=10h (a tune or jingle started) sets the driver's
+  position at once and its row counter to 1, so the jump follows at the
+  next tick after one more row of the old pattern, and a second AL=10h
+  before that tick gets the new position minus one (the handler at
+  01FBh of the unpacked driver, the row code at 0D73h-0E04h). The port's
+  `modplay_jump` does the same; with a jump at the row's end the jingles
+  of a game's start went back to the attract tune (heard by the user,
+  2026-09-28).
 - The sound effects (2026-09-28; the user heard none on Beat Box, the port
   had AL=11h empty): SBLASTER.SDR is EXEPACKed (unpacked by hand for
   reading; the INT 66h dispatcher at 0049h of the unpacked code, DS

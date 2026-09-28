@@ -119,7 +119,14 @@ space of the driver's EXEC in CODE, the stack)
   port computes it (the program's ticks, a phase, 0.53 ms later when
   `draw_sprites` drew) the ticks so far are one off at 1 to 5 of some
   4,000 calls in a minute, so `music_pos` can still differ now and then;
-  only the sound routines read it.
+  only the sound routines read it. AL=10h sets the driver's position to
+  one less at once and its row counter to 1: the next tick plays the
+  current pattern's next row and then goes to the new position
+  (`modplay_jump`). It matters at a game's start: F1 sets the main tune
+  and five frames later jingle 2 keeps the position AL=10h returns as
+  the one to go back to after the jingles, the main tune's. `music_pos`
+  is equal at st_ball_start#1 and ball_start_loop#1 after F1 on all
+  eight tables.
 
 ## Build and run
 
