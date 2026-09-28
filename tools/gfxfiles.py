@@ -46,20 +46,22 @@ VGA_PALETTES = {
 }
 
 # Directory: (hints file, table extension ->
-#             (name, palette offset, light count)).  The offsets have no
-# names in the hints; program names and segment frames are read from them.
+#             (name, palette offset, light count, lights-on offset)).  The
+# offsets have no names in the hints; program names and segment frames are
+# read from them.  PD's last item is unused because its stored source layout
+# is different.
 TABLE_PALETTES = {
     'DREAMS1': ('PD.hints', {
-        'IGN': ('Ignition', 0x1EA8, 0x3D),
-        'STW': ('Steel Wheel', 0x20D6, 0x2E),
-        'BBX': ('Beat Box', 0x22AA, 0x33),
-        'NTM': ('Nightmare', 0x249C, 0x3E),
+        'IGN': ('Ignition', 0x1EA8, 0x3D, None),
+        'STW': ('Steel Wheel', 0x20D6, 0x2E, None),
+        'BBX': ('Beat Box', 0x22AA, 0x33, None),
+        'NTM': ('Nightmare', 0x249C, 0x3E, None),
     }),
     'DREAMS2': ('PD2.hints', {
-        'UND': ('Neptune', 0x1EB8, 0x3D),
-        'SFR': ('Safari', 0x2278, 0x2E),
-        'MNG': ('Revenge of the Robot Warriors', 0x2638, 0x33),
-        'STT': ('Stall Turn', 0x29F8, 0x3E),
+        'UND': ('Neptune', 0x1EB8, 0x3D, 0x21B8),
+        'SFR': ('Safari', 0x2278, 0x2E, 0x2578),
+        'MNG': ('Revenge of the Robot Warriors', 0x2638, 0x33, 0x2938),
+        'STT': ('Stall Turn', 0x29F8, 0x3E, 0x2CF8),
     }),
 }
 
@@ -219,7 +221,7 @@ def table_palette(asset, extension):
     frame = next(s.frame for s in hints.segs if s.name == 'TDATA')
     extension = extension.upper()
     try:
-        table_name, offset, light_count = tables[extension]
+        table_name, offset, light_count, lights_on_offset = tables[extension]
     except KeyError as e:
         choices = ', '.join(tables)
         raise ValueError(f'unknown table {extension}; expected {choices}') from e
@@ -240,10 +242,10 @@ def table_palette(asset, extension):
     else:
         # PD2 uploads a full 300h-byte palette.  Before that, each setup
         # routine derives colours 40h..7Fh (lights_off_pal) by halving the
-        # corresponding components at colours 80h..BFh (lights_on_pal).
+        # separate C0h-byte lights_on_pal block that follows the palette.
         source = bytearray(mz_bytes(program_path, frame, offset, PALETTE_BYTES))
-        source[0x0C0:0x180] = bytes(value // 2
-                                    for value in source[0x180:0x240])
+        lights_on = mz_bytes(program_path, frame, lights_on_offset, 0xC0)
+        source[0x0C0:0x180] = bytes(value // 2 for value in lights_on)
         palette = dac_colours(source)
     description = (f'{program} TDATA:{offset:04X} '
                    f'({table_name}, {light_count} lamp colours)')
