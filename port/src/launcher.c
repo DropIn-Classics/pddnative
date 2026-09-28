@@ -349,7 +349,7 @@ static const Item qol_items[] = {
     { K_CHOICE, I_SKIP_ANIMATION, "Skip animation", "On: none before a table; off: the table's, as the menu plays it." },
     { K_CHOICE, I_QUICK_BALL, "Quick next ball", "On: before a ball only until the jingle ends; \"ball lost\" shorter." },
     { K_CHOICE, I_QUICK_BONUS, "Quick bonus", "On: the bonus counted twice as fast, shorter holds around it." },
-    { K_CHOICE, I_MENU_BOX, "Menu box", "On: a box around a table in the menu, Up/Down and Enter; off: the pointer." },
+    { K_CHOICE, I_MENU_BOX, "Menu box", "On: a box in the menu (tables, history), Up/Down and Enter; off: the pointer." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_BACK, "Back", NULL },
 };

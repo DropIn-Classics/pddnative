@@ -193,18 +193,20 @@ The box (the quality of life fix "menu box", `-menu -qol`; the port's
 own): no pointer; a frame (a dark line, three pixels of yellow and white
 in turn every 24 pictures, a dark line) drawn into the list's picture
 around the entry of `menu_ranges` chosen, the pixels under it kept and
-put back when it moves. Up and Down move it among the eight tables (held,
-after 20 pictures every 6), Enter runs the table, F1-F8 as before (the
-box goes to the table); the list scrolls up to 6 rows a picture until
+put back when it moves. Up and Down move it among the eight tables and
+the history (held, after 20 pictures every 6), Enter runs the entry,
+F1-F9 as before (the box goes to the entry); the list scrolls up to 6 rows a picture until
 the entry is on the screen, and at once after a table and the high score
 show. A move starts the count to the high score show anew; in the show
-Enter and the arrows go back to the list. The box stays on its table
+Enter and the arrows go back to the list. The box stays on its entry
 while the program runs. Checked headless (`PD_DUMP` pictures): the box on
 F1 at the start, five Downs to Safari with the list scrolled, F8 after
 nine, Enter on F2 runs Steel Wheel, on F8 Stall Turn and back (Esc, Y)
 with the box on F8, Down in the high score show back to the list; without
 `-qol` portcmp `--menu` still equal (Down held, menu_loop#100, #230,
-hiscore_show_loop#700). Not tried in the window or with a controller.
+hiscore_show_loop#700). Ten Downs from F1: the box on the history (the
+tenth is not taken), Enter shows the language screen. Not tried in the
+window or with a controller.
 
 Checked with `tools/portcmp.py --menu` (below) against DDPCMAIN in
 tools/run (`-loadfix`), the menu's segments and all of video memory at
@@ -343,8 +345,8 @@ start a table from the first two pages.
   while AL=10h's jump still waited for the row's end). With `-prog`/`-table` the table runs as the
   original's unless `-qol` is given (both engine fixes); a game played
   with them does not replay in the original (`-record`). Menu box
-  (`menu_box`, menu.h): in the menu a frame around one table's entry in
-  place of the pointer (below, "The menu").
+  (`menu_box`, menu.h): in the menu a frame around one table's or the
+  history's entry in place of the pointer (below, "The menu").
 - Controller: what each button of a game controller does in a table
   (below), one line a button, Left and Right choose; a mark before a
   button while it is held shows which is which. Kept in `pdd.cfg`

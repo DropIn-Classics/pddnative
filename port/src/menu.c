@@ -872,18 +872,18 @@ static void edge_scroll(void)
 }
 
 /* ---- the box (menu_box): the port's own, in place of the pointer.  A
- * frame drawn into the list's picture around one of the eight tables'
- * entries (menu_ranges), moved with Up and Down; the list scrolls so that
+ * frame drawn into the list's picture around one of the first nine
+ * entries of menu_ranges (the eight tables, the history), moved with Up and Down; the list scrolls so that
  * it stays on the screen; a dark line either side of it, for the light
  * entries.  The pixels under it are kept and put back
  * before it moves. */
 
 int menu_box;
 
-enum { BOX_TABLES = 8, BOX_EDGE = 5, BOX_VISIBLE = 0xBC, BOX_LAST_ROW = 0x118,
+enum { BOX_ENTRIES = 9, BOX_EDGE = 5, BOX_VISIBLE = 0xBC, BOX_LAST_ROW = 0x118,
        BOX_SCROLL = 6, BOX_PULSE = 24, BOX_DELAY = 20, BOX_REPEAT = 6 };
 
-static int box_entry;                   /* 0-7, kept while the program runs */
+static int box_entry;                   /* 0-8, kept while the program runs */
 static int box_drawn, box_x1, box_y1, box_x2, box_y2;
 static int box_held, box_hold, box_moved, box_pulse;
 static int box_back;                    /* back to the list from the high score show */
@@ -1012,7 +1012,7 @@ static void box_init(void)
 }
 
 /* read_menu_keys with the box: Up and Down move it (held, they repeat),
- * Enter chooses its table; in the high score show (`in_list` 0) Enter and
+ * Enter chooses its entry; in the high score show (`in_list` 0) Enter and
  * the arrows go back to the list.  F1-F10 and Esc as there; 1 when Esc
  * is down */
 static int box_keys(int in_list)
@@ -1037,7 +1037,7 @@ static int box_keys(int in_list)
         wait_keys_up();
         return 0;
     }
-    if (step && box_entry + step >= 0 && box_entry + step < BOX_TABLES) {
+    if (step && box_entry + step >= 0 && box_entry + step < BOX_ENTRIES) {
         box_entry += step;
         box_pulse = 0;
         box_draw();
@@ -1052,7 +1052,7 @@ static int box_keys(int in_list)
             if (key_down(fkeys[i])) {
                 dwb(M_selection, (uint8_t)(i + 1));
                 dwb(M_mouse_buttons, 2);
-                if (i < BOX_TABLES)
+                if (i < BOX_ENTRIES)
                     box_entry = i;
                 wait_keys_up();
                 break;
