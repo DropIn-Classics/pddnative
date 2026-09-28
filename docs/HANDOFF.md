@@ -322,11 +322,39 @@ designer, the filters), STACK. From the code, not run:
   browser is entered. A nine-byte table record in HISTORY selects the
   IDX record and one or two picture names: `.016` (four VGA planes,
   640x480, mode 12h with the default palette) or, with VESA, the same
-  name as `.256` (768-byte DAC palette, then 640x480 bytes). CR/LF after
-  a HOP string adds a row only in the 16-colour view. Not opened by any
+  name as `.256` (768-byte DAC palette, then 640x480 bytes). The CR/LF
+  pairs after a HOP string are skipped without a row in both views (the
+  16-colour view adds 8 to DX for each, but draw_history_line POPs DX).
+  Not opened by any
   path: BIGBRAVE.025, LIZARD_1.1, CLRFILE.CV4, INTRO2.MOD (the only
-  `load_sound` call passes index 0). All from the code and the files,
-  not run.
+  `load_sound` call passes index 0). Run in tools/run and translated
+  2026-09-28 (below, "The history run").
+
+### The history run (2026-09-28)
+
+F9 in tools/run: the language screen, the start screen, the table list
+and the browser with Big Brave's picture (BIGBRAVE.016) and its German
+text; the files opened: ddpclang.vga, then after CHDIR `..\history`
+ddpchist.vga, history.fnt, german.idx, german.hop, bigbrave.016.
+Without a mouse driver (the runner has none) the keyboard is a poor
+mouse here: Enter sets `mouse_buttons` and nothing clears it (poll_mouse
+does only with a driver). The language's Enter so reaches the start
+screen: its first pass takes the box under the pointer where the
+language was chosen (on the English flag that is the exit box, and the
+menu comes back at once), or with none the pointer is not drawn again
+and the first box it enters is taken. In the browser a button is pressed
+again each pass while the pointer is on it. In mode 12h the program
+leaves the pointer to the driver (INT 33h AX=1, 2), so without one none
+is seen. The keys move `mouse_x` 2 pixels a pass in all screens; in the
+640-pixel screens the program's x is the driver's (poll_history_mouse,
+read_history_keys), in the list's inner loop poll_mouse halves it and
+read_menu_keys doubles it back. Choosing the start screen's exit box
+leaves the font's and the .HOP's DOS blocks taken (run_history_menus
+frees them only after the browser). The runner's mode 12h palette is
+not the BIOS's (its default DAC has a grey ramp from 10h on; the
+attribute registers pick 14h and 38h-3Fh), so its colours are wrong
+there; the port loads the BIOS's 64 EGA colours (not checked against a
+real VGA BIOS beyond the usual rgbRGB layout).
 
 ### The menu run and translated (2026-09-28)
 
@@ -488,14 +516,14 @@ a C compiler and the CD).
    played unless the quality of life fix "skip animation" is on.
 2. The menu in C (DDPCMAIN): done 2026-09-28 (`port/src/menu.c`, "Play
    from the menu" in the launcher, `pdd -menu`; checked headless against
-   tools/run, port/README.md), apart from: F9 (the history viewer) and
-   F10 (the options screen; perhaps the launcher's options page instead),
-   the mouse (the platform has none yet; the quality of life fix "menu
-   box" replaces the pointer: without a mouse driver the arrows move
-   `mouse_y` down without a limit, `read_menu_keys` stops it only at 0,
-   so the pointer leaves the screen at the bottom and stays below it;
-   presumably the driver's range, INT 33h AX=8, kept it there, not
-   checked), the intro DDPCINTR (pictures
+   tools/run, port/README.md), and F9 (the history, 16-colour pictures;
+   port/README.md), apart from: F10 (the options screen; perhaps the
+   launcher's options page instead), the history's VESA pictures (.256:
+   a VESA 101h mode in vga.c and the program's banked routines), a real
+   mouse behind the port's driver (the platform has none yet; without a
+   driver the arrows move `mouse_y` down without a limit, and the
+   pointer leaves the screen at the bottom; the port's driver keeps it
+   in the range the program sets), the intro DDPCINTR (pictures
    and a CD track; the GOG release has the tracks as ogg). To try in the
    window: the menu, the intro's animations before it, a table and back.
    The table programs' `wait_keys_up` waits a picture with its tick

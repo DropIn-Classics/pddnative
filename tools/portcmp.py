@@ -48,9 +48,11 @@ more than once.
 With each stop the tool prints the notes of the port's trace since the
 stop before (the event objects' handlers run, the level switches).
 
---menu runs the menu (DDPCMAIN.EXE; the port's -menu, the runner's
--loadfix) instead of a table: its checkpoints are menu_loop and
-hiscore_show_loop, its memory is compared at each stop; the keys may be
+--menu runs the menu (DDPCMAIN.EXE; the port's -menu -nomouse: the
+runner has no mouse driver; the runner's -loadfix) instead of a table:
+its checkpoints are menu_loop, hiscore_show_loop, and in the history
+(F9) language_loop, history_start_loop, history_row_loop,
+history_row_wait and history_browse_loop; its memory is compared at each stop; the keys may be
 placed at the checkpoints of the table the menu runs too (a table of
 --prog's program; the runner stops in it at PD.EXE:WHERE or PD2.EXE:WHERE).
 The runner's run gets a Space at 13 s, which ends the intro's animations
@@ -88,7 +90,8 @@ MENU = ('DELUXE/DDPCMAIN.EXE', 'src/DDPCMAIN.hints')
 MENU_LOAD = '1018'   # the menu's CODE under the runner's -loadfix (and the port's)
 MENU_INTRO_KEYS = ['13.00000 39+', '13.15000 39-']     # a Space ends the intro's animations
 # the port's checkpoints (the trace's other names are notes)
-MENU_CHECKPOINTS = ('menu_loop', 'hiscore_show_loop')
+MENU_CHECKPOINTS = ('menu_loop', 'hiscore_show_loop', 'language_loop', 'history_start_loop',
+                    'history_row_loop', 'history_row_wait', 'history_browse_loop')
 CHECKPOINTS = ('idle_loop', 'ball_start_loop', 'st_play', 'st_ball_lost', 'st_ball_start', 'st_game_over',
                'st_tilt', 'st_ball_locked', 'ball_locked_loop', 'initials_loop') + MENU_CHECKPOINTS
 # memcmp lines of differences that are expected (see the docstring)
@@ -154,7 +157,7 @@ def port_trace(args, keys, stop=None, ram=None, vram=None):
         env['PD_STOP'] = stop
     if ram:
         env['PD_RAM'], env['PD_VRAM'] = ram, vram
-    what = ['-menu'] if args.menu else ['-prog', str(args.prog), '-table', str(args.table)]
+    what = ['-menu', '-nomouse'] if args.menu else ['-prog', str(args.prog), '-table', str(args.table)]
     r = subprocess.run([PORT, '-game', game_dir()] + what, env=env, capture_output=True, text=True)
     trace, count = {}, {}
     for l in r.stderr.splitlines():

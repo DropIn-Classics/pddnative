@@ -140,10 +140,34 @@ the driver play it), a table run in the same process: the menu's memory
 is kept aside while the table's program runs where tools/run loads it,
 and put back after it, as under DOS the table ran above the menu. Not
 translated: the intro (DDPCINTR.EXE, a CD audio track and four
-pictures), the history (F9) and the options screen (F10; the setup
-screen has the options): chosen, the menu fades out and comes back, as
-it does when the history's language screen is left with Esc. No mouse
-(the program sees no mouse driver, as in tools/run).
+pictures) and the options screen (F10; the setup screen has the
+options): chosen, the menu fades out and comes back.
+
+The history (F9, translated 2026-09-28): the language screen (the
+pointer on a flag, Enter), then in HISTORY the start screen (five boxes:
+the tables, their manufacturers, designers, years, exit), the list the
+box chooses in mode 12h (the row under the pointer inverted, Enter) and
+the browser: a table's .016 picture (640x480, 16 colours, the BIOS's
+palette, which `vga_set_mode` now loads for mode 12h) with its text from
+the language's .HOP, eight buttons below it (the four lists, exit, the
+next picture, the table before and after); Esc leaves the browser and the
+menu comes back. Without a VESA BIOS, as in tools/run, the program keeps
+to the .016 pictures; its VESA routines (the .256 pictures, a pointer of
+its own) are not translated. The files are looked up in the directory
+the program changed to (`dos_dir`, pd_files.c).
+
+The mouse driver (`menu_mouse`, on unless `-nomouse`) is the port's: the
+programs give it the pointer the arrow keys move (INT 33h AX=4), it keeps
+it in the ranges they set (AX=7, 8) and answers AX=3 with it and no
+button down (no mouse behind it yet); where the program has it show its
+pointer (AX=1: the history's 640x480 screens) the port draws an arrow
+over the picture, not into video memory. Without it (as in tools/run,
+and as portcmp runs the port) the original is hard to use from the
+keyboard: Enter leaves `mouse_buttons` set, so on the start screen the
+box the pointer is in (or first enters) is taken at once, in the browser
+a button is pressed again each picture, and in mode 12h no pointer is
+seen. With it the menu's pointer starts in the middle and no longer
+leaves the screen at the bottom.
 
 The box (the quality of life fix "menu box", `-menu -qol`; the port's
 own): no pointer; a frame (a dark line, three pixels of yellow and white
@@ -186,6 +210,25 @@ intro), at
   after the pass: in the runner the driver's timer interrupt came into
   the fade's first step there, before its wait (docs/HANDOFF.md, "The
   menu's tick").
+- the history (`-nomouse`, the runner has no driver): F9, the pointer
+  moved 60 pixels right and 50 down on the language screen and Enter
+  (German; the start screen takes its first box at once, see
+  docs/HANDOFF.md), Enter on Big Brave's row in the table list: at
+  language_loop#150, history_row_wait#20, history_browse_loop#50 equal;
+  with the pointer and a click poked in at history_browse_loop#60 (PD_POKE
+  now works at the menu's checkpoints too): the next table's button
+  pressed each pass to the last table (#61, #90, #200), the table
+  before's back to the first, the next picture's (Lizard's two), the
+  manufacturers' list (#62, #79, #81, #82, #99, history_row_loop#20):
+  equal. A key let go at a pass of the browser after an Enter there is
+  not placed by portcmp (the pass moves with the key; it tries again
+  without end), hence the pokes.
+
+With the port's mouse driver (headless, `PD_DUMP` pictures): the start
+screen with the pointer, a box chosen, the list and the browser with the
+arrow drawn over the picture, the next table's button, Esc back to the
+menu. Not tried in the window or with a controller; the colours of mode
+12h are the BIOS's as the port has them, not compared with a real VGA.
 
 Not tried in the window: the menu, the intro's animations before it.
 

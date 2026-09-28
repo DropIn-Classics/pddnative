@@ -16,6 +16,7 @@ static int tick_due;                    /* the keys came, the tick not yet */
 static int handed;                      /* bytes handed to the program this picture */
 static VgaFrame picture;
 static FILE *record;
+static void (*overlay)(VgaFrame *picture);
 
 void frame_set_tick(FrameCallback tick)
 {
@@ -25,6 +26,11 @@ void frame_set_tick(FrameCallback tick)
 void frame_set_keyboard(KeyHandler handler)
 {
     key_handler = handler;
+}
+
+void frame_set_overlay(void (*draw)(VgaFrame *picture))
+{
+    overlay = draw;
 }
 
 static void hand_over_byte(int b)
@@ -88,6 +94,8 @@ static void finish(void)
         tick_routine();
     vga_frame_start();
     vga_render(&picture);
+    if (overlay)
+        overlay(&picture);
     hud_draw(&picture);
     plat_present(picture.pixels, picture.width, picture.height, picture.palette);
     frames++;

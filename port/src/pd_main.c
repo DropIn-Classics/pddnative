@@ -79,6 +79,23 @@ static void parse_pokes(void)
     }
 }
 
+/* PD_POKE's bytes for the checkpoint `where` written at seg:off, the Nth
+ * time it is passed (the table programs' DATA, the menu's) */
+void checkpoint_pokes(const char *where, uint16_t seg)
+{
+    static int parsed;
+    int i, k;
+
+    if (!parsed) {
+        parsed = 1;
+        parse_pokes();
+    }
+    for (i = 0; i < npokes; i++)
+        if (!strcmp(where, pokes[i].where) && ++pokes[i].count == pokes[i].n)
+            for (k = 0; k < pokes[i].len; k++)
+                fwb(seg, (uint16_t)(pokes[i].off + k), pokes[i].b[k]);
+}
+
 /* PD_STOP=where#N: the program ends the Nth time it passes the checkpoint
  * `where` (for comparing its memory with a run of the original stopped at
  * the same place with tools/run's -break ADDR#N); PD_TRACE: each
@@ -90,7 +107,6 @@ void checkpoint(const char *where)
     static unsigned long count, want;
     static size_t len;
     static int parsed;
-    int i, k;
 
     if (!parsed) {
         const char *hash;
@@ -101,17 +117,13 @@ void checkpoint(const char *where)
             len = hash ? (size_t)(hash - stop) : strlen(stop);
             want = hash ? strtoul(hash + 1, NULL, 10) : 1;
         }
-        parse_pokes();
     }
     if (getenv("PD_TRACE"))
         fprintf(stderr, "%s picture %lu\n", where, frame_count());
     if (getenv("PD_TRACE_BALL") && !strcmp(where, "st_play"))   /* the ball's pixel and speed */
         fprintf(stderr, "ball %d %d %d %d\n", (int16_t)rw(V(ball_x_hi)) >> 2, (int16_t)rw(V(ball_y_hi)) >> 2,
                 (int16_t)rw(V(ball_vx)), (int16_t)rw(V(ball_vy)));
-    for (i = 0; i < npokes; i++)
-        if (!strcmp(where, pokes[i].where) && ++pokes[i].count == pokes[i].n)
-            for (k = 0; k < pokes[i].len; k++)
-                wb((uint16_t)(pokes[i].off + k), pokes[i].b[k]);
+    checkpoint_pokes(where, seg_data);
     if (stop && strlen(where) == len && !strncmp(where, stop, len) && ++count == want)
         pd_exit();
 }

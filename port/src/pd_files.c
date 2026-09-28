@@ -3,7 +3,8 @@
  *
  * A DOS name is looked up as the program would see it: "C:\DELUXE\X" from
  * the root of the game's folder, a name without a folder in the program's
- * own folder (DREAMS1 or DREAMS2, where it starts; DELUXE for the menu).
+ * own folder (DREAMS1 or DREAMS2, where it starts; DELUXE for the menu),
+ * or in dos_dir after the program changed its directory.
  * Files the program writes go into the save folder (sys_data_dir()/save,
  * the same tree), and a name found there is taken before the game's. */
 #include <stdio.h>
@@ -11,6 +12,8 @@
 #include <string.h>
 #include "pd.h"
 #include "sys.h"
+
+const char *dos_dir;
 
 /* `dos` relative to the game's root, with '\' between the parts */
 static void dos_rel(uint16_t seg, uint16_t off, char *rel, size_t n)
@@ -27,7 +30,7 @@ static void dos_rel(uint16_t seg, uint16_t off, char *rel, size_t n)
     if (*p == '\\')
         snprintf(rel, n, "%s", p + 1);
     else
-        snprintf(rel, n, "%s\\%s", prog_id == 1 ? "DREAMS1" : prog_id == 2 ? "DREAMS2" : "DELUXE", p);
+        snprintf(rel, n, "%s\\%s", dos_dir ? dos_dir : prog_id == 1 ? "DREAMS1" : prog_id == 2 ? "DREAMS2" : "DELUXE", p);
 }
 
 /* each part of `rel` found in `root` ignoring case; 1 when all are */

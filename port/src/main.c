@@ -1,7 +1,7 @@
 /* main.c - Pinball Dreams: a native compatibility implementation that
  * needs an installed copy of the game.
  *
- *     pdd [-game DIR | -gog FILE] [-prog 1|2] [-table 0-3] [-menu] [-qol]
+ *     pdd [-game DIR | -gog FILE] [-prog 1|2] [-table 0-3] [-menu] [-qol] [-nomouse]
  *         [-record FILE] [-fx BASS,TREBLE,OOMPH,HEADPHONE]
  *
  * DIR is the unpacked CD (the folders DELUXE, DREAMS1, DREAMS2 ...):
@@ -19,7 +19,8 @@
  * starts the game's menu (menu.h) instead, without the setup screen and
  * the animations, its tables as with -prog/-table; Esc there ends the
  * program (with -qol the menu has the box, menu.h: menu_box, in place of
- * the pointer).  From the setup screen (its "Play from the menu" too) its
+ * the pointer; -nomouse gives it no mouse driver, menu_mouse, as in
+ * tools/run, for comparisons with it).  From the setup screen (its "Play from the menu" too) its
  * settings decide: the engine's fixes each, and
  * unless the animation is skipped, the table's animation before it as the
  * menu plays it (fli.h).  -record writes each byte of
@@ -183,6 +184,8 @@ int main(int argc, char **argv)
             pd_qol = QOL_NEXT_BALL | QOL_BONUS;
             menu_box = 1;
         }
+        else if (!strcmp(argv[i], "-nomouse"))
+            menu_mouse = 0;
         else if (!strcmp(argv[i], "-record") && i + 1 < argc)
             frame_record(argv[++i]);
         else if (!strcmp(argv[i], "-fx") && i + 1 < argc) {

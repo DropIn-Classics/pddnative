@@ -29,7 +29,9 @@ void set_planes(uint8_t map_mask, uint8_t read_map);
 void screen_off(void);
 void screen_on(void);
 int dos_path(uint16_t seg, uint16_t off, char *out, size_t n);
+void checkpoint_pokes(const char *where, uint16_t seg);
 extern const char *pd_game_dir;
+extern const char *dos_dir;
 
 /* the names of DDPCMAIN.hints: M_name is its offset in its segment */
 #define DDM_ENUM(seg, name, off) M_##name = off,
@@ -80,6 +82,7 @@ static void checkpoint_menu(const char *where)
     }
     if (getenv("PD_TRACE"))
         fprintf(stderr, "%s picture %lu\n", where, frame_count());
+    checkpoint_pokes(where, s_data);
     if (stop && strlen(where) == len && !strncmp(where, stop, len) && ++count == want)
         leave();
 }
@@ -153,11 +156,11 @@ static void copy_vga_image_planes(uint16_t seg, uint16_t di, uint16_t count)
     }
 }
 
-/* the file named at DATA:name, 320 pixels a row, into video memory from
+/* the file named at seg:name, 320 pixels a row, into video memory from
  * `di`: read in chunks of 0FA00h bytes into a DOS block, 3E80h groups of
  * four copied after each (a short last chunk too: the rest of the group
  * from the chunk before), until a read is short */
-static void load_vga_image(uint16_t name, uint16_t di)
+static void load_vga_image(uint16_t seg, uint16_t name, uint16_t di)
 {
     char path[SYS_PATH];
     uint8_t *data;
@@ -167,8 +170,8 @@ static void load_vga_image(uint16_t name, uint16_t di)
     if (!block)
         fatal("Not enough memory for the menu's picture.");
     cww(M_image_block, block);
-    if (dos_path(s_data, name, path, sizeof path) || (data = sys_load(path, &size)) == NULL)
-        fatal("The menu's picture (SELECT.VGA) could not be read.");
+    if (dos_path(seg, name, path, sizeof path) || (data = sys_load(path, &size)) == NULL)
+        fatal("A picture of the menu could not be read.");
     do {
         k = size - pos < 0xFA00 ? size - pos : 0xFA00;
         for (i = 0; i < k; i++)
@@ -426,15 +429,116 @@ static void alloc_pointer_buffers(void)
     }
 }
 
-/* INT 33h AX=0: no mouse driver answers here */
-static void detect_mouse(void)
+/* ---- the mouse driver (INT 33h): the port's, with no mouse behind it yet.
+ * The keyboard moves the pointer the programs give it (AX=4), within the
+ * ranges they set (AX=7, 8); no button is ever down.  In the history's
+ * 640x480 screens the program has it show its pointer (AX=1), which the
+ * port draws over the picture (mouse_overlay), not into video memory.
+ * menu_mouse 0: no driver, as in tools/run. */
+
+int menu_mouse = 1;
+
+static struct {
+    int present;
+    int x, y, x1, x2, y1, y2;
+    int shown;                          /* the pointer is shown at 0 */
+} drv;
+
+static void mouse_clamp(void)
 {
-    dwb(M_mouse_present, 0xFE);
+    drv.x = drv.x < drv.x1 ? drv.x1 : drv.x > drv.x2 ? drv.x2 : drv.x;
+    drv.y = drv.y < drv.y1 ? drv.y1 : drv.y > drv.y2 ? drv.y2 : drv.y;
 }
 
-/* INT 33h AX=3 when a mouse was found: never here */
+/* AX=4 */
+static void mouse_set(uint16_t x, uint16_t y)
+{
+    if (!drv.present)
+        return;
+    drv.x = (int16_t)x;
+    drv.y = (int16_t)y;
+    mouse_clamp();
+}
+
+/* mouse_range: y from CX to DX (AX=8), x from AX to BX (AX=7) */
+static void mouse_range(uint16_t ax, uint16_t bx, uint16_t cx, uint16_t dx)
+{
+    if (!drv.present)
+        return;
+    drv.y1 = (int16_t)cx;
+    drv.y2 = (int16_t)dx;
+    drv.x1 = (int16_t)ax;
+    drv.x2 = (int16_t)bx;
+    mouse_clamp();
+}
+
+/* AX=1, AX=2 */
+static void mouse_show(void)
+{
+    if (drv.shown < 0)
+        drv.shown++;
+}
+
+static void mouse_hide(void)
+{
+    drv.shown--;
+}
+
+/* the pointer a driver draws: an arrow, its tip at the position */
+static void mouse_overlay(VgaFrame *f)
+{
+    static const char *const arrow[] = {
+        "X", "XX", "XWX", "XWWX", "XWWWX", "XWWWWX", "XWWWWWX", "XWWWWWWX",
+        "XWWWWWWWX", "XWWWWWXXXX", "XWWXWWX", "XWX XWWX", "XX  XWWX",
+        "X    XWWX", "     XWWX", "      XX", NULL };
+    int best[2] = { 0, 0 }, dist[2] = { 1 << 30, 1 << 30 }, i, r, c;
+
+    if (!drv.present || drv.shown < 0 || f->width < 640)
+        return;
+    for (i = 0; i < 256; i++) {
+        int rr = f->palette[i] >> 16 & 0xFF, g = f->palette[i] >> 8 & 0xFF, b = f->palette[i] & 0xFF;
+        int dark = rr * rr + g * g + b * b;
+        int light = (255 - rr) * (255 - rr) + (255 - g) * (255 - g) + (255 - b) * (255 - b);
+        if (dark < dist[0]) { dist[0] = dark; best[0] = i; }
+        if (light < dist[1]) { dist[1] = light; best[1] = i; }
+    }
+    for (r = 0; arrow[r]; r++)
+        for (c = 0; arrow[r][c]; c++) {
+            int x = drv.x + c, y = drv.y + r;
+            if (arrow[r][c] != ' ' && x < f->width && y < f->height)
+                f->pixels[y * f->width + x] = (uint8_t)best[arrow[r][c] == 'W'];
+        }
+}
+
+/* INT 33h AX=0: mouse_present 1 when a driver answers (the pointer
+ * hidden, in the middle of a 640x200 screen, as a driver has it after a
+ * reset in the 320x200 mode; not checked with a real one), else 0FEh */
+static void detect_mouse(void)
+{
+    if (!menu_mouse) {
+        drv.present = 0;
+        dwb(M_mouse_present, 0xFE);
+        return;
+    }
+    drv.present = 1;
+    drv.shown = -1;
+    drv.x1 = drv.y1 = 0;
+    drv.x2 = 639;
+    drv.y2 = 199;
+    drv.x = 320;
+    drv.y = 100;
+    dwb(M_mouse_present, 1);
+}
+
+/* INT 33h AX=3 when a mouse was found: x halved (the driver counts 640 a
+ * row in the 320x200 mode) */
 static void poll_mouse(void)
 {
+    if (db(M_mouse_present) != 1)
+        return;
+    dww(M_mouse_x, (uint16_t)((uint16_t)drv.x >> 1));
+    dww(M_mouse_y, (uint16_t)drv.y);
+    dwb(M_mouse_buttons, 0);
 }
 
 /* ---- the ticker */
@@ -676,7 +780,7 @@ static int read_menu_keys(void)
                 break;
             }
     }
-    /* INT 33h AX=4: the pointer to the mouse driver (none here) */
+    mouse_set((uint16_t)(dw(M_mouse_x) << 1), dw(M_mouse_y));
     dwb(M_menu_key_seen, 1);
     return 0;
 }
@@ -718,6 +822,7 @@ enum { BOX_TABLES = 8, BOX_EDGE = 5, BOX_VISIBLE = 0xBC, BOX_LAST_ROW = 0x118,
 static int box_entry;                   /* 0-7, kept while the program runs */
 static int box_drawn, box_x1, box_y1, box_x2, box_y2;
 static int box_held, box_hold, box_moved, box_pulse;
+static int box_back;                    /* back to the list from the high score show */
 static uint8_t box_colour[3];           /* two to pulse between, the dark lines' */
 static uint8_t box_saved[2 * BOX_EDGE * (320 + 480)];
 
@@ -863,7 +968,7 @@ static int box_keys(int in_list)
         step = dir;
     }
     if (!in_list && (step || key_down(0x1C))) {
-        dwb(M_mouse_buttons, 1);
+        box_back = 1;                   /* a click, which the driver's poll would undo */
         box_held = 0;
         wait_keys_up();
         return 0;
@@ -902,6 +1007,627 @@ static void box_pass(void)
     box_scroll(0);
 }
 
+/* ---- the history (F9): the language screen (DDPCLANG.VGA), then in the
+ * HISTORY folder a start screen (DDPCHIST.VGA) whose five boxes choose a
+ * list (the tables, or their manufacturers, designers or years; the fifth
+ * leaves), then in mode 12h the list and the browser: a table's picture
+ * (.016, 640x480) with its text of the language's .HOP, and eight buttons
+ * below (the four lists, exit, the next picture, the table before and
+ * after).  Without a VESA BIOS (as in tools/run: INT 10h AX=4F00h fails)
+ * the program keeps to the .016 pictures; its VESA routines are not
+ * translated. */
+
+static uint8_t hb(uint16_t o) { return frb(s_history, o); }
+static void hwb(uint16_t o, uint8_t v) { fwb(s_history, o, v); }
+static uint16_t hw(uint16_t o) { return frw(s_history, o); }
+static void hww(uint16_t o, uint16_t v) { fww(s_history, o, v); }
+
+/* read_file_far: the file named at seg:name into dst:di on; 1 when it
+ * could not be opened */
+static int read_file_far(uint16_t seg, uint16_t name, uint16_t dst, uint16_t di)
+{
+    char path[SYS_PATH];
+    uint8_t *data;
+    size_t size, i;
+    uint32_t a = ((uint32_t)dst << 4) + di;
+
+    if (dos_path(seg, name, path, sizeof path) || (data = sys_load(path, &size)) == NULL)
+        return 1;
+    for (i = 0; i < size && a + i < MEM_SIZE; i++)
+        mem[a + i] = data[i];
+    free(data);
+    return 0;
+}
+
+/* the language screen: 1 (CF) when left with Esc, else language_index
+ * set to the flag clicked */
+static int language_screen(void)
+{
+    uint16_t si;
+    int esc, count, dx;
+
+    dww(M_menu_start, 0);
+    mouse_set(0x140, 0x64);
+    screen_off();
+    clear_vram();
+    set_mode_x();
+    screen_off();
+    clear_palette(0x300);
+    screen_on();
+    load_vga_image(s_data, M_language_vga_path, 0);
+    fade_in(s_data, M_language_palette, 0x300);
+    poll_mouse();
+    draw_pointer(0);
+    for (;;) {
+        checkpoint_menu("language_loop");
+        wait_retrace();
+        remove_pointer(0);
+        poll_mouse();
+        esc = read_menu_keys();
+        draw_pointer(0);
+        if (esc)
+            break;
+        si = M_language_ranges;
+        count = db(si++);
+        for (dx = 0; dx < count; dx++, si = (uint16_t)(si + 8))
+            if (dw(M_mouse_y) >= dw((uint16_t)(si + 2)) && dw(M_mouse_y) <= dw((uint16_t)(si + 6)) &&
+                dw(M_mouse_x) >= dw(si) && dw(M_mouse_x) <= dw((uint16_t)(si + 4)))
+                break;
+        /* a flag under the pointer: chosen with Enter (or anything with no
+         * selection made, which cannot be: F9 made one); the F keys not */
+        if (dx < count && db(M_mouse_buttons) &&
+            (db(M_selection) == 0 || db(M_mouse_buttons) == 1)) {
+            dwb(M_language_index, (uint8_t)dx);
+            break;
+        }
+    }
+    wait_keys_up();
+    fade_out(s_data, M_language_palette, 0x300);
+    return esc;
+}
+
+/* the index of the rectangle at HISTORY:bx (a count, then x1, y1, x2, y2)
+ * the pointer is in, else 0FFh */
+static uint16_t hit_test(uint16_t bx)
+{
+    uint16_t si = (uint16_t)(bx + 1), n = hb(bx), bp;
+    uint16_t x = dw(M_mouse_x), y = dw(M_mouse_y);
+
+    for (bp = 0; bp < n; bp++, si = (uint16_t)(si + 8))
+        if (y >= hw((uint16_t)(si + 2)) && y <= hw((uint16_t)(si + 6)) &&
+            x >= hw(si) && x <= hw((uint16_t)(si + 4)))
+            return bp;
+    return 0xFF;
+}
+
+/* INT 33h AX=3 without halving x: the history's 640-pixel screens */
+static void poll_history_mouse(void)
+{
+    if (db(M_mouse_present) != 1)
+        return;
+    dww(M_mouse_x, (uint16_t)drv.x);
+    dww(M_mouse_y, (uint16_t)drv.y);
+    dwb(M_mouse_buttons, 0);
+}
+
+/* read_menu_keys without the F keys, the pointer given to the driver only
+ * after a key; 1 (CF) when Esc is down, once it is let go */
+static int read_history_keys(void)
+{
+    if (key_down(0x01)) {
+        wait_keys_up();
+        return 1;
+    }
+    if (key_down(0xC8)) {
+        dww(M_mouse_y, (uint16_t)(dw(M_mouse_y) - 2));
+        if (dsw(M_mouse_y) < 0)
+            dww(M_mouse_y, 0);
+    } else if (key_down(0xD0)) {
+        dww(M_mouse_y, (uint16_t)(dw(M_mouse_y) + 2));
+    } else if (key_down(0xCB)) {
+        dww(M_mouse_x, (uint16_t)(dw(M_mouse_x) - 2));
+        if (dsw(M_mouse_x) < 0)
+            dww(M_mouse_x, 0);
+    } else if (key_down(0xCD)) {
+        dww(M_mouse_x, (uint16_t)(dw(M_mouse_x) + 2));
+    } else if (key_down(0x1C)) {
+        dwb(M_mouse_buttons, 1);
+        wait_keys_up();
+    } else {
+        return 0;
+    }
+    mouse_set(dw(M_mouse_x), dw(M_mouse_y));
+    return 0;
+}
+
+/* the NUL-terminated string at seg:si in HISTORY.FNT's glyphs, a byte a
+ * glyph row, at byte x, line y of the 640x480 screen, in all four planes
+ * (inverted when `inverted`); the offset of its NUL */
+static uint16_t draw_history_string(uint16_t seg, uint16_t si, uint16_t x, uint16_t y, int inverted)
+{
+    uint16_t di = (uint16_t)(y * 0x50 + x), font = hw(M_history_font_segment), s, d;
+    uint8_t mask, c, v;
+    int r;
+
+    cww(M_string_planes, 4);
+    cww(M_string_inverted, (uint16_t)inverted);
+    for (mask = 1; mask < 0x10; mask = (uint8_t)(mask + mask)) {
+        set_planes(mask, 0);
+        for (s = si, d = di; (c = frb(seg, s)) != 0; s++, d++)
+            for (r = 0; r < 8; r++) {
+                v = frb(font, (uint16_t)(c * 8 + r));
+                vga_write((uint16_t)(d + r * 0x50), inverted ? (uint8_t)~v : v);
+            }
+        cww(M_string_end, s);
+        cww(M_string_planes, (uint16_t)(cw(M_string_planes) - 1));
+    }
+    return cw(M_string_end);
+}
+
+/* (50h - the length of the string at HISTORY:si) / 2; *len the length */
+static uint16_t centre_string(uint16_t si, uint16_t *len)
+{
+    uint16_t dx = 0;
+
+    while (hb((uint16_t)(si + dx)))
+        dx++;
+    *len = dx;
+    return (uint16_t)((uint16_t)(0x50 - dx) >> 1);
+}
+
+/* the first line of a list of `count` rows centred on the screen (the x
+ * the routine works out too goes unused) */
+static uint16_t centre_list(uint16_t di, uint16_t count)
+{
+    uint16_t dx = 0, n, bp;
+
+    for (n = count; n; n--) {
+        centre_string(hw(di), &bp);
+        if ((int16_t)bp >= (int16_t)dx) {
+            dx = bp;
+            di = (uint16_t)(di + 2);
+        }
+    }
+    return (uint16_t)((uint16_t)(0x1E0 - (count << 3)) >> 1);
+}
+
+/* plane 0 of `cx` bytes in eight lines at byte x, line y inverted */
+static void invert_history_row(uint16_t x, uint16_t y, uint16_t cx)
+{
+    uint16_t di, a;
+    int r, i;
+
+    if (cx == 0)
+        return;
+    di = (uint16_t)(y * 0x50 + x);
+    set_planes(1, 0);
+    mouse_hide();
+    for (r = 0; r < 8; r++, di = (uint16_t)(di + 0x50))
+        for (i = 0, a = di; i < cx; i++, a++)
+            vga_write(a, (uint8_t)~vga_read(a));
+    mouse_show();
+}
+
+/* the list's row under the pointer inverted until a click (its index)
+ * or the pointer leaves it or Esc (0FFFFh) */
+static uint16_t choose_history_row(uint16_t rows, uint16_t count)
+{
+    uint16_t si, c, bx, dx;
+
+    for (;;) {
+        checkpoint_menu("history_row_loop");
+        si = rows;
+        wait_retrace();
+        poll_history_mouse();
+        if (read_history_keys())
+            return 0xFFFF;
+        bx = (uint16_t)(dw(M_mouse_y) >> 3);
+        for (c = count; c; c--, si = (uint16_t)(si + 6)) {
+            dx = hw((uint16_t)(si + 2));
+            cww(M_history_row_y, dx);
+            if ((uint16_t)(dx >> 3) == bx)
+                break;
+        }
+        if (c == 0)
+            return 0xFFFF;
+        cww(M_history_rows_left, c);
+        cww(M_history_row, bx);
+        invert_history_row(0, cw(M_history_row_y), 0x50);
+        for (;;) {
+            checkpoint_menu("history_row_wait");
+            wait_retrace();
+            poll_mouse();
+            read_menu_keys();
+            if (db(M_mouse_buttons))
+                return (uint16_t)(count - cw(M_history_rows_left));
+            if (cw(M_history_row) != (uint16_t)(dw(M_mouse_y) >> 3))
+                break;
+        }
+        invert_history_row(0, cw(M_history_row_y), 0x50);
+    }
+}
+
+/* the `count` strings whose offsets are at HISTORY:table as a list, one
+ * of them chosen; its index */
+static uint8_t select_history_filter(uint16_t table, uint16_t count)
+{
+    uint16_t y, i, x, len, si, rec;
+    uint16_t r;
+
+    dwb(M_mouse_buttons, 0);
+    y = centre_list(table, count);
+    for (i = 0; i < count; i++, y = (uint16_t)(y + 8)) {
+        si = hw((uint16_t)(table + 2 * i));
+        x = centre_string(si, &len);
+        rec = (uint16_t)(M_history_rows + 6 * i);
+        hww(rec, x);
+        hww((uint16_t)(rec + 2), y);
+        hww((uint16_t)(rec + 4), len);
+        draw_history_string(s_history, si, x, y, 0);
+    }
+    mouse_show();
+    do
+        r = choose_history_row(M_history_rows, count);
+    while (r == 0xFFFF);
+    mouse_hide();
+    return (uint8_t)r;
+}
+
+/* filtered_table_records: the nine-byte table records of the filter
+ * history_filter_mask chooses (the first bit set of 1 manufacturer, 2
+ * designer, 4 year), all of them for none */
+static void filter_history_records(void)
+{
+    uint16_t si = M_table_records, di = M_filtered_table_records, n;
+    uint8_t mask;
+    int take, i;
+
+    hww(M_filtered_table_count, 0);
+    for (n = 0x35; n; n--, si = (uint16_t)(si + 9)) {
+        mask = hb(M_history_filter_mask);
+        if (mask & 1)
+            take = hb(M_manufacturer_filter) == hb((uint16_t)(si + 1));
+        else if (mask & 2)
+            take = hb(M_designer_filter) == hb((uint16_t)(si + 3));
+        else if (mask & 4)
+            take = hb(M_year_filter) == hb((uint16_t)(si + 2));
+        else
+            take = 1;
+        if (take) {
+            for (i = 0; i < 9; i++)
+                hwb((uint16_t)(di + i), hb((uint16_t)(si + i)));
+            di = (uint16_t)(di + 9);
+            hww(M_filtered_table_count, (uint16_t)(hw(M_filtered_table_count) + 1));
+        }
+    }
+}
+
+static void history_title(uint16_t text)
+{
+    uint16_t len;
+    draw_history_string(s_history, text, centre_string(text, &len), 1, 0);
+}
+
+/* a list of manufacturers (1), designers (2) or years (4): the tables of
+ * the one chosen */
+static void filter_by(uint8_t mask, uint16_t text, uint16_t table, uint16_t count, uint16_t var)
+{
+    hwb(M_history_filter_mask, mask);
+    history_title(text);
+    hwb(var, select_history_filter(table, count));
+    filter_history_records();
+    cww(M_shown_table, 0xFFFF);
+    hww(M_selected_table, 0);
+}
+
+/* the list of the tables: all of them, the one chosen shown */
+static void select_history_table(void)
+{
+    uint8_t al;
+
+    history_title(M_select_table_text);
+    hwb(M_history_filter_mask, 8);
+    al = select_history_filter(M_table_name_table, 0x35);
+    hwb(M_direct_table_selection, al);
+    hww(M_selected_table, al);
+    filter_history_records();
+    cww(M_shown_table, 0xFFFF);
+}
+
+/* the routine history_action_table has for `choice` (0-3; 4 leaves) */
+static void history_action(uint16_t choice)
+{
+    uint16_t routine = hw((uint16_t)(M_history_action_table + 2 * choice));
+
+    if (routine == M_select_history_table)
+        select_history_table();
+    else if (routine == M_filter_manufacturer)
+        filter_by(1, M_select_manufacturer_text, M_manufacturer_table, 0x0A, M_manufacturer_filter);
+    else if (routine == M_filter_designer)
+        filter_by(2, M_select_designer_text, M_designer_table, 0x1D, M_designer_filter);
+    else if (routine == M_filter_year)
+        filter_by(4, M_select_year_text, M_year_table, 0x16, M_year_filter);
+}
+
+/* the .016 file named at HISTORY:name into the four planes, 9600h bytes
+ * each, through a DOS block (a short read copies what the block held
+ * before); nothing when it is not there */
+static void load_history_picture_16(uint16_t name)
+{
+    char path[SYS_PATH];
+    uint8_t *data = NULL;
+    size_t size = 0, pos = 0, k, i;
+    uint16_t block = dos_alloc(0x961), a;
+    uint8_t mask;
+
+    if (!block)
+        fatal("Not enough memory for the history.");
+    cww(M_picture_block, block);
+    if (!dos_path(s_history, name, path, sizeof path) && (data = sys_load(path, &size)) != NULL) {
+        mask = 1;
+        do {
+            k = size - pos < 0x9600 ? size - pos : 0x9600;
+            for (i = 0; i < k; i++)
+                fwb(block, (uint16_t)i, data[pos + i]);
+            pos += k;
+            set_planes(mask, 0);
+            for (a = 0; a < 0x9600; a++)
+                vga_write(a, frb(block, a));
+            mask = (uint8_t)(mask + mask);
+        } while (k == 0x9600);
+        free(data);
+    }
+    dos_free(block);
+}
+
+/* one string of the .HOP at x 28h (the right half), line y, inverted;
+ * the NULs and CR/LF pairs after it skipped (the rows the program adds
+ * for them are lost with its POP DX); the offset after them */
+static uint16_t draw_history_line(uint16_t si, uint16_t y)
+{
+    uint16_t hop = hw(M_hop_segment);
+
+    si = draw_history_string(hop, si, 0x28, y, 1);
+    while (frb(hop, si) == 0)
+        si++;
+    while (frw(hop, si) == 0x0A0D)
+        si = (uint16_t)(si + 2);
+    return si;
+}
+
+/* the table's text: its .IDX record's strings from line 8 on, 35h rows at
+ * most; the rest (scroll_active) at the next call for the same table */
+static void draw_history_record(void)
+{
+    uint16_t sel = hw(M_selected_table), dx = 8, cx, si, idx;
+    uint8_t cl;
+
+    if (cw(M_drawn_table) != sel) {
+        hww(M_scroll_active, 0);
+        cww(M_drawn_table, sel);
+    }
+    if (hw(M_scroll_active)) {
+        cx = hw(M_scroll_line_count);
+        si = hw(M_scroll_text_ptr);
+        do {
+            si = draw_history_line(si, dx);
+            dx = (uint16_t)(dx + 8);
+        } while (--cx);
+        hww(M_scroll_line_count, 0);
+        hww(M_scroll_active, 0);
+        hww(M_scroll_text_ptr, 0);
+        return;
+    }
+    idx = (uint16_t)(M_history_text_index +
+                     5 * hb((uint16_t)(M_filtered_table_records + 9 * sel)));
+    cl = (uint8_t)(hb((uint16_t)(idx + 4)) + 1);
+    cx = cl;
+    hww(M_scroll_active, 0);
+    if ((int8_t)cl > 0x35) {
+        hww(M_scroll_line_count, (uint16_t)(cx - 0x35));
+        cx = 0x35;
+        hww(M_scroll_active, 1);
+    }
+    si = hw(idx);
+    do {
+        si = draw_history_line(si, dx);
+        dx = (uint16_t)(dx + 8);
+    } while (--cx);
+    hww(M_scroll_text_ptr, si);
+}
+
+/* the selected table's first picture and its text, unless shown */
+static void show_history_table(void)
+{
+    uint16_t sel = hw(M_selected_table);
+
+    if (cw(M_shown_table) == sel)
+        return;
+    cww(M_shown_table, sel);
+    mouse_hide();
+    screen_off();
+    load_history_picture_16(hw((uint16_t)(M_filtered_table_records + 9 * sel + 5)));
+    draw_history_record();
+    wait_retrace();
+    screen_on();
+    mouse_show();
+}
+
+/* the record's other picture, when it has two */
+static void next_history_picture(void)
+{
+    uint16_t si = (uint16_t)(M_filtered_table_records + 9 * hw(M_selected_table));
+    uint16_t n = (uint16_t)(cw(M_picture_number) + 1);
+
+    cww(M_picture_number, n);
+    if ((int16_t)n > (int16_t)hb((uint16_t)(si + 4)))
+        cww(M_picture_number, 1);
+    if (hb((uint16_t)(si + 4)) != 1) {
+        mouse_hide();
+        screen_off();
+        load_history_picture_16(hw((uint16_t)(si + (cw(M_picture_number) == 1 ? 5 : 7))));
+        draw_history_record();
+        wait_retrace();
+        screen_on();
+    }
+    mouse_show();
+}
+
+/* the browser until one of its buttons 0-4 (the lists, exit) or Esc (4) */
+static uint16_t browse_history_tables(void)
+{
+    uint16_t ax, sel;
+
+    vga_set_mode(0x12);                     /* set_history_mode: no VESA */
+    mouse_range(0, 0x276, 0, 0x1D0);
+    cww(M_picture_number, 1);
+    dwb(M_mouse_buttons, 0);
+    mouse_show();
+    for (;;) {
+        show_history_table();
+        poll_history_mouse();
+        for (;;) {
+            checkpoint_menu("history_browse_loop");
+            wait_retrace();
+            poll_history_mouse();
+            if (read_history_keys()) {
+                mouse_hide();
+                return 4;
+            }
+            if (!db(M_mouse_buttons))
+                continue;
+            ax = hit_test(M_history_menu_hitboxes);
+            if (ax == 0xFF)
+                continue;
+            if (ax == 5) {
+                next_history_picture();
+                continue;
+            }
+            sel = hw(M_selected_table);
+            if (ax == 6) {
+                hww(M_selected_table, (uint16_t)(sel - 1));
+                if ((int16_t)(sel - 1) < 0)
+                    hww(M_selected_table, 0);
+                break;
+            }
+            if (ax == 7) {
+                hww(M_selected_table, (uint16_t)(sel + 1));
+                if ((int16_t)(sel + 1) >= (int16_t)hw(M_filtered_table_count))
+                    hww(M_selected_table, (uint16_t)(hw(M_filtered_table_count) - 1));
+                break;
+            }
+            mouse_hide();
+            return ax;
+        }
+    }
+}
+
+/* mode 12h, the .HOP; the start screen's choice, then the browser and the
+ * lists its buttons choose until it is left; the font and the .HOP
+ * released (not when the start screen's fifth box was chosen: then both
+ * blocks stay taken, as in the program) */
+static void run_history_menus(void)
+{
+    uint16_t block, ax;
+
+    screen_off();
+    clear_vram();
+    vga_set_mode(0x12);
+    block = dos_alloc(0xFF0);
+    if (!block)
+        fatal("Not enough memory for the history.");
+    hww(M_hop_segment, block);
+    if (read_file_far(s_history, hw((uint16_t)(M_hop_file_table + 2 * db(M_language_index))), block, 0)) {
+        dos_free(block);
+        fatal("A file of the history (the .HOP text) could not be read.");
+    }
+    ax = hw(M_history_start_choice);
+    if (ax != 4) {
+        history_action(ax);
+        while ((ax = browse_history_tables()) != 4) {
+            vga_set_mode(0x12);
+            history_action(ax);
+        }
+        if (dos_free(hw(M_history_font_segment)) || dos_free(hw(M_hop_segment)))
+            fatal("The history's memory could not be released.");
+    }
+    dwb(M_menu_unused_byte, 1);
+}
+
+/* the start screen until a box is clicked or Esc */
+static void history_loop(void)
+{
+    uint16_t ax;
+
+    poll_mouse();
+    draw_pointer(2);
+    for (;;) {
+        checkpoint_menu("history_start_loop");
+        wait_retrace();
+        remove_pointer(2);
+        poll_mouse();
+        if (read_menu_keys())
+            break;
+        if (!db(M_mouse_buttons)) {
+            draw_pointer(2);
+            continue;
+        }
+        ax = hit_test(M_history_start_hitboxes);
+        if (ax == 0xFF)
+            continue;
+        hww(M_history_start_choice, ax);
+        fade_out(s_history, M_history_palette, 0x300);
+        run_history_menus();
+        return;
+    }
+    fade_out(s_history, M_history_palette, 0x300);
+}
+
+static void history_screen(void)
+{
+    uint16_t block;
+    int i;
+
+    /* history_init */
+    hww(M_scroll_line_count, 0);
+    hww(M_scroll_text_ptr, 0);
+    hww(M_scroll_active, 0);
+    dww(M_menu_start, 0);
+    dwb(M_menu_unused_byte, 1);
+    dos_dir = "HISTORY";                    /* CHDIR ..\history */
+    screen_off();
+    clear_vram();
+    set_mode_x();
+    screen_off();
+    load_vga_image(s_history, M_history_vga_path, 0);
+    clear_palette(0x300);
+    screen_on();
+    fade_in(s_history, M_history_palette, 0x300);
+    hwb(M_vesa_available, 0);               /* detect_vesa: INT 10h AX=4F00h fails */
+    block = dos_alloc(0x80);                /* load_history_font */
+    if (!block)
+        fatal("Not enough memory for the history.");
+    hww(M_history_font_segment, block);
+    if (read_file_far(s_history, M_history_font_path, block, 0))
+        fatal("A file of the history (HISTORY.FNT) could not be read.");
+    if (read_file_far(s_history, hw((uint16_t)(M_idx_file_table + 2 * db(M_language_index))),
+                      s_history, M_history_text_index))
+        fatal("A file of the history (the .IDX index) could not be read.");
+    /* select_history_picture_format: the .016 names stay without VESA */
+    history_loop();
+
+    /* leave_history: the DAC read and faded out (the screen is off) */
+    screen_off();
+    vga_outb(0x3C7, 0);
+    for (i = 0; i < 0x300; i++)
+        dwb((uint16_t)(M_palette_work + i), vga_inb(0x3C9));
+    fade_out(s_data, M_palette_work, 0x300);
+    clear_vram();
+    dos_dir = NULL;                         /* CHDIR ..\deluxe */
+    stop_sound();
+    screen_off();
+}
+
 static void menu_init(void);
 
 /* the table run: its program loaded over the menu's memory, which is put
@@ -926,7 +1652,8 @@ static void run_table(int bx)
         fatal(err);
 }
 
-/* F1-F8: the table (its animation first); F9, F10: not translated */
+/* F1-F8: the table (its animation first); F9 the history after the
+ * language screen; F10 (the options): not translated */
 static void run_selection(void)
 {
     uint8_t sel = db(M_selection);
@@ -936,7 +1663,11 @@ static void run_selection(void)
     dww(M_tick_draw, M_tick_nothing);
     dww(M_tick_remove, M_tick_nothing);
     dww(M_tick_ticker, M_tick_nothing);
-    if (sel != 0x0A && sel != 9) {
+    if (sel == 9) {
+        if (!language_screen())
+            history_screen();
+        /* else CHDIR deluxe_dir: the folder did not change */
+    } else if (sel != 0x0A) {
         restore_keyboard();
         run_table(sel - 1 >= 4 ? 1 : 0);
     }
@@ -969,7 +1700,7 @@ static void menu_video_init(void)
     clear_vram();
     set_mode_x();
     screen_off();
-    load_vga_image(M_select_vga_path, 0x3C0);
+    load_vga_image(s_data, M_select_vga_path, 0x3C0);
     load_hiscores();
     draw_hiscores();
     set_split();
@@ -981,8 +1712,8 @@ static void menu_video_init(void)
 
 static void menu_init(void)
 {
-    /* mouse_range (INT 33h AX=7, 8) and the pointer to 140h, 64h (AX=4):
-     * no mouse driver here */
+    mouse_range(0, 0x270, 0, 0xAC);
+    mouse_set(0x140, 0x64);
     dwb(M_mouse_buttons, 0);
     dwb(M_menu_unused_byte, 0);
     dwb(M_frame_tick, 0);
@@ -1068,8 +1799,9 @@ static void menu(void)
             checkpoint_menu("hiscore_show_loop");
             show_menu_start();
             poll_mouse();
-            if (db(M_mouse_buttons)) {
+            if (db(M_mouse_buttons) || box_back) {
                 dwb(M_mouse_buttons, 0);
+                box_back = 0;
                 break;
             }
             if (any_key_down()) {
@@ -1117,6 +1849,8 @@ int menu_run(const char *game, const MenuHooks *h, char *err, size_t n)
         snd_stop();                     /* the program's memory stays as it was */
         restore_keyboard();
         frame_set_tick(NULL);
+        frame_set_overlay(NULL);
+        dos_dir = NULL;
         return r == 2 ? -1 : 0;
     }
 
@@ -1124,6 +1858,7 @@ int menu_run(const char *game, const MenuHooks *h, char *err, size_t n)
     install_keyboard();
     alloc_pointer_buffers();
     detect_mouse();
+    frame_set_overlay(mouse_overlay);
     /* run_intro: DDPCINTR.EXE, not translated; run_fli_player with 0 */
     dwb(M_selection, 0);
     restore_keyboard();
@@ -1139,5 +1874,6 @@ int menu_run(const char *game, const MenuHooks *h, char *err, size_t n)
     restore_keyboard();
     screen_off();
     clear_vram();
+    frame_set_overlay(NULL);
     return 0;
 }

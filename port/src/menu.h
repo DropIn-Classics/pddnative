@@ -1,16 +1,18 @@
 /* menu.h - the menu, DDPCMAIN.EXE, in C: the list of the eight tables
  * (F1-F8, or the pointer moved with the arrows and Enter), the ticker
  * line, the high score show when nothing is chosen for a while, a table
- * run in the same process and the menu back after it; Esc leaves it.
+ * run in the same process and the menu back after it, the history (F9:
+ * the language screen, then the History of Pinball in its 16-colour
+ * pictures); Esc leaves it.
  *
  * Translated from the generated source (build/DDPCMAIN.ASM) under the
  * names of src/DDPCMAIN.hints, on the program's own memory (mem.h, where
  * tools/run -loadfix loads it), so that it can be compared with runs of
  * the original.  Not translated: the intro (DDPCINTR.EXE, which `start`
- * runs first), the history viewer (F9) and the options screen (F10; the
- * setup screen has the options): chosen, the menu fades out and comes
- * back, as when the language screen before the history is left with Esc.
- * No mouse: the program sees none, as without a mouse driver. */
+ * runs first), the history's VESA pictures (no VESA BIOS here, as in
+ * tools/run) and the options screen (F10; the setup screen has the
+ * options): chosen, the menu fades out and comes back.  The mouse driver
+ * is the port's (menu_mouse), with the keyboard behind it. */
 #ifndef PD_MENU_H
 #define PD_MENU_H
 #include <stddef.h>
@@ -36,5 +38,11 @@ int menu_run(const char *game, const MenuHooks *hooks, char *err, size_t n);
  * chooses; in the high score show Enter and the arrows go back to the
  * list.  0 (the default): the pointer, as the original has it. */
 extern int menu_box;
+
+/* Not 0 (the default): the port's mouse driver, which the programs give
+ * the pointer the keys move and which draws its pointer where they have
+ * it show one (the history's 640x480 screens); no mouse behind it yet.
+ * 0: no driver, as in tools/run (for comparisons with it). */
+extern int menu_mouse;
 
 #endif

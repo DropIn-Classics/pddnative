@@ -30,7 +30,8 @@ uint8_t vga_read(uint16_t offset);
 
 /* INT 10h AH=00h: mode 12h (640x480, 16 colours) or 13h (320x200, 256
  * colours, chain-4); the registers the BIOS sets, memory cleared.  The
- * BIOS palette is not loaded: the game sets its own. */
+ * BIOS palette is loaded for mode 12h (the menu's history shows its
+ * pictures in it), not for 13h: the programs set their own. */
 void vga_set_mode(int mode);
 
 /* the picture the CRTC would show now */

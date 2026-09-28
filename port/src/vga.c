@@ -262,6 +262,17 @@ void vga_set_mode(int mode)
     memcpy(v.gc, m12 ? gc12 : gc13, sizeof v.gc);
     memcpy(v.attr, m12 ? attr12 : attr13, sizeof v.attr);
     v.pel_mask = 0xFF;
+    /* mode 12h: the BIOS's 64 EGA colours in DAC 0-3Fh (bits 0-2 blue,
+     * green, red at 2/3, bits 3-5 at 1/3), which the attribute registers
+     * above pick the 16 from */
+    if (m12) {
+        int i;
+        for (i = 0; i < 0x40; i++) {
+            v.dac[i][0] = (uint8_t)((i >> 2 & 1) * 42 + (i >> 5 & 1) * 21);
+            v.dac[i][1] = (uint8_t)((i >> 1 & 1) * 42 + (i >> 4 & 1) * 21);
+            v.dac[i][2] = (uint8_t)((i & 1) * 42 + (i >> 3 & 1) * 21);
+        }
+    }
 }
 
 /* ---- scan-out ---- */

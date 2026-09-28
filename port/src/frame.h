@@ -11,6 +11,8 @@
 #ifndef PD_FRAME_H
 #define PD_FRAME_H
 
+#include "vga.h"
+
 typedef void (*FrameCallback)(void);
 typedef void (*KeyHandler)(unsigned char scancode);
 
@@ -19,6 +21,10 @@ void frame_set_tick(FrameCallback tick);
 
 /* the program's INT 9 handler, which gets each byte of port 60h */
 void frame_set_keyboard(KeyHandler handler);
+
+/* drawn into each picture after vga_render, before it is shown (what
+ * video memory does not hold: a mouse driver's pointer); NULL for none */
+void frame_set_overlay(void (*draw)(VgaFrame *picture));
 
 /* waits for the next picture; 0 once the window was closed */
 int frame_wait(void);

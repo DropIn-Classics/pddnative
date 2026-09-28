@@ -32,6 +32,9 @@ void pd_fatal(const char *what);
 void not_ported(const char *name);
 /* PD_STOP=where#N ends the program the Nth time it gets here */
 void checkpoint(const char *where);
+/* PD_POKE=where#N OFF HEX;...: the bytes written at seg:OFF the Nth time
+ * `where` is passed (checkpoint does it for DATA) */
+void checkpoint_pokes(const char *where, uint16_t seg);
 /* PD_TRACE: something worth knowing happened (a handler, a level switch) */
 void trace_note(const char *what);
 /* one picture (frame_wait); the program ends when the window was closed */
@@ -213,6 +216,9 @@ int key_down(int code);
 /* the host path of the DOS file name at seg:off (see pd_files.c); 0 when
  * the file is there */
 int dos_path(uint16_t seg, uint16_t off, char *out, size_t n);
+/* the current directory (CHDIR) a name without a folder is looked up in,
+ * relative to the game's root; NULL: the program's own folder */
+extern const char *dos_dir;
 int load_file(uint16_t name, uint16_t seg, uint16_t di);      /* 1 = failed */
 int write_file(uint16_t name, uint16_t seg, uint16_t di);     /* [file_size] bytes */
 void load_hiscores(void);
