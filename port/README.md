@@ -181,6 +181,18 @@ start a table from the first two pages.
   game is written there when the table ends. `-fx` is kept like a setting
   made on the screen.
 
+When no game files are found (no `-game`, no `PDD_GAME`, no folder `game`
+with a DREAMS1 in it beside the program, in the current directory or in
+the data folder), the window first looks for the installed GOG release
+(`src/gog.c`): its `game.gog` beside the program, in the Mac application
+in `/Applications` or `~/Applications`, on Windows where GOG's registry
+entries (`GOG.com\Games\*`, value `path`) point and in `\GOG Games\Pinball
+Dreams Deluxe` on any drive, elsewhere in a few usual Wine folders. It
+offers to copy the files into `game` in the data folder: the image's
+ISO 9660 file system unpacked as `tools/gogx.py` does it, into
+`game.part` first and renamed when complete. `-gog FILE` names the image
+instead.
+
 Comparing with the original: stop both at the same place and compare
 their memory by the names of the hints. The port stops at the first routine
 not translated yet or, with `PD_STOP=where#N`, the Nth time it passes

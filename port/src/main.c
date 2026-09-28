@@ -1,12 +1,15 @@
 /* main.c - Pinball Dreams: a native compatibility implementation that
  * needs an installed copy of the game.
  *
- *     pdd [-game DIR] [-prog 1|2] [-table 0-3] [-record FILE]
+ *     pdd [-game DIR | -gog FILE] [-prog 1|2] [-table 0-3] [-record FILE]
  *         [-fx BASS,TREBLE,OOMPH,HEADPHONE]
  *
  * DIR is the unpacked CD (the folders DELUXE, DREAMS1, DREAMS2 ...):
- * -game, else $PDD_GAME, else `game` beside the program, else `game` in
- * the current directory.  Without -prog and -table the window shows the
+ * -game, else $PDD_GAME, else the first folder `game` with a DREAMS1 in
+ * it beside the program, in the current directory or in the data folder
+ * (sys_data_dir).  When there is none, the window offers to unpack the
+ * installed GOG release's image into the data folder's `game` (gog.c;
+ * -gog names the image, game.gog, instead of looking for it).  Without -prog and -table the window shows the
  * setup screen (launcher.c), which starts the tables and comes back after
  * each.  -prog 1 runs PD.EXE's tables (Ignition, Steel Wheel, Beat Box,
  * Nightmare), 2 PD2.EXE's; -table picks one of the four, as the command
@@ -53,9 +56,16 @@ static void dump(void)
     }
 }
 
+/* a folder with the CD's files: one with DREAMS1 in it */
+static int has_game(const char *dir)
+{
+    char sub[SYS_PATH];
+    return sys_is_dir(dir) && sys_find(dir, "DREAMS1", sub, sizeof sub) && sys_is_dir(sub);
+}
+
 static int find_game(const char *given, char *out, size_t n)
 {
-    char exe[SYS_PATH];
+    char dir[SYS_PATH];
     const char *env = getenv("PDD_GAME");
 
     if (given) {
@@ -66,12 +76,16 @@ static int find_game(const char *given, char *out, size_t n)
         snprintf(out, n, "%s", env);
         return sys_is_dir(out);
     }
-    sys_exe_dir(exe, sizeof exe);
-    sys_join(out, n, exe, "game");
-    if (sys_is_dir(out))
+    sys_exe_dir(dir, sizeof dir);
+    sys_join(out, n, dir, "game");
+    if (has_game(out))
         return 1;
     snprintf(out, n, "game");
-    return sys_is_dir(out);
+    if (has_game(out))
+        return 1;
+    sys_data_dir(dir, sizeof dir);
+    sys_join(out, n, dir, "game");
+    return has_game(out);
 }
 
 /* The setup screen, the table chosen there, back to the screen: until it
@@ -99,7 +113,7 @@ static int with_launcher(const char *game)
 
 int main(int argc, char **argv)
 {
-    const char *given = NULL;
+    const char *given = NULL, *image = NULL;
     char game[SYS_PATH], err[512];
     int prog = 1, table = 0, direct = 0, fx_given = 0, i, r;
     int fx[4] = { 0, 0, 0, 0 };
@@ -107,6 +121,8 @@ int main(int argc, char **argv)
     for (i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-game") && i + 1 < argc)
             given = argv[++i];
+        else if (!strcmp(argv[i], "-gog") && i + 1 < argc)
+            image = argv[++i];
         else if (!strcmp(argv[i], "-prog") && i + 1 < argc) {
             prog = atoi(argv[++i]) == 2 ? 2 : 1;
             direct = 1;
@@ -122,14 +138,26 @@ int main(int argc, char **argv)
     }
     if (!plat_init("Pinball Dreams"))
         return 1;
-    if (!find_game(given, game, sizeof game)) {
-        plat_message("The game's files were not found: give their folder with -game "
-                     "or in PDD_GAME.");
-        plat_shutdown();
-        return 1;
-    }
     if (plat_has_window())
         launcher_load_settings();
+    if (!find_game(given, game, sizeof game)) {
+        /* found by neither -game nor PDD_GAME: the GOG release's, copied */
+        if (!given && !getenv("PDD_GAME") && plat_has_window()) {
+            char data[SYS_PATH];
+            sys_data_dir(data, sizeof data);
+            sys_join(game, sizeof game, data, "game");
+            if (!launcher_import(image, game)) {
+                launcher_save_settings();
+                plat_shutdown();
+                return 0;
+            }
+        } else {
+            plat_message("The game's files were not found: give their folder with -game "
+                         "or in PDD_GAME.");
+            plat_shutdown();
+            return 1;
+        }
+    }
     if (fx_given)
         launcher_set_fx(fx[0], fx[1], fx[2], fx[3]);
     if (plat_has_window() && !direct)

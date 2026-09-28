@@ -27,4 +27,9 @@ void launcher_save_settings(void);
  * first in a box (why the last table ended). */
 int launcher_run(const char *game, int *prog, int *table, const char *note);
 
+/* No game files: the installed GOG release looked for (gog.c; `image`
+ * instead if not NULL) and the copy of its files into `dir` offered, or
+ * told how to give them.  1 when the files are in `dir` then, 0 to quit. */
+int launcher_import(const char *image, const char *dir);
+
 #endif

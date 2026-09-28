@@ -9,7 +9,7 @@ cd "$(dirname "$0")"
 CC=${CC:-cc}
 CFLAGS="-O2 -Wall -Wextra"
 ENGINE="src/pd_main.c src/pd1.c src/pd2.c src/pd_video.c src/pd_sprite.c src/pd_text.c src/pd_keys.c src/pd_files.c src/pd_sound.c src/pd_idle.c src/pd_ball.c src/pd_lights.c src/pd_game.c src/pd_events.c src/pd_play.c src/pd_rules.c src/pd_bcd.c src/pd_lost.c src/pd_handlers.c src/pd_over.c src/code.c src/mem.c"
-CORE="src/main.c src/frame.c src/sound.c src/audiofx.c src/hud.c src/launcher.c src/textmode.c src/modplay.c src/vga.c src/sys.c src/sha256.c"
+CORE="src/main.c src/frame.c src/sound.c src/audiofx.c src/hud.c src/launcher.c src/gog.c src/textmode.c src/modplay.c src/vga.c src/sys.c src/sha256.c"
 
 mkdir -p build
 $CC $CFLAGS -o build/pdd-headless $ENGINE $CORE src/plat_null.c -lm

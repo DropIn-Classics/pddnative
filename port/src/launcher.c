@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "gog.h"
 #include "hud.h"
 #include "launcher.h"
 #include "platform.h"
@@ -672,6 +673,15 @@ static void draw_box(const char *text, const char *footer)
     centred(x, w, y + n + 3, footer, TM_ATTR(TM_YELLOW, TM_RED));
 }
 
+/* the blue screen with its title bar */
+static void backdrop(void)
+{
+    tm_clear(' ', A_SCREEN);
+    tm_fill(0, 0, TM_COLS, 1, ' ', A_BAR);
+    tm_text(1, 0, "Pinball Dreams Setup", A_BAR);
+    tm_text(TM_COLS - 10, 0, "pddnative", A_BAR);
+}
+
 static void draw(const char *game)
 {
     static const char *const help_page[] = {
@@ -690,11 +700,7 @@ static void draw(const char *game)
     char line[TM_COLS + 1];
     int n;
 
-    tm_clear(' ', A_SCREEN);
-    tm_fill(0, 0, TM_COLS, 1, ' ', A_BAR);
-    tm_text(1, 0, "Pinball Dreams Setup", A_BAR);
-    tm_text(TM_COLS - 10, 0, "pddnative", A_BAR);
-
+    backdrop();
     draw_page();
 
     if (note[0] && plat_micros() < note_until) {
@@ -711,7 +717,7 @@ static void draw(const char *game)
     }
     /* the game's folder, the start of a long path left out */
     n = (int)strlen(game);
-    snprintf(line, sizeof line, "Your Pinball Dreams: %s%s", n > 56 ? "..." : "", game + (n > 56 ? n - 56 : 0));
+    snprintf(line, sizeof line, "Your Pinball Dreams: %s%s", n > 52 ? "..." : "", game + (n > 52 ? n - 52 : 0));
     centred(0, TM_COLS, 23, line, A_LABEL);
 
     if (box[0]) {
@@ -785,4 +791,164 @@ int launcher_run(const char *game, int *prog, int *table, const char *note_text)
         plat_sleep_ms(15);
     }
     return r == START;
+}
+
+/* ---- the game's files from the GOG release (gog.c) */
+
+static uint8_t shown_pixels[TM_WIDTH * TM_HEIGHT];
+static uint32_t shown_palette[256];
+
+static void present(void)
+{
+    tm_render(shown_pixels, shown_palette);
+    plat_present(shown_pixels, TM_WIDTH, TM_HEIGHT, shown_palette);
+}
+
+/* `s` in at most `w` columns: the start left out */
+static const char *tail(const char *s, int w, char *buf, size_t n)
+{
+    int len = (int)strlen(s);
+    if (len <= w)
+        return s;
+    snprintf(buf, n, "...%s", s + len - (w - 3));
+    return buf;
+}
+
+/* a window of text lines (NULL: an empty line) and below them the
+ * choices, `cursor` highlighted (-1: none) */
+static void draw_import(const char *const *lines, int nlines, const char *const *choices,
+                        int nchoices, int cursor)
+{
+    int w = 70, h = nlines + nchoices + 5, x = (TM_COLS - w) / 2, y = 2 + (20 - h) / 2, i;
+
+    tm_fill(x, y, w, h, ' ', A_WINDOW);
+    tm_frame(x, y, w, h, A_WINDOW);
+    centred(x, w, y, " The game's files ", A_TITLE);
+    tm_shadow(x, y, w, h);
+    for (i = 0; i < nlines; i++)
+        if (lines[i])
+            tm_text(x + 3, y + 2 + i, lines[i], lines[i][0] == ' ' ? A_VALUE : A_LABEL);
+    for (i = 0; i < nchoices; i++) {
+        int row = y + 3 + nlines + i;
+        if (i == cursor)
+            tm_fill(x + 2, row, w - 4, 1, ' ', A_CURSOR);
+        tm_text(x + 4, row, choices[i], i == cursor ? A_CURSOR : A_LABEL);
+    }
+}
+
+typedef struct {
+    uint64_t drawn;
+    int closed;
+} Copying;
+
+static int copy_progress(void *ctx, const char *file, long done, long total)
+{
+    static const char *const help[] = { "", "Copying ...", NULL };
+    Copying *c = (Copying *)ctx;
+    char bar[64], text[80];
+    int width = 50, full = total > 0 ? (int)((double)done / (double)total * width) : 0, i;
+    const char *lines[4];
+
+    if (plat_micros() - c->drawn < 30000 && done < total)
+        return 0;
+    c->drawn = plat_micros();
+    for (i = 0; i < width; i++)
+        bar[i] = (char)(i < full ? TM_BLOCK : TM_SHADE_LIGHT);
+    bar[width] = 0;
+    snprintf(text, sizeof text, " %3d %%   %s", total > 0 ? (int)(100.0 * (double)done / (double)total) : 0, file);
+    lines[0] = "Copying the game's files from your GOG release:";
+    lines[1] = NULL;
+    lines[2] = bar;
+    lines[3] = text;
+    backdrop();
+    draw_import(lines, 4, NULL, 0, -1);
+    help_bar(24, help);
+    present();
+    if (!plat_pump())
+        c->closed = 1;
+    return c->closed;
+}
+
+/* the lines of text until Enter (or Esc: the last choice); the choice */
+static int ask(const char *const *lines, int nlines, const char *const *choices, int nchoices)
+{
+    static const char *const help[] = { "\x18\x19", "Select", "Enter", "Choose", NULL };
+    int cursor = 0, e0 = 0, b;
+
+    for (;;) {
+        if (!plat_pump())
+            return nchoices - 1;
+        while (plat_read_control() >= 0)
+            ;
+        while ((b = plat_read_scancode()) >= 0) {
+            int code;
+            if (b == 0xE0) {
+                e0 = 1;
+                continue;
+            }
+            code = (b & 0x7F) | (e0 ? 0x80 : 0);
+            e0 = 0;
+            if (b & 0x80)
+                continue;
+            if ((code == 0x48 || code == 0xC8) && cursor > 0)
+                cursor--;
+            else if ((code == 0x50 || code == 0xD0) && cursor < nchoices - 1)
+                cursor++;
+            else if (code == 0x1C || code == 0x9C || code == 0x39)
+                return cursor;
+            else if (code == 0x01)
+                return nchoices - 1;
+        }
+        backdrop();
+        draw_import(lines, nlines, choices, nchoices, cursor);
+        help_bar(24, help);
+        present();
+        plat_sleep_ms(15);
+    }
+}
+
+int launcher_import(const char *image, const char *dir)
+{
+    static const char *const copy_or_quit[] = { "Copy the files", "Quit" };
+    static const char *const quit[] = { "Quit" };
+    char found[SYS_PATH], err[200], from[80], to[80], why[80];
+    const char *lines[10];
+    Copying c;
+
+    if (image)
+        snprintf(found, sizeof found, "%s", image);
+    else if (!gog_find(found, sizeof found)) {
+        lines[0] = "pdd runs Pinball Dreams with the files of your own copy of the";
+        lines[1] = "game, the GOG release of Pinball Dreams Deluxe. Neither its files";
+        lines[2] = "nor an installed GOG release were found.";
+        lines[3] = NULL;
+        lines[4] = "Install the game from GOG and start pdd again, or start it with";
+        lines[5] = "-gog FILE (the release's game.gog) or -game FOLDER (the files of";
+        lines[6] = "its CD).";
+        ask(lines, 7, quit, 1);
+        return 0;
+    }
+    snprintf(from, sizeof from, "  %s", tail(found, 62, err, sizeof err));
+    snprintf(to, sizeof to, "  %s", tail(dir, 62, why, sizeof why));
+    lines[0] = "pdd runs Pinball Dreams with the files of your own copy of the";
+    lines[1] = "game. They are not here yet; your GOG release is:";
+    lines[2] = from;
+    lines[3] = NULL;
+    lines[4] = "Its files can be copied from there into:";
+    lines[5] = to;
+    if (ask(lines, 6, copy_or_quit, 2) != 0)
+        return 0;
+    memset(&c, 0, sizeof c);
+    if (gog_unpack(found, dir, copy_progress, &c, err, sizeof err) == 0)
+        return 1;
+    if (c.closed)
+        return 0;
+    snprintf(why, sizeof why, "  %s", err);
+    lines[0] = "The files could not be copied:";
+    lines[1] = why;
+    lines[2] = NULL;
+    lines[3] = "From:";
+    lines[4] = from;
+    ask(lines, 5, quit, 1);
+    return 0;
 }
