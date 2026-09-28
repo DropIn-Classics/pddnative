@@ -1,10 +1,12 @@
 /* plat_sdl.c - platform.h on SDL2, for macOS and Linux (the Steam Deck
  * too): a window drawn by SDL's renderer, the keyboard's scan codes from
- * SDL's (USB) scan codes, SDL's performance counter, an SDL audio device. */
+ * SDL's (USB) scan codes, game controllers through SDL's game controller
+ * API (pad.h), SDL's performance counter, an SDL audio device. */
 #include <SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pad.h"
 #include "platform.h"
 #include "sys.h"
 
@@ -100,6 +102,108 @@ static void release_all(void)
             push_key(i & 0x7F, i & 0x80, 1);
 }
 
+/* ---- game controllers: their buttons into the same queue (pad.h) */
+
+#define MAX_PADS 8
+static struct {
+    SDL_GameController *gc;
+    SDL_JoystickID id;
+    uint32_t on;                        /* the sources down, bit = source */
+} pads[MAX_PADS];
+
+/* sources 0-15 are pad.h's buttons, 16-19 the left stick up, down, left,
+ * right (the D-pad's buttons as well) */
+static const int sdl_buttons[SDL_CONTROLLER_BUTTON_MAX] = {
+    [SDL_CONTROLLER_BUTTON_A] = PAD_A + 1, [SDL_CONTROLLER_BUTTON_B] = PAD_B + 1,
+    [SDL_CONTROLLER_BUTTON_X] = PAD_X + 1, [SDL_CONTROLLER_BUTTON_Y] = PAD_Y + 1,
+    [SDL_CONTROLLER_BUTTON_BACK] = PAD_BACK + 1, [SDL_CONTROLLER_BUTTON_START] = PAD_START + 1,
+    [SDL_CONTROLLER_BUTTON_LEFTSTICK] = PAD_LSTICK + 1,
+    [SDL_CONTROLLER_BUTTON_RIGHTSTICK] = PAD_RSTICK + 1,
+    [SDL_CONTROLLER_BUTTON_LEFTSHOULDER] = PAD_LB + 1,
+    [SDL_CONTROLLER_BUTTON_RIGHTSHOULDER] = PAD_RB + 1,
+    [SDL_CONTROLLER_BUTTON_DPAD_UP] = PAD_UP + 1, [SDL_CONTROLLER_BUTTON_DPAD_DOWN] = PAD_DOWN + 1,
+    [SDL_CONTROLLER_BUTTON_DPAD_LEFT] = PAD_LEFT + 1, [SDL_CONTROLLER_BUTTON_DPAD_RIGHT] = PAD_RIGHT + 1,
+};
+
+static void pad_key(int code, int up)
+{
+    push_key(code & 0x7F, code & 0x80, up);
+}
+
+static void set_source(int p, int source, int on)
+{
+    uint32_t bit = 1u << source;
+
+    if (!on == !(pads[p].on & bit))
+        return;
+    pads[p].on ^= bit;
+    pad_button(source < 16 ? source : PAD_UP + (source - 16), on, pad_key);
+}
+
+static int pad_index(SDL_JoystickID id)
+{
+    int p;
+    for (p = 0; p < MAX_PADS; p++)
+        if (pads[p].gc && pads[p].id == id)
+            return p;
+    return -1;
+}
+
+static void pad_added(int device)
+{
+    int p;
+    SDL_GameController *gc;
+
+    if (pad_index(SDL_JoystickGetDeviceInstanceID(device)) >= 0)
+        return;                         /* opened already */
+    for (p = 0; p < MAX_PADS && pads[p].gc; p++)
+        ;
+    if (p == MAX_PADS || !(gc = SDL_GameControllerOpen(device)))
+        return;
+    pads[p].gc = gc;
+    pads[p].id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gc));
+    pads[p].on = 0;
+}
+
+static void pad_removed(SDL_JoystickID id)
+{
+    int p = pad_index(id), s;
+
+    if (p < 0)
+        return;
+    for (s = 0; s < 20; s++)
+        set_source(p, s, 0);
+    SDL_GameControllerClose(pads[p].gc);
+    pads[p].gc = NULL;
+}
+
+/* a trigger or the left stick, with some hysteresis */
+static void pad_axis(SDL_JoystickID id, int axis, int v)
+{
+    int p = pad_index(id);
+
+    if (p < 0)
+        return;
+    switch (axis) {
+    case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+    case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: {
+        int s = axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT ? PAD_LT : PAD_RT;
+        if (v > 16000 || v < 8000)
+            set_source(p, s, v > 16000);
+        break;
+    }
+    case SDL_CONTROLLER_AXIS_LEFTY:
+    case SDL_CONTROLLER_AXIS_LEFTX: {
+        int s = axis == SDL_CONTROLLER_AXIS_LEFTY ? 16 : 18;  /* up/down, left/right */
+        if (v < -20000 || v > -12000)
+            set_source(p, s, v < -20000);
+        if (v > 20000 || v < 12000)
+            set_source(p, s + 1, v > 20000);
+        break;
+    }
+    }
+}
+
 /* the sound keys, from SDL's text input */
 static int controls[16], ctl_head, ctl_tail;
 
@@ -159,7 +263,7 @@ static void toggle_fullscreen(void)
 
 int plat_init(const char *title)
 {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) != 0) {
         fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
         return 0;
     }
@@ -219,6 +323,22 @@ int plat_pump(void)
         case SDL_WINDOWEVENT:
             if (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
                 release_all();
+            break;
+        case SDL_CONTROLLERDEVICEADDED:        /* also those there at the start */
+            pad_added(e.cdevice.which);
+            break;
+        case SDL_CONTROLLERDEVICEREMOVED:
+            pad_removed(e.cdevice.which);
+            break;
+        case SDL_CONTROLLERBUTTONDOWN:
+        case SDL_CONTROLLERBUTTONUP: {
+            int p = pad_index(e.cbutton.which), b = e.cbutton.button;
+            if (p >= 0 && b >= 0 && b < SDL_CONTROLLER_BUTTON_MAX && sdl_buttons[b])
+                set_source(p, sdl_buttons[b] - 1, e.type == SDL_CONTROLLERBUTTONDOWN);
+            break;
+        }
+        case SDL_CONTROLLERAXISMOTION:
+            pad_axis(e.caxis.which, e.caxis.axis, e.caxis.value);
             break;
         case SDL_TEXTINPUT: {
             const char *t;

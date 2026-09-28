@@ -262,6 +262,30 @@ start a table from the first two pages.
   while AL=10h's jump still waited for the row's end). With `-prog`/`-table` the table runs as the
   original's unless `-qol` is given (both engine fixes); a game played
   with them does not replay in the original (`-record`).
+- Controller: what each button of a game controller does in a table
+  (below), one line a button, Left and Right choose; a mark before a
+  button while it is held shows which is which. Kept in `pdd.cfg`
+  (`pada = 3` ...).
+
+Game controllers (`src/pad.c`): the buttons become keys, pushed into the
+same queue as the keyboard's, so the programs see keys and `-record`
+writes them like typed ones (a game played with a controller replays in
+the headless build and the original). The window build finds the
+controllers there at the start and those plugged in later: SDL2's game
+controller API (`plat_sdl.c`, any controller SDL knows, named by the
+Xbox layout), XInput on Windows (`plat_win32.c`, the four XInput slots,
+an empty one asked every two seconds, nothing while another window is
+in front). In the setup screen and the menu the D-pad and the left stick
+are the arrow keys, A and Start Enter, B and Back Esc. In a table, by
+default: the shoulders and the triggers the flippers, A and D-pad down
+the plunger, X and D-pad up the nudge (the keys the game options set for
+them), Start F1 and P together (F1 starts a game for one player where
+the table waits for one, P pauses one being played; neither key is read
+where the other is), Back Esc, Y and B the keys Y and N (the table's
+"quit?" question). A key held by two buttons goes up with the last; a
+key held by a button and the keyboard at once goes up with the first.
+While a game key is being set in the setup screen the controller does
+nothing.
 
 When no game files are found (no `-game`, no `PDD_GAME`, no folder `game`
 with a DREAMS1 in it beside the program, in the current directory or in

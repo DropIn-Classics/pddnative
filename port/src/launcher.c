@@ -5,6 +5,7 @@
 #include "gog.h"
 #include "hud.h"
 #include "launcher.h"
+#include "pad.h"
 #include "pd.h"
 #include "platform.h"
 #include "sound.h"
@@ -60,10 +61,15 @@ void launcher_load_settings(void)
     cfg_path(path, sizeof path);
     f = fopen(path, "r");
     while (f && fgets(line, sizeof line, f))
-        if (sscanf(line, " %63[a-z] = %d", name, &v) == 2)
+        if (sscanf(line, " %63[a-z] = %d", name, &v) == 2) {
             for (i = 0; i < NCFG; i++)
                 if (!strcmp(name, cfg_keys[i].name) && v >= cfg_keys[i].lo && v <= cfg_keys[i].hi)
                     *cfg_keys[i].value = v;
+            for (i = 0; i < PAD_BUTTONS; i++)
+                if (!strncmp(name, "pad", 3) && !strcmp(name + 3, pad_button_cfg_name(i)) &&
+                    v >= 0 && v < PA_ACTIONS)
+                    pad_map[i] = v;
+        }
     if (f)
         fclose(f);
     hud_set(cfg.volume, cfg.shaping);
@@ -106,6 +112,10 @@ void launcher_save_settings(void)
     fprintf(f, "# pdd's settings, written by its setup screen\n");
     for (i = 0; i < NCFG; i++)
         fprintf(f, "%s = %d\n", cfg_keys[i].name, *cfg_keys[i].value);
+    fprintf(f, "# a controller's buttons in a table: 0 nothing, 1 left flipper, 2 right\n"
+               "# flipper, 3 plunger, 4 nudge, 5 start a game or pause, 6 Esc, 7 Y, 8 N\n");
+    for (i = 0; i < PAD_BUTTONS; i++)
+        fprintf(f, "pad%s = %d\n", pad_button_cfg_name(i), pad_map[i]);
     fclose(f);
 }
 
@@ -262,10 +272,11 @@ enum {
     I_BALLS, I_MUSIC, I_COLOURS, I_ANGLE, I_SCREEN,
     I_KEY, I_KEY_LAST = I_KEY + 3, I_DEFAULTS, I_BACK,
     I_VOLUME, I_SHAPING, I_BASS, I_TREBLE, I_OOMPH, I_HEADPHONE, I_FULLSCREEN,
-    I_QOL, I_SKIP_ANIMATION, I_QUICK_BALL, I_QUICK_BONUS
+    I_QOL, I_SKIP_ANIMATION, I_QUICK_BALL, I_QUICK_BONUS,
+    I_PAD, I_PAD_BUTTON, I_PAD_LAST = I_PAD_BUTTON + PAD_BUTTONS - 1, I_PAD_DEFAULTS
 };
 enum { K_GAP, K_HEADING, K_ITEM, K_CHOICE };
-enum { P_MAIN, P_TABLES, P_OPTIONS, P_SOUND, P_QOL };
+enum { P_MAIN, P_TABLES, P_OPTIONS, P_SOUND, P_QOL, P_PAD };
 
 typedef struct {
     int kind, id;
@@ -278,6 +289,7 @@ static const Item main_items[] = {
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_OPTIONS, "Game options", "Balls, music, colours, angle, screen, keys: the menu's F10 options." },
     { K_ITEM, I_SOUND, "Sound and window", "The volume, the sound's shaping, full screen." },
+    { K_ITEM, I_PAD, "Controller", "What a game controller's buttons do in a table." },
     { K_ITEM, I_QOL, "Quality of life fixes", "Each on its own: no animation, a quicker next ball, a quicker bonus." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_QUIT, "Quit", "Back to the system." },
@@ -335,6 +347,28 @@ static const Item qol_items[] = {
     { K_ITEM, I_BACK, "Back", NULL },
 };
 
+/* the buttons in pad.h's order; a mark before the name while one is held */
+#define PAD_HELP "In a table. Here and in the menu: D-pad, A Enter, B Esc."
+static const Item pad_items[] = {
+    { K_CHOICE, I_PAD_BUTTON + PAD_A, "A (bottom)", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_B, "B (right)", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_X, "X (left)", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_Y, "Y (top)", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_BACK, "Back", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_START, "Start", "In a table: F1 (a game for one player) and P (pause)." },
+    { K_CHOICE, I_PAD_BUTTON + PAD_LSTICK, "Left stick press", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_RSTICK, "Right stick press", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_LB, "Left shoulder", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_RB, "Right shoulder", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_LT, "Left trigger", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_RT, "Right trigger", PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_UP, "D-pad up", "The left stick as well. " PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_DOWN, "D-pad down", "The left stick as well. " PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_LEFT, "D-pad left", "The left stick as well. " PAD_HELP },
+    { K_CHOICE, I_PAD_BUTTON + PAD_RIGHT, "D-pad right", "The left stick as well. " PAD_HELP },
+    { K_ITEM, I_PAD_DEFAULTS, "Defaults", "The buttons as pdd starts with them. Esc: back." },
+};
+
 typedef struct {
     const char *title;
     const Item *items;
@@ -349,6 +383,7 @@ static Page pages[] = {
     { "Game options", ITEMS(option_items), 60, P_MAIN, 0 },
     { "Sound and window", ITEMS(sound_items), 60, P_MAIN, 0 },
     { "Quality of life fixes", ITEMS(qol_items), 60, P_MAIN, 0 },
+    { "Controller", ITEMS(pad_items), 60, P_MAIN, 0 },
 };
 static int page;
 
@@ -436,6 +471,8 @@ static void value_text(int id, char *out, size_t n)
     default:
         if (id >= I_KEY && id <= I_KEY_LAST)
             snprintf(out, n, "%s", key_name(key_code(id - I_KEY)));
+        else if (id >= I_PAD_BUTTON && id <= I_PAD_LAST)
+            snprintf(out, n, "%s", pad_action_name(pad_map[id - I_PAD_BUTTON]));
         else
             out[0] = 0;
     }
@@ -475,7 +512,9 @@ static void change(int id, int dir, int wrap)
     case I_QUICK_BALL:     cfg.quick_ball = !cfg.quick_ball; break;
     case I_QUICK_BONUS:    cfg.quick_bonus = !cfg.quick_bonus; break;
     default:
-        return;
+        if (id < I_PAD_BUTTON || id > I_PAD_LAST)
+            return;
+        pad_map[id - I_PAD_BUTTON] = step(pad_map[id - I_PAD_BUTTON], dir, 0, PA_ACTIONS - 1, 1);
     }
     if (id >= I_BALLS && id <= I_SCREEN)
         save_game_options();
@@ -518,6 +557,12 @@ static int activate(int *prog, int *table)
     case I_OPTIONS: go(P_OPTIONS); break;
     case I_SOUND:   go(P_SOUND); break;
     case I_QOL:     go(P_QOL); break;
+    case I_PAD:     go(P_PAD); break;
+    case I_PAD_DEFAULTS:
+        pad_default_map();
+        launcher_save_settings();
+        show_note("The controller's buttons are as pdd starts with them again.");
+        break;
     case I_QUIT:    return QUIT;
     case I_BACK:    go(pages[page].parent); break;
     case I_DEFAULTS:
@@ -665,6 +710,8 @@ static void draw_page(void)
             tm_text(x + 9, row, table_names[it->id - I_TABLE], cur ? A_CURSOR : TM_ATTR(TM_WHITE, TM_BLUE));
             continue;
         }
+        if (it->id >= I_PAD_BUTTON && it->id <= I_PAD_LAST && pad_held(it->id - I_PAD_BUTTON))
+            tm_put(x + 3, row, TM_RIGHT_TRIANGLE, cur ? A_CURSOR : A_VALUE);
         tm_text(x + 4, row, it->label, label);
         if (it->kind == K_CHOICE) {
             int vx = x + 24 > x + 8 + (int)strlen(it->label) ? x + 24 : x + 8 + (int)strlen(it->label);
@@ -782,9 +829,11 @@ int launcher_run(const char *game, int *prog, int *table, const char *note_text)
     uint64_t repeat_at = 0;
 
     load_game_options();
+    pad_set_context(PAD_TEXT);
     if (note_text && *note_text)
         snprintf(box, sizeof box, "%s", note_text);
     while (r == GO_ON) {
+        pad_set_context(capturing >= 0 ? PAD_OFF : PAD_TEXT);  /* a game key: the keyboard's */
         if (!plat_pump())
             return 0;
         /* the sound keys act in the game only; here they tell a key that

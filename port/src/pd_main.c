@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "frame.h"
+#include "pad.h"
 #include "pd.h"
 #include "vga.h"
 
@@ -128,6 +129,23 @@ void not_ported(const char *name)
     pd_fatal(msg);
 }
 
+/* the four keys of the options (key_map's byte, then the bit as a mask)
+ * for the controller's buttons (pad.h); not the original's */
+static void tell_pad_keys(void)
+{
+    int codes[4], k, bit;
+
+    for (k = 0; k < 4; k++) {
+        uint16_t w = rw((uint16_t)(V(key_lflipper) + 2 * k));
+        for (bit = 0; bit < 8 && (w >> 8) != 1u << bit; bit++)
+            ;
+        if (bit == 8 || (w & 0xFF) >= 0x20)
+            return;                     /* not a key: the buttons keep theirs */
+        codes[k] = (w & 0xFF) * 8 + bit;
+    }
+    pad_set_game_keys(codes);
+}
+
 /* ---- start: memory, the table number, mode 13h, INT 9, options, high scores */
 
 int pd_run(int table, const char *game_dir, char *err, size_t n)
@@ -163,6 +181,7 @@ int pd_run(int table, const char *game_dir, char *err, size_t n)
     wait_keys_up();
     ww(V(game_state), 1);
     load_options();
+    tell_pad_keys();
 
     /* main_loop: the routine of the game state, for ever */
     for (;;)

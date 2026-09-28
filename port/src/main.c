@@ -42,6 +42,7 @@
 #include "frame.h"
 #include "launcher.h"
 #include "menu.h"
+#include "pad.h"
 #include "pd.h"
 #include "platform.h"
 #include "sound.h"
@@ -105,7 +106,7 @@ static int with_setup;                  /* started from the setup screen */
  * a message in err */
 static int play_table(int prog, int table, char *err, size_t n)
 {
-    int r;
+    int r, was;
 
     if (with_setup) {
         pd_qol = launcher_qol();
@@ -114,7 +115,9 @@ static int play_table(int prog, int table, char *err, size_t n)
     }
     if (mem_load(prog, game_dir, err, n) != 0)
         return -1;
+    was = pad_set_context(PAD_TABLE);
     r = pd_run(table, game_dir, err, n);
+    pad_set_context(was);
     snd_stop();                         /* the table's music, if it still plays */
     if (plat_has_window())
         launcher_save_settings();       /* what the sound keys and Alt+Enter set */
@@ -141,6 +144,8 @@ static int with_launcher(void)
     with_setup = 1;
     while (launcher_run(game_dir, &prog, &table, err)) {
         err[0] = 0;
+        if (prog == 0)
+            pad_set_context(PAD_MENU);
         r = prog == 0 ? menu_run(game_dir, &hooks, err, sizeof err)
                       : play_table(prog, table, err, sizeof err);
         if (r == 0 && !plat_pump())
@@ -210,6 +215,7 @@ int main(int argc, char **argv)
 
     if (menu) {
         MenuHooks hooks = { NULL, play_table };
+        pad_set_context(PAD_MENU);
         r = menu_run(game, &hooks, err, sizeof err);
         dump();
         if (r != 0)
@@ -224,6 +230,7 @@ int main(int argc, char **argv)
         plat_shutdown();
         return 1;
     }
+    pad_set_context(PAD_TABLE);
     r = pd_run(table, game, err, sizeof err);
     dump();
     if (r != 0) {

@@ -1,11 +1,14 @@
 /* plat_win32.c - platform.h on Windows: a GDI window, the keyboard's scan
- * codes from WM_KEYDOWN/UP, QueryPerformanceCounter, waveOut. */
+ * codes from WM_KEYDOWN/UP, game controllers through XInput (pad.h),
+ * QueryPerformanceCounter, waveOut. */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <mmsystem.h>
+#include <xinput.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pad.h"
 #include "platform.h"
 
 #define WINDOW_CLASS "PinballDreamsWindow"
@@ -59,6 +62,98 @@ static void release_all(void)
     for (i = 0; i < 256; i++)
         if (held[i])
             push_key(i & 0x7F, i & 0x80, 1);
+}
+
+/* ---- game controllers: XInput's four, polled each pump (pad.h) */
+
+typedef DWORD (WINAPI *GetStateFn)(DWORD user, XINPUT_STATE *state);
+static GetStateFn xinput_get_state;
+static uint8_t pad_down[256];           /* keys a button holds (release_shifts) */
+static struct {
+    int connected;
+    uint32_t on;                        /* the sources down, as in set_source */
+    DWORD next_look;                    /* not connected: when to look again */
+} xpads[XUSER_MAX_COUNT];
+
+static void pad_key(int code, int up)
+{
+    pad_down[code & 0xFF] = (uint8_t)!up;
+    push_key(code & 0x7F, code & 0x80, up);
+}
+
+/* sources 0-15 are pad.h's buttons, 16-19 the left stick up, down, left,
+ * right (the D-pad's buttons as well) */
+static void set_source(int p, int source, int on)
+{
+    uint32_t bit = 1u << source;
+
+    if (!on == !(xpads[p].on & bit))
+        return;
+    xpads[p].on ^= bit;
+    pad_button(source < 16 ? source : PAD_UP + (source - 16), on, pad_key);
+}
+
+static void load_xinput(void)
+{
+    static const char *const dlls[] = { "xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll" };
+    size_t i;
+
+    for (i = 0; i < sizeof dlls / sizeof dlls[0] && !xinput_get_state; i++) {
+        HMODULE m = LoadLibraryA(dlls[i]);
+        if (m)
+            xinput_get_state = (GetStateFn)(void (*)(void))GetProcAddress(m, "XInputGetState");
+    }
+}
+
+/* the thumb stick's value past `on` sets the source, back inside `off`
+ * clears it */
+static void stick(int p, int source, int v, int on, int off)
+{
+    if (v > on || v < off)
+        set_source(p, source, v > on);
+}
+
+static void poll_pads(void)
+{
+    static const struct { WORD mask; int button; } buttons[] = {
+        { XINPUT_GAMEPAD_A, PAD_A }, { XINPUT_GAMEPAD_B, PAD_B },
+        { XINPUT_GAMEPAD_X, PAD_X }, { XINPUT_GAMEPAD_Y, PAD_Y },
+        { XINPUT_GAMEPAD_BACK, PAD_BACK }, { XINPUT_GAMEPAD_START, PAD_START },
+        { XINPUT_GAMEPAD_LEFT_THUMB, PAD_LSTICK }, { XINPUT_GAMEPAD_RIGHT_THUMB, PAD_RSTICK },
+        { XINPUT_GAMEPAD_LEFT_SHOULDER, PAD_LB }, { XINPUT_GAMEPAD_RIGHT_SHOULDER, PAD_RB },
+        { XINPUT_GAMEPAD_DPAD_UP, PAD_UP }, { XINPUT_GAMEPAD_DPAD_DOWN, PAD_DOWN },
+        { XINPUT_GAMEPAD_DPAD_LEFT, PAD_LEFT }, { XINPUT_GAMEPAD_DPAD_RIGHT, PAD_RIGHT },
+    };
+    DWORD now = GetTickCount();
+    XINPUT_STATE st;
+    int p, s;
+    size_t i;
+
+    if (!xinput_get_state || GetForegroundWindow() != window)
+        return;                         /* another window has the player */
+    for (p = 0; p < XUSER_MAX_COUNT; p++) {
+        /* an empty slot is slow to ask: every two seconds */
+        if (!xpads[p].connected && (LONG)(now - xpads[p].next_look) < 0)
+            continue;
+        if (xinput_get_state((DWORD)p, &st) != ERROR_SUCCESS) {
+            for (s = 0; s < 20; s++)
+                set_source(p, s, 0);    /* unplugged: all it held goes up */
+            xpads[p].connected = 0;
+            xpads[p].next_look = now + 2000;
+            continue;
+        }
+        xpads[p].connected = 1;
+        for (i = 0; i < sizeof buttons / sizeof buttons[0]; i++)
+            set_source(p, buttons[i].button, (st.Gamepad.wButtons & buttons[i].mask) != 0);
+        if (st.Gamepad.bLeftTrigger > 64 || st.Gamepad.bLeftTrigger < 32)
+            set_source(p, PAD_LT, st.Gamepad.bLeftTrigger > 64);
+        if (st.Gamepad.bRightTrigger > 64 || st.Gamepad.bRightTrigger < 32)
+            set_source(p, PAD_RT, st.Gamepad.bRightTrigger > 64);
+        stick(p, 16, st.Gamepad.sThumbLY, 20000, 12000);        /* up: positive here */
+        stick(p, 17, -st.Gamepad.sThumbLY, 20000, 12000);
+        stick(p, 18, -st.Gamepad.sThumbLX, 20000, 12000);
+        stick(p, 19, st.Gamepad.sThumbLX, 20000, 12000);
+    }
 }
 
 /* the sound keys, from WM_CHAR */
@@ -226,6 +321,7 @@ int plat_init(const char *title)
 
     SetProcessDPIAware();
     timeBeginPeriod(1);
+    load_xinput();
     memset(&wc, 0, sizeof wc);
     wc.lpfnWndProc = wndproc;
     wc.hInstance = inst;
@@ -263,9 +359,9 @@ void plat_message(const char *text)
  * so each one's release is looked for in the keyboard's state */
 static void release_shifts(void)
 {
-    if (held[0x2A] && !(GetAsyncKeyState(VK_LSHIFT) & 0x8000))
+    if (held[0x2A] && !pad_down[0x2A] && !(GetAsyncKeyState(VK_LSHIFT) & 0x8000))
         push_key(0x2A, 0, 1);
-    if (held[0x36] && !(GetAsyncKeyState(VK_RSHIFT) & 0x8000))
+    if (held[0x36] && !pad_down[0x36] && !(GetAsyncKeyState(VK_RSHIFT) & 0x8000))
         push_key(0x36, 0, 1);
 }
 
@@ -277,6 +373,7 @@ int plat_pump(void)
         DispatchMessageA(&m);
     }
     release_shifts();
+    poll_pads();
     return !closed;
 }
 

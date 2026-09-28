@@ -38,7 +38,8 @@ DDPCMAIN run in tools/run, a table run from it included.
   engine: "Running the originals" and "The engine" below; the C:
   port/README.md.
 - Where the port is going and what is left: "Next" below. The launcher,
-  the FLI animations and the menu are not yet tried in the window.
+  the FLI animations, the menu and the controllers are not yet tried in
+  the window.
 - Before any change to `tools/` or the hints: `python tools/check.py`
   must stay `all ok` (the hook enforces it on commit). `game/` holds the
   unpacked CD (`python tools/gogx.py` if it is missing).
@@ -496,13 +497,19 @@ a C compiler and the CD).
    (pump_frame) where the menu's now goes on before the tick
    (`frame_wait_keys`, "The menu's tick"); whether the tables need the
    same is not checked (their comparisons are equal as they are).
-3. Game controllers: SDL2's game controller API in `plat_sdl.c`, XInput
-   in `plat_win32.c`; the buttons become the scan codes of the keys the
-   table reads (the two flippers, nudge, plunger, F1 to start, P for
-   pause, Esc), pushed into the same queue as the keyboard's, so
-   `-record` and the replays work with them; controllers plugged in while
-   the game runs are found. The launcher driven with the controller too,
-   with a page for the mapping.
+3. Game controllers: done 2026-09-28 (`port/src/pad.c`, port/README.md):
+   SDL2's game controller API in `plat_sdl.c`, XInput in `plat_win32.c`;
+   the buttons become the scan codes of keys in the keyboard's queue (in
+   a table the four game keys of the options, F1 and P on Start, Esc, Y
+   and N; arrows, Enter and Esc in the setup screen and the menu), a
+   "Controller" page in the setup screen maps them. Checked: built on the
+   Mac without warnings, `pad.c`'s key logic by a small test (two buttons
+   on one key, a release after the context changed, stick and D-pad
+   together), check.py all ok, portcmp equal through portplay's Steel
+   Wheel game (seed 1) after the change. Not checked: with a real
+   controller (none here), the Controller page on the screen,
+   `plat_win32.c` not compiled (no Windows compiler on the Mac; XInput
+   loaded with LoadLibrary, `xinput.h` from the Windows SDK).
 4. Later: the sound drivers (DELUXE/*.SDR, SOUND.CFG) described by a
    tool, as the other files are. The port plays the music with micromod
    and needs only SBLASTER.SDR's timing, which is described below ("The
