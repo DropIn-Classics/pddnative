@@ -43,10 +43,14 @@ the Nth time they pass WHERE (the runner's -poke, the port's PD_POKE):
 a way into a state the keys do not easily reach (game_state 4 at
 st_play#100).  It may be given more than once.
 
+With each stop the tool prints the notes of the port's trace since the
+stop before (the event objects' handlers run, the level switches).
+
 Every run starts from nothing written: the port's saved files
 (PD_DATA_DIR) and the runner's layer over C: (-state) are made afresh in
-build/portcmp/, so the high scores a game writes do not reach the next
-run.  --options puts a DDPCOPTN.BIN with the bytes HEX into both (13
+build/portcmp/PID/ (this process's: runs of the tool side by side do not
+meet; removed at the end), so the high scores a game writes do not reach
+the next run.  --options puts a DDPCOPTN.BIN with the bytes HEX into both (13
 bytes: the options in the order of load_options; 01 01 02 01 05 04 06 40
 07 02 1A 01 02 is the defaults with opt_screen 2).
 """
@@ -61,6 +65,7 @@ EXE = '.exe' if os.name == 'nt' else ''
 PORT = os.path.join(ROOT, 'port', 'build', 'pdd-headless' + EXE)
 BUILD_PORT = r'port\build.bat' if os.name == 'nt' else 'port/build.sh'
 BUILD = os.path.join(ROOT, 'build')
+WORK = os.path.join(BUILD, 'portcmp', str(os.getpid()))    # this run's files: runs side by side stay apart
 RATE = 70.087        # pictures a second in the 320x200 mode (the runner's times of 6000 frames of play)
 RECOUNT = 1000       # passes at most that a time is counted on over (RATE is not exact)
 EXES = {1: ('DREAMS1/PD.EXE', 'src/PD.hints'), 2: ('DREAMS2/PD2.EXE', 'src/PD2.hints')}
@@ -105,7 +110,7 @@ def runner_key(t, code, down):
 def fresh(args, which):
     """an empty layer for one run of `which` ('port' or 'run'), with the
     options file when --options gave one; its path"""
-    d = os.path.join(BUILD, 'portcmp', which)
+    d = os.path.join(WORK, which)
     shutil.rmtree(d, ignore_errors=True)
     opt = os.path.join(d, 'save', 'DELUXE') if which == 'port' else os.path.join(d, 'DELUXE')
     os.makedirs(opt)
@@ -138,10 +143,18 @@ def port_trace(args, keys, stop=None, ram=None, vram=None):
     return trace
 
 
-def run_port(args, keys, stop, ram=None, vram=None):
-    """the port's picture count at `stop` (None when it does not get there)"""
+def run_port(args, keys, stop, ram=None, vram=None, since=None):
+    """the port's picture count at `stop` (None when it does not get there)
+    and the notes it passed after the stop `since` {name: count}"""
     where, n = stop.split('#')
-    return port_trace(args, keys, stop, ram, vram).get((where, int(n)))
+    trace = port_trace(args, keys, stop, ram, vram)
+    notes, counting = {}, since is None
+    for (name, k) in trace:                 # in the order passed
+        if since and '%s#%d' % (name, k) == since:
+            counting = True
+        elif counting and name not in CHECKPOINTS:
+            notes[name] = notes.get(name, 0) + 1
+    return trace.get((where, int(n))), notes
 
 
 def run_original(args, keyfile, stop, ram=None, vram=None):
@@ -268,9 +281,11 @@ def write_events(path, events):
                                           4 if e[2] > 0xFF else 2, e[2], '+' if e[3] else '-'))
 
 
-def compare(args, pk, keyfile, stop):
-    f = {k: os.path.join(BUILD, 'portcmp_%s.bin' % k) for k in ('pram', 'pvram', 'oram', 'ovram')}
-    pic = run_port(args, pk, stop, f['pram'], f['pvram'])
+def compare(args, pk, keyfile, stop, since=None):
+    """the memory of both at `stop` compared, true when equal (the notes the
+    port passed after the stop `since` are printed with it)"""
+    f = {k: os.path.join(WORK, '%s.bin' % k) for k in ('pram', 'pvram', 'oram', 'ovram')}
+    pic, notes = run_port(args, pk, stop, f['pram'], f['pvram'], since)
     t = run_original(args, keyfile, stop, f['oram'], f['ovram'])
     if pic is None or t is None:
         print('%s: not reached by %s' % (stop, 'the port' if pic is None else 'the original'))
@@ -284,6 +299,8 @@ def compare(args, pk, keyfile, stop):
     print('%s: port picture %d, original t=%.5f: %s' % (stop, pic, t, 'different' if diffs else 'equal'))
     for l in diffs:
         print(l)
+    if notes:
+        print('    the port ran on the way: ' + ' '.join('%s*%d' % kv for kv in sorted(notes.items())))
     return not diffs
 
 
@@ -301,15 +318,17 @@ def main():
     args = ap.parse_args()
     if not os.path.exists(PORT):
         raise SystemExit(f'portcmp.py: build the port first ({BUILD_PORT})')
-    os.makedirs(BUILD, exist_ok=True)
-    keyfile = os.path.join(BUILD, 'portcmp_keys.txt')
+    os.makedirs(WORK, exist_ok=True)
+    keyfile = os.path.join(WORK, 'keys.txt')
     events = parse_keys(args.keys) if args.keys else []
     if args.record:
         events = parse_record(args, args.record)
         write_events(os.path.join(BUILD, 'portcmp_record.txt'), events)
     pk, rk = place(args, events, keyfile)
     write_keys(keyfile, rk)
-    ok = all([compare(args, pk, keyfile, stop) for stop in args.stops])
+    ok = all([compare(args, pk, keyfile, stop, since)
+              for since, stop in zip([None] + args.stops, args.stops)])
+    shutil.rmtree(WORK, ignore_errors=True)
     sys.exit(0 if ok else 1)
 
 

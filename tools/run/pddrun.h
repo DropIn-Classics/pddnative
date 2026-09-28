@@ -64,7 +64,7 @@ extern uint32_t insn_ip;               /* IP of the instruction being executed *
 
 /* Breakpoints: linear addresses; reaching one stops the run before the
  * instruction executes (cpu.shutdown, brk_hit = its index). */
-#define BRK_MAX 16
+#define BRK_MAX 64
 extern uint32_t brk_lin[BRK_MAX];
 extern int brk_n, brk_hit;
 extern uint32_t brk_resume;

@@ -147,7 +147,7 @@ the runner's time), runs both to the stops given and compares:
 
 `--poke st_play#100 game_state 0400` writes a variable in both at the
 same pass; `--options HEX` gives both a DDPCOPTN.BIN. Each run starts
-with nothing saved (in `build/portcmp/`).
+with nothing saved (in `build/portcmp/`, a directory per run of the tool).
 
 The results listed under "State" were found by hand this way before the
 tool; it reproduces them.

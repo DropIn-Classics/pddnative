@@ -29,8 +29,6 @@ import portcmp
 from disasm import game_dir
 
 ZONE = (70, 200, 425, 460)          # x1, x2, y1, y2 over the flippers' tips
-CHECKS = ('idle_loop', 'ball_start_loop', 'st_play', 'st_ball_lost', 'st_ball_start', 'st_game_over',
-          'st_tilt', 'st_ball_locked', 'ball_locked_loop')
 
 
 def run(args, ev, pics, stop, frames):
@@ -126,7 +124,7 @@ def main():
             f.write('%s#%d %0*X%s\n' % (where, n, 4 if code > 0xFF else 2, code, '+' if down else '-'))
     notes = {}
     for w, n in trace:
-        if w not in CHECKS:
+        if w not in portcmp.CHECKPOINTS:
             notes[w] = notes.get(w, 0) + 1
     print('%d frames of play, %d balls lost, game over: %s; %d key events' % (
         max([n for w, n in trace if w == 'st_play'] or [0]), max([n for w, n in trace if w == 'st_ball_lost'] or [0]),

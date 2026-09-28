@@ -34,18 +34,23 @@ void pump_frame(void)
 /* PD_POKE="where#N OFF HEX[;...]": the Nth time the checkpoint `where` is
  * passed, the bytes HEX are written at DATA:OFF (tools/run's -poke at the
  * same place) */
-static struct { char where[32]; unsigned long n, count; uint16_t off; uint8_t b[16]; int len; } pokes[8];
+#define POKE_MAX 64
+static struct { char where[32]; unsigned long n, count; uint16_t off; uint8_t b[16]; int len; } pokes[POKE_MAX];
 static int npokes;
 
 static void parse_pokes(void)
 {
     const char *s = getenv("PD_POKE");
 
-    while (s && *s && npokes < 8) {
+    while (s && *s) {
         char where[32], hex[40];
         unsigned off;
         int k, used = 0;
         const char *h;
+        if (npokes == POKE_MAX) {
+            fprintf(stderr, "PD_POKE: at most %d\n", POKE_MAX);
+            exit(1);
+        }
         if (sscanf(s, " %31[^#]#%lu %x %39[0-9A-Fa-f ]%n", where, &pokes[npokes].n, &off, hex, &used) < 4)
             break;
         strcpy(pokes[npokes].where, where);
