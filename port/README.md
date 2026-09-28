@@ -157,11 +157,19 @@ its own) are not translated. The files are looked up in the directory
 the program changed to (`dos_dir`, pd_files.c).
 
 The mouse driver (`menu_mouse`, on unless `-nomouse`) is the port's: the
-programs give it the pointer the arrow keys move (INT 33h AX=4), it keeps
-it in the ranges they set (AX=7, 8), the whole screen again after each
-mode set (mode X 640x200, mode 12h 640x480; presumably as DOSBox's
-driver does, from memory, not checked with a real driver), and answers AX=3 with it and no
-button down (no mouse behind it yet); where the program has it show its
+programs give it the pointer (INT 33h AX=4) the arrow keys move, and the
+computer's mouse moves it too: where the mouse is on the picture
+(`plat_mouse`, taken when it moved; the system's pointer hidden over the
+window), 640 across in both modes. It keeps the pointer in the ranges
+they set (AX=7, 8), the whole screen again after each mode set (mode X
+640x200, mode 12h 640x480; presumably as DOSBox's driver does, from
+memory, not checked with a real driver), and answers AX=3 with it and
+the buttons clicked since the last AX=3 (left 1, right 2), once for each
+click: a real driver reports a button while it is held, and the browser
+takes it again each pass, which on a disk took the time of a picture
+and in the port none (a click went several tables on). Clicks made
+before a mode set are dropped (in a table, a fade). With the menu box
+(below) the list takes no mouse. Where the program has it show its
 pointer (AX=1: the history's 640x480 screens) the port draws an arrow
 over the picture, not into video memory. Without it (as in tools/run,
 and as portcmp runs the port) the original is hard to use from the
@@ -174,7 +182,12 @@ history's lists: kept at the menu's (y to 0ACh), the pointer stopped at
 Harley Davidson in the table list; with the ranges a mode set gives it
 reaches Torpedo Alley, the last row, and a click shows its page
 (headless, `PD_DUMP` pictures). The menu's range (y to 0ACh) is set
-before its mode set and so gives way to 0-199.
+before its mode set and so gives way to 0-199. With the mouse (headless,
+`PD_MOUSE`): the menu's hand where the mouse is, the language's flag,
+the start screen's box, Torpedo Alley's row clicked, one click on the
+browser's back button one table back (The Machine), the arrow where the
+mouse is. The window build (SDL, macOS) and the Windows build not tried
+with a mouse; the Windows build not compiled.
 
 The box (the quality of life fix "menu box", `-menu -qol`; the port's
 own): no pointer; a frame (a dark line, three pixels of yellow and white
@@ -247,7 +260,7 @@ Not tried in the window: the menu, the intro's animations before it.
 `build.bat` needs MSVC (the Visual Studio 2019 Build Tools, or what
 vswhere finds) and builds `build\pdd.exe` (a window) and
 `build\pdd-headless.exe` (no window or sound, a virtual clock; see
-`src/plat_null.c` for `PD_FRAMES`, `PD_KEYS`, `PD_DUMP`).
+`src/plat_null.c` for `PD_FRAMES`, `PD_KEYS`, `PD_MOUSE`, `PD_DUMP`).
 
 On macOS and Linux `port/build.sh` builds `build/pdd` and
 `build/pdd-headless` with `cc`; the window is SDL2 (`src/plat_sdl.c`):

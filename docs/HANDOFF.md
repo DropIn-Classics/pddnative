@@ -530,11 +530,9 @@ a C compiler and the CD).
    tools/run, port/README.md), and F9 (the history, 16-colour pictures;
    port/README.md), apart from: F10 (the options screen; perhaps the
    launcher's options page instead), the history's VESA pictures (.256:
-   a VESA 101h mode in vga.c and the program's banked routines), a real
-   mouse behind the port's driver (the platform has none yet; without a
-   driver the arrows move `mouse_y` down without a limit, and the
-   pointer leaves the screen at the bottom; the port's driver keeps it
-   in the range the program or the last mode set gives), the intro DDPCINTR (pictures
+   a VESA 101h mode in vga.c and the program's banked routines), the
+   port's mouse driver in the window (the computer's mouse behind it,
+   tried headless only; port/README.md), the intro DDPCINTR (pictures
    and a CD track; the GOG release has the tracks as ogg). To try in the
    window: the menu, the intro's animations before it, a table and back.
    The table programs' `wait_keys_up` waits a picture with its tick

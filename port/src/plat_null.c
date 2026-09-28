@@ -7,6 +7,10 @@
  *   PD_KEYS=...     scan codes by picture number: "120:3B 125:BB" presses
  *                   and releases F1 at pictures 120 and 125; E0 keys as
  *                   "E0-50"
+ *   PD_MOUSE=...    the mouse by picture number: "300:320,240,1" moves it
+ *                   to 320,240 of a 640x480 picture (in 1/640 and 1/480
+ *                   of the picture whatever its size) and clicks the left
+ *                   button (2 the right, 0 none)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +18,8 @@
 #include "platform.h"
 
 static long frames_left = -1, picture;
-static const char *dump_path, *keys;
+static const char *dump_path, *keys, *mouse;
+static int mouse_seen, mouse_x, mouse_y, mouse_clicks;
 static uint64_t now_us;
 static uint8_t pending[64];
 static int npending, pos_pending;
@@ -31,6 +36,7 @@ int plat_init(const char *title)
         frames_left = atol(n);
     dump_path = getenv("PD_DUMP");
     keys = getenv("PD_KEYS");
+    mouse = getenv("PD_MOUSE");
     return 1;
 }
 
@@ -88,6 +94,39 @@ static void keys_for_picture(void)
     }
 }
 
+/* what PD_MOUSE gives for picture `picture` */
+static void mouse_for_picture(void)
+{
+    const char *p = mouse;
+    while (p && *p) {
+        char *end;
+        long at = strtol(p, &end, 10), x, y, c;
+        if (end == p || *end != ':')
+            break;
+        x = strtol(end + 1, &end, 10);
+        y = *end == ',' ? strtol(end + 1, &end, 10) : 0;
+        c = *end == ',' ? strtol(end + 1, &end, 10) : 0;
+        if (at == picture) {
+            mouse_seen = 1;
+            mouse_x = (int)(x * 65536 / 640);
+            mouse_y = (int)(y * 65536 / 480);
+            mouse_clicks |= (int)c;
+        }
+        p = end;
+        while (*p == ' ')
+            p++;
+    }
+}
+
+int plat_mouse(int *x, int *y, int *clicks)
+{
+    *clicks = mouse_clicks;
+    mouse_clicks = 0;
+    *x = mouse_x;
+    *y = mouse_y;
+    return mouse_seen;
+}
+
 int plat_pump(void)
 {
     if (frames_left == 0)
@@ -122,6 +161,7 @@ void plat_present(const uint8_t *pixels, int width, int height, const uint32_t p
     if (frames_left > 0)
         frames_left--;
     keys_for_picture();
+    mouse_for_picture();
 }
 
 int plat_read_scancode(void)

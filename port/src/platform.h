@@ -43,6 +43,12 @@ int plat_read_scancode(void);
 enum { PLAT_VOLUME_UP = 1, PLAT_VOLUME_DOWN, PLAT_MUTE, PLAT_EQ };
 int plat_read_control(void);
 
+/* The mouse: 1 and where it is on the picture last shown (0-65535 across
+ * and down, kept within it), with the buttons pressed since the last call
+ * in *clicks (1 left, 2 right); 0 while it was not moved over the window
+ * yet.  The system's pointer is not shown over the window. */
+int plat_mouse(int *x, int *y, int *clicks);
+
 /* monotonic clock in microseconds */
 uint64_t plat_micros(void);
 void plat_sleep_ms(int ms);

@@ -16,6 +16,8 @@ static SDL_Texture *texture;
 static int tex_w, tex_h;
 static uint32_t *argb;
 static int closed;
+static SDL_Rect shown;                  /* the picture, in the renderer's pixels */
+static int mouse_seen, mouse_x, mouse_y, mouse_clicks;  /* window points */
 
 /* ---- keyboard: a queue of scan code bytes ---- */
 
@@ -285,6 +287,7 @@ int plat_init(const char *title)
     }
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
+    SDL_ShowCursor(SDL_DISABLE);
     SDL_RenderPresent(renderer);
     SDL_StartTextInput();               /* the sound keys come as text */
     return 1;
@@ -337,6 +340,17 @@ int plat_pump(void)
                 set_source(p, sdl_buttons[b] - 1, e.type == SDL_CONTROLLERBUTTONDOWN);
             break;
         }
+        case SDL_MOUSEMOTION:
+            mouse_seen = 1;
+            mouse_x = e.motion.x;
+            mouse_y = e.motion.y;
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            mouse_seen = 1;
+            mouse_x = e.button.x;
+            mouse_y = e.button.y;
+            mouse_clicks |= e.button.button == SDL_BUTTON_LEFT ? 1 : e.button.button == SDL_BUTTON_RIGHT ? 2 : 0;
+            break;
         case SDL_CONTROLLERAXISMOTION:
             pad_axis(e.caxis.which, e.caxis.axis, e.caxis.value);
             break;
@@ -401,9 +415,30 @@ void plat_present(const uint8_t *src, int width, int height, const uint32_t pale
     }
     dst.x = (ow - dst.w) / 2;
     dst.y = (oh - dst.h) / 2;
+    shown = dst;
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, &dst);
     SDL_RenderPresent(renderer);
+}
+
+/* the window's points to the renderer's pixels (more on a Retina screen) */
+int plat_mouse(int *x, int *y, int *clicks)
+{
+    int ww, wh, ow, oh, px, py;
+
+    *clicks = mouse_clicks;
+    mouse_clicks = 0;
+    if (!mouse_seen || shown.w <= 0 || shown.h <= 0)
+        return 0;
+    SDL_GetWindowSize(window, &ww, &wh);
+    SDL_GetRendererOutputSize(renderer, &ow, &oh);
+    px = ww > 0 ? mouse_x * ow / ww - shown.x : 0;
+    py = wh > 0 ? mouse_y * oh / wh - shown.y : 0;
+    px = px < 0 ? 0 : px >= shown.w ? shown.w - 1 : px;
+    py = py < 0 ? 0 : py >= shown.h ? shown.h - 1 : py;
+    *x = (int)((long)px * 65536 / shown.w);
+    *y = (int)((long)py * 65536 / shown.h);
+    return 1;
 }
 
 /* ---- the clock ---- */

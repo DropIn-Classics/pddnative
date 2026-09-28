@@ -16,6 +16,7 @@
 #include "gen/ddnames.h"
 #include "mem.h"
 #include "menu.h"
+#include "platform.h"
 #include "sound.h"
 #include "sys.h"
 #include "vga.h"
@@ -429,10 +430,14 @@ static void alloc_pointer_buffers(void)
     }
 }
 
-/* ---- the mouse driver (INT 33h): the port's, with no mouse behind it yet.
- * The keyboard moves the pointer the programs give it (AX=4), within the
- * ranges they set (AX=7, 8) or a mode set gives (mouse_new_mode); no
- * button is ever down.  In the history's
+/* ---- the mouse driver (INT 33h): the port's.  The pointer the programs
+ * give it (AX=4) is moved by the keyboard (the programs' own key
+ * routines) and by the mouse (plat_mouse: where it is on the picture,
+ * taken when it moved), within the ranges they set (AX=7, 8) or a mode
+ * set gives (mouse_new_mode).  AX=3 reports a button down once for each
+ * click, where a real driver reports it while it is held: the browser
+ * takes a held button again each pass, and the port shows the next
+ * table's page at once, not after a disk's time.  In the history's
  * 640x480 screens the program has it show its pointer (AX=1), which the
  * port draws over the picture (mouse_overlay), not into video memory.
  * menu_mouse 0: no driver, as in tools/run. */
@@ -442,7 +447,11 @@ int menu_mouse = 1;
 static struct {
     int present;
     int x, y, x1, x2, y1, y2;
+    int height;                         /* the mode's rows (x counts 640) */
     int shown;                          /* the pointer is shown at 0 */
+    int clicks;                         /* the buttons clicked, for AX=3 */
+    int host_x, host_y;                 /* plat_mouse's last place */
+    int host_off;                       /* the mouse not taken (the menu box) */
 } drv;
 
 static void mouse_clamp(void)
@@ -514,14 +523,20 @@ static void mouse_overlay(VgaFrame *f)
 /* what the driver does when INT 10h sets a mode: the ranges the whole
  * screen, 640 wide in both modes (as DOSBox's driver does, from memory,
  * not checked with a real one).  The program sets no range for the
- * history's lists, which need the 480 rows of mode 12h. */
+ * history's lists, which need the 480 rows of mode 12h.  Clicks made
+ * before (in a table, in a fade) are dropped. */
 static void mouse_new_mode(int height)
 {
+    int x, y, clicks;
+
     if (!drv.present)
         return;
+    plat_mouse(&x, &y, &clicks);
+    drv.clicks = 0;
     drv.x1 = drv.y1 = 0;
     drv.x2 = 639;
     drv.y2 = height - 1;
+    drv.height = height;
     mouse_clamp();
 }
 
@@ -554,7 +569,27 @@ static void detect_mouse(void)
     drv.y2 = 199;
     drv.x = 320;
     drv.y = 100;
+    drv.height = 200;
+    drv.clicks = 0;
+    drv.host_x = drv.host_y = -1;
     dwb(M_mouse_present, 1);
+}
+
+/* the mouse's moves and clicks to the driver */
+static void mouse_from_host(void)
+{
+    int x, y, clicks;
+
+    if (!plat_mouse(&x, &y, &clicks) || !drv.present || drv.host_off)
+        return;
+    drv.clicks |= clicks;
+    if (x == drv.host_x && y == drv.host_y)
+        return;
+    drv.host_x = x;
+    drv.host_y = y;
+    drv.x = x * 640 >> 16;
+    drv.y = y * drv.height >> 16;
+    mouse_clamp();
 }
 
 /* INT 33h AX=3 when a mouse was found: x halved (the driver counts 640 a
@@ -563,9 +598,11 @@ static void poll_mouse(void)
 {
     if (db(M_mouse_present) != 1)
         return;
+    mouse_from_host();
     dww(M_mouse_x, (uint16_t)((uint16_t)drv.x >> 1));
     dww(M_mouse_y, (uint16_t)drv.y);
-    dwb(M_mouse_buttons, 0);
+    dwb(M_mouse_buttons, (uint8_t)drv.clicks);
+    drv.clicks = 0;
 }
 
 /* ---- the ticker */
@@ -1132,9 +1169,11 @@ static void poll_history_mouse(void)
 {
     if (db(M_mouse_present) != 1)
         return;
+    mouse_from_host();
     dww(M_mouse_x, (uint16_t)drv.x);
     dww(M_mouse_y, (uint16_t)drv.y);
-    dwb(M_mouse_buttons, 0);
+    dwb(M_mouse_buttons, (uint8_t)drv.clicks);
+    drv.clicks = 0;
 }
 
 /* read_menu_keys without the F keys, the pointer given to the driver only
@@ -1690,6 +1729,7 @@ static void run_selection(void)
     dww(M_tick_draw, M_tick_nothing);
     dww(M_tick_remove, M_tick_nothing);
     dww(M_tick_ticker, M_tick_nothing);
+    drv.host_off = 0;
     if (sel == 9) {
         if (!language_screen())
             history_screen();
@@ -1699,6 +1739,7 @@ static void run_selection(void)
         run_table(sel - 1 >= 4 ? 1 : 0);
     }
     menu_init();
+    drv.host_off = menu_box;
 }
 
 /* a selection made with a key, else the list's row under the pointer */
@@ -1792,6 +1833,7 @@ static void menu(void)
     int cx = 0x870, chosen;
 
     menu_init();
+    drv.host_off = menu_box;
     poll_mouse();
     cww(M_menu_unused_word, 1);
     for (;;) {

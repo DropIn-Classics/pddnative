@@ -40,8 +40,8 @@ int menu_run(const char *game, const MenuHooks *hooks, char *err, size_t n);
 extern int menu_box;
 
 /* Not 0 (the default): the port's mouse driver, which the programs give
- * the pointer the keys move and which draws its pointer where they have
- * it show one (the history's 640x480 screens); no mouse behind it yet.
+ * the pointer the keys and the computer's mouse move and which draws its
+ * pointer where they have it show one (the history's 640x480 screens).
  * 0: no driver, as in tools/run (for comparisons with it). */
 extern int menu_mouse;
 

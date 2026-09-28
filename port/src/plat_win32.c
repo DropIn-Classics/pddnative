@@ -229,6 +229,8 @@ int plat_fullscreen(void)
     return fullscreen;
 }
 
+static int shown_x, shown_y, shown_w, shown_h;    /* the picture, as last painted */
+
 /* the picture in the largest 4:3 rectangle of the client area, black around */
 static void paint(HDC dc)
 {
@@ -248,6 +250,10 @@ static void paint(HDC dc)
     }
     x = (cw - w) / 2;
     y = (ch - h) / 2;
+    shown_x = x;
+    shown_y = y;
+    shown_w = w;
+    shown_h = h;
     if (x > 0) {
         RECT a = {0, 0, x, ch}, b = {x + w, 0, cw, ch};
         FillRect(dc, &a, black);
@@ -268,6 +274,24 @@ static void paint(HDC dc)
                   DIB_RGB_COLORS, SRCCOPY);
 }
 
+/* the mouse, in the client area's pixels */
+static int mouse_seen, mouse_x, mouse_y, mouse_clicks;
+
+int plat_mouse(int *x, int *y, int *clicks)
+{
+    int px = mouse_x - shown_x, py = mouse_y - shown_y;
+
+    *clicks = mouse_clicks;
+    mouse_clicks = 0;
+    if (!mouse_seen || shown_w <= 0 || shown_h <= 0)
+        return 0;
+    px = px < 0 ? 0 : px >= shown_w ? shown_w - 1 : px;
+    py = py < 0 ? 0 : py >= shown_h ? shown_h - 1 : py;
+    *x = (int)((long)px * 65536 / shown_w);
+    *y = (int)((long)py * 65536 / shown_h);
+    return 1;
+}
+
 static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     switch (msg) {
@@ -283,6 +307,20 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     }
     case WM_ERASEBKGND:
         return 1;
+    case WM_SETCURSOR:
+        if (LOWORD(lp) == HTCLIENT) {
+            SetCursor(NULL);
+            return TRUE;
+        }
+        break;
+    case WM_MOUSEMOVE:
+    case WM_LBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+        mouse_seen = 1;
+        mouse_x = (short)LOWORD(lp);
+        mouse_y = (short)HIWORD(lp);
+        mouse_clicks |= msg == WM_LBUTTONDOWN ? 1 : msg == WM_RBUTTONDOWN ? 2 : 0;
+        return 0;
     case WM_KILLFOCUS:
         release_all();
         break;
