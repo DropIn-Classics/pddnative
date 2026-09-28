@@ -15,7 +15,7 @@ task's branch (see AGENTS.md).
 | T6 | Claude | working | the implementation in C (port/): the table programs' engine, routine by routine |
 | T5 | Sol | done | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
 | T7 | Sol | done | tools/ddfiles.py: the history viewer's files (HISTORY/*.HOP, *.IDX, HISTORY.FNT, the pictures) |
-| T8 | Sol | open | tools/gfxfiles.py: the pictures and sprites (DELUXE/*.VGA, the .SPR files, TABLE2M) with their real palettes |
+| T8 | Sol | changes | tools/gfxfiles.py: the pictures and sprites (DELUXE/*.VGA, the .SPR files, TABLE2M) with their real palettes |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
