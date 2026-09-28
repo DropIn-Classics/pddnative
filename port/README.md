@@ -168,8 +168,10 @@ the buttons clicked since the last AX=3 (left 1, right 2), once for each
 click: a real driver reports a button while it is held, and the browser
 takes it again each pass, which on a disk took the time of a picture
 and in the port none (a click went several tables on). Clicks made
-before a mode set are dropped (in a table, a fade). With the menu box
-(below) the list takes no mouse. Where the program has it show its
+before a mode set are dropped (in a table, a fade), and so is a move
+made there: the pointer stays where it was until the mouse moves. With
+the menu box (below) the list takes no mouse until it moves or clicks.
+Where the program has it show its
 pointer (AX=1: the history's 640x480 screens) the port draws an arrow
 over the picture, not into video memory. Without it (as in tools/run,
 and as portcmp runs the port) the original is hard to use from the
@@ -190,13 +192,15 @@ mouse is. The window build (SDL, macOS) and the Windows build not tried
 with a mouse; the Windows build not compiled.
 
 The box (the quality of life fix "menu box", `-menu -qol`; the port's
-own): no pointer; a frame (a dark line, three pixels of yellow and white
+own): in place of the pointer while the keys or a controller are used, a
+frame (a dark line, three pixels of yellow and white
 in turn every 24 pictures, a dark line) drawn into the list's picture
 around the entry of `menu_ranges` chosen, the pixels under it kept and
 put back when it moves. Up and Down move it among the eight tables and
 the history (held, after 20 pictures every 6), Enter runs the entry,
-F1-F9 as before (the box goes to the entry); the list scrolls up to 6 rows a picture until
-the entry is on the screen, and at once after a table and the high score
+F1-F9 as before (the box goes to the entry); the list scrolls up to 6
+rows a picture until the entry is on the screen, and at once after a
+table and the high score
 show. A move starts the count to the high score show anew; in the show
 Enter and the arrows go back to the list. The box stays on its entry
 while the program runs. Checked headless (`PD_DUMP` pictures): the box on
@@ -205,8 +209,16 @@ nine, Enter on F2 runs Steel Wheel, on F8 Stall Turn and back (Esc, Y)
 with the box on F8, Down in the high score show back to the list; without
 `-qol` portcmp `--menu` still equal (Down held, menu_loop#100, #230,
 hiscore_show_loop#700). Ten Downs from F1: the box on the history (the
-tenth is not taken), Enter shows the language screen. Not tried in the
-window or with a controller.
+tenth is not taken), Enter shows the language screen. The mouse moved
+or clicked (also in the high score show) takes the box away and shows
+the pointer, which the mouse moves and clicks as without the box; Up,
+Down or Enter bring the box back on the entry under the pointer (Up and
+Down do not move it then, Enter runs nothing). The mode is kept after a
+table. Checked headless (`PD_MOUSE`): the box at the start, a move to
+Beat Box shows the pointer there, Down the box on Beat Box, a move to
+Steel Wheel the pointer, a click runs it, back (Esc, Y) with the pointer;
+in the high score show a move and a click, the list with the pointer.
+Not tried in the window or with a controller.
 
 Checked with `tools/portcmp.py --menu` (below) against DDPCMAIN in
 tools/run (`-loadfix`), the menu's segments and all of video memory at
@@ -346,7 +358,8 @@ start a table from the first two pages.
   original's unless `-qol` is given (both engine fixes); a game played
   with them does not replay in the original (`-record`). Menu box
   (`menu_box`, menu.h): in the menu a frame around one table's or the
-  history's entry in place of the pointer (below, "The menu").
+  history's entry in place of the pointer, until the mouse is used
+  (below, "The menu").
 - Controller: what each button of a game controller does in a table
   (below), one line a button, Left and Right choose; a mark before a
   button while it is held shows which is which. Kept in `pdd.cfg`

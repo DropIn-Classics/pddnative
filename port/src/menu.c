@@ -452,6 +452,7 @@ static struct {
     int clicks;                         /* the buttons clicked, for AX=3 */
     int host_x, host_y;                 /* plat_mouse's last place */
     int host_off;                       /* the mouse not taken (the menu box) */
+    int woke;                           /* it moved or clicked then, and is taken */
 } drv;
 
 static void mouse_clamp(void)
@@ -531,7 +532,10 @@ static void mouse_new_mode(int height)
 
     if (!drv.present)
         return;
-    plat_mouse(&x, &y, &clicks);
+    if (plat_mouse(&x, &y, &clicks)) {
+        drv.host_x = x;                 /* a move in the table is not one here */
+        drv.host_y = y;
+    }
     drv.clicks = 0;
     drv.x1 = drv.y1 = 0;
     drv.x2 = 639;
@@ -575,15 +579,23 @@ static void detect_mouse(void)
     dwb(M_mouse_present, 1);
 }
 
-/* the mouse's moves and clicks to the driver */
+/* the mouse's moves and clicks to the driver; when it is not taken, a
+ * move or a click has it taken again (woke) */
 static void mouse_from_host(void)
 {
-    int x, y, clicks;
+    int x, y, clicks, moved;
 
-    if (!plat_mouse(&x, &y, &clicks) || !drv.present || drv.host_off)
+    if (!plat_mouse(&x, &y, &clicks) || !drv.present)
         return;
+    moved = x != drv.host_x || y != drv.host_y;
+    if (drv.host_off) {
+        if (!moved && !clicks)
+            return;
+        drv.host_off = 0;
+        drv.woke = 1;
+    }
     drv.clicks |= clicks;
-    if (x == drv.host_x && y == drv.host_y)
+    if (!moved)
         return;
     drv.host_x = x;
     drv.host_y = y;
@@ -873,10 +885,12 @@ static void edge_scroll(void)
 
 /* ---- the box (menu_box): the port's own, in place of the pointer.  A
  * frame drawn into the list's picture around one of the first nine
- * entries of menu_ranges (the eight tables, the history), moved with Up and Down; the list scrolls so that
- * it stays on the screen; a dark line either side of it, for the light
- * entries.  The pixels under it are kept and put back
- * before it moves. */
+ * entries of menu_ranges (the eight tables, the history), moved with Up
+ * and Down; the list scrolls so that it stays on the screen; a dark line
+ * either side of it, for the light entries.  The pixels under it are
+ * kept and put back before it moves.  The mouse moved or clicked brings
+ * the pointer back (box_shown 0), Up, Down or Enter the box, on the
+ * entry under the pointer. */
 
 int menu_box;
 
@@ -887,6 +901,7 @@ static int box_entry;                   /* 0-8, kept while the program runs */
 static int box_drawn, box_x1, box_y1, box_x2, box_y2;
 static int box_held, box_hold, box_moved, box_pulse;
 static int box_back;                    /* back to the list from the high score show */
+static int box_shown = 1;               /* the box, not the pointer: the mouse not used last */
 static uint8_t box_colour[3];           /* two to pulse between, the dark lines' */
 static uint8_t box_saved[2 * BOX_EDGE * (320 + 480)];
 
@@ -999,6 +1014,44 @@ static void box_scroll(int jump)
     dww(M_menu_start, (uint16_t)(0x3C0 + want * 0x50));
 }
 
+/* the list's entry (0-8) under the pointer, else -1 */
+static int box_under_pointer(void)
+{
+    int y = dw(M_menu_row) + dw(M_mouse_y), i;
+
+    for (i = 0; i < BOX_ENTRIES; i++)
+        if (y >= box_range(i, 1) && y <= box_range(i, 3))
+            return i;
+    return -1;
+}
+
+/* the pointer in place of the box, the mouse taken */
+static void box_hide(void)
+{
+    box_remove();
+    box_shown = 0;
+    draw_pointer(1);
+    dww(M_tick_draw, M_tick_draw_pointer);
+    dww(M_tick_remove, M_tick_remove_pointer);
+}
+
+/* the box in place of the pointer, on the entry under it; the mouse not
+ * taken until it moves */
+static void box_show(void)
+{
+    int at = box_under_pointer();
+
+    dww(M_tick_draw, M_tick_nothing);
+    dww(M_tick_remove, M_tick_nothing);
+    remove_pointer(1);
+    if (at >= 0)
+        box_entry = at;
+    box_shown = 1;
+    drv.host_off = 1;
+    box_pulse = 0;
+    box_draw();
+}
+
 /* the box drawn anew on the picture just loaded, the list at it */
 static void box_init(void)
 {
@@ -1012,9 +1065,9 @@ static void box_init(void)
 }
 
 /* read_menu_keys with the box: Up and Down move it (held, they repeat),
- * Enter chooses its entry; in the high score show (`in_list` 0) Enter and
- * the arrows go back to the list.  F1-F10 and Esc as there; 1 when Esc
- * is down */
+ * Enter chooses its entry; with the pointer shown they bring the box; in
+ * the high score show (`in_list` 0) Enter and the arrows go back to the
+ * list.  F1-F10 and Esc as there; 1 when Esc is down */
 static int box_keys(int in_list)
 {
     static const uint8_t fkeys[10] = { 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x44 };
@@ -1035,6 +1088,13 @@ static int box_keys(int in_list)
         box_back = 1;                   /* a click, which the driver's poll would undo */
         box_held = 0;
         wait_keys_up();
+        return 0;
+    }
+    if (!box_shown && (step || key_down(0x1C))) {
+        box_show();
+        box_moved = 1;
+        if (key_down(0x1C))
+            wait_keys_up();
         return 0;
     }
     if (step && box_entry + step >= 0 && box_entry + step < BOX_ENTRIES) {
@@ -1739,7 +1799,7 @@ static void run_selection(void)
         run_table(sel - 1 >= 4 ? 1 : 0);
     }
     menu_init();
-    drv.host_off = menu_box;
+    drv.host_off = menu_box && box_shown;
 }
 
 /* a selection made with a key, else the list's row under the pointer */
@@ -1799,7 +1859,7 @@ static void menu_init(void)
     dww(M_char_y, 0);
     menu_video_init();
     poll_mouse();
-    if (menu_box) {
+    if (menu_box && box_shown) {
         box_init();
         show_menu_start();
         dww(M_tick_draw, M_tick_nothing);
@@ -1822,7 +1882,7 @@ static void list_again(void)
     dww(M_menu_row, 0);
     dww(M_menu_start, 0x3C0);
     dww(M_menu_start_end, 0x5780);
-    if (menu_box)
+    if (menu_box && box_shown)
         box_scroll(1);
     show_menu_start();
 }
@@ -1833,7 +1893,7 @@ static void menu(void)
     int cx = 0x870, chosen;
 
     menu_init();
-    drv.host_off = menu_box;
+    drv.host_off = menu_box && box_shown;
     poll_mouse();
     cww(M_menu_unused_word, 1);
     for (;;) {
@@ -1842,11 +1902,17 @@ static void menu(void)
             show_menu_start();
             poll_mouse();
             if (menu_box) {
+                if (drv.woke && box_shown)
+                    box_hide();
+                drv.woke = 0;
                 if (box_keys(1))
                     return;
                 if (box_moved)
                     cx = 0x870;
-                box_pass();
+                if (box_shown)
+                    box_pass();
+                else
+                    edge_scroll();
             } else {
                 if (read_menu_keys())
                     return;
