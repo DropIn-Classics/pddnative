@@ -137,7 +137,7 @@ static int menu_intro(void)
  * table is shown on the screen. */
 static int with_launcher(void)
 {
-    MenuHooks hooks = { menu_intro, play_table };
+    static const MenuHooks hooks = { menu_intro, play_table };
     char err[512] = "";
     int prog, table, r;
 
@@ -214,7 +214,7 @@ int main(int argc, char **argv)
         return with_launcher();
 
     if (menu) {
-        MenuHooks hooks = { NULL, play_table };
+        static const MenuHooks hooks = { NULL, play_table };
         pad_set_context(PAD_MENU);
         r = menu_run(game, &hooks, err, sizeof err);
         dump();
