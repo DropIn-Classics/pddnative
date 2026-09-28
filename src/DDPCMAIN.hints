@@ -38,10 +38,13 @@ dptr CODE:434C CODE
 ; [0D0C] are HISTORY paths, and [1E26]/[1E28]/[1E2A] are HISTORY data
 ds CODE:3158-31C8 HISTORY
 ; these callees inherit DS=HISTORY; calls reset the analysis to DATA
+ds CODE:3234-3273 HISTORY
 ds CODE:32DA-3347 HISTORY
 ds CODE:3599-36A8 HISTORY
+ds CODE:36A8-3713 HISTORY
 ds CODE:3DBF-3DE1 HISTORY
 ds CODE:3E09-3E3D HISTORY
+ds CODE:3EE1-3F81 HISTORY
 ds CODE:4394-43D2 HISTORY
 
 ; near-pointer tables in DATA read with BX in L0B59 (CHDIR/EXEC for tables)
@@ -122,7 +125,9 @@ comment CODE:11D1 read a file through DOS into consecutive 8000h-byte far-memory
 name CODE:1205 write_file_far
 comment CODE:1205 create and write a far-memory buffer through DOS
 name CODE:128E load_vga_image
-comment CODE:128E allocate memory, read a VGA image and copy its four planes to video memory
+comment CODE:128E allocate memory, read a 320x200 VGA image (one byte per pixel) and copy every fourth byte to one Mode X plane; history_init uses it for DDPCHIST.VGA
+name CODE:12F0 copy_vga_image_planes
+comment CODE:12F0 CX groups of four chunky pixels at DS:0000 to the four Mode X planes at ES:DI
 name CODE:1329 install_keyboard
 comment CODE:1329 save the old INT 9 vector and install keyboard_handler
 name CODE:134E restore_keyboard
@@ -142,18 +147,45 @@ name CODE:3131 resize_memory
 name CODE:3140 history_screen
 comment CODE:3140 run the F9 History of Pinball viewer with DS and ES set to HISTORY
 name CODE:3158 history_init
+comment CODE:3158 CHDIR HISTORY, initialize Mode X with DDPCHIST.VGA, detect VESA 640x480x256, load HISTORY.FNT and the selected language's .IDX, choose the picture format and enter the viewer; the .HOP is loaded after leaving this menu
 name CODE:31C8 history_loop
+name CODE:33D3 load_history_font
+comment CODE:33D3 allocate 800h bytes and read HISTORY.FNT: 256 glyphs, eight row bytes each; bit 7 is the glyph's left pixel
+name CODE:33FF show_history_table
+comment CODE:33FF choose the selected table record's first picture name; load .016 in VGA mode or .256 in VESA mode, then draw its indexed .HOP text
+name CODE:344C browse_history_tables
+name CODE:3508 draw_history_string
+comment CODE:3508 draw a NUL-terminated string through HISTORY.FNT, one byte per 8-pixel glyph row, to all four VGA planes
 name CODE:3599 filter_manufacturer
 name CODE:35DC filter_designer
 name CODE:361F filter_year
 name CODE:3662 select_history_table
 name CODE:36A4 leave_history_menu
+name CODE:36A8 next_history_picture
+comment CODE:36A8 cycle the selected table record's one or two picture-name offsets and load that .016 or .256 file
 name CODE:3713 select_history_filter
+name CODE:3963 select_history_picture_format
+comment CODE:3963 when VESA mode 101h is available, change both picture names in every table record from .016 to .256 in place
+name CODE:39AB load_history_picture_16
+comment CODE:39AB read four 9600h-byte planes from the selected .016 file and copy them to VGA mode 12h: 640x480, one bit per plane and pixel
+name CODE:3A0C copy_history_picture_plane
 name CODE:3BDC filter_history_records
 comment CODE:3599 HISTORY:16CD dispatches the manufacturer filter and rebuilds filtered_table_records
 comment CODE:35DC HISTORY:16CD dispatches the designer filter and rebuilds filtered_table_records
 comment CODE:361F HISTORY:16CD dispatches the year filter and rebuilds filtered_table_records
 comment CODE:3662 HISTORY:16CD dispatches direct table selection
+name CODE:3C61 load_history_picture_256
+comment CODE:3C61 read the selected .256 file: 300h-byte VGA DAC palette then 640x480 pixel indices, copied through VESA 64K banks; the last 16 palette entries are replaced by history_palette_tail for the UI
+name CODE:3D39 copy_history_picture_bank
+name CODE:3DBF load_history_hop
+comment CODE:3DBF load the selected language's whole .HOP file into hop_segment; its offsets and displayed-string counts come from the matching .IDX
+name CODE:3E09 load_history_idx
+comment CODE:3E09 read the selected language's 265-byte .IDX into history_text_index: 53 records of HOP start word, end-marker word (not used by the viewer), displayed-string-count-minus-one byte
+name CODE:3E3D draw_history_record
+comment CODE:3E3D use table record +0 as the .IDX record number, then draw count+1 NUL-terminated strings from the HOP start offset
+name CODE:3EE1 draw_history_line
+comment CODE:3EE1 draw one HOP string; in 16-colour mode skip all following NULs and add a row for each following 0Dh,0Ah, while VESA skips CR/LF within strings and following NULs so they add no row; the two-NUL loop at L3F53 is dead
+name CODE:3F81 render_history_glyph
 name CODE:41E5 load_sound
 comment CODE:41E5 save drive/directory, load the SDR named by SOUND.CFG and register sound_callback
 name CODE:4407 stop_sound
@@ -183,6 +215,8 @@ name DATA:0D3F intro_program
 name DATA:1237 command_tail
 comment DATA:1237 DOS command tail used by all three EXEC helpers
 name DATA:133B exec_params
+name DATA:134B language_index
+comment DATA:134B history language 0..4: English, French, German, Italian, Spanish; selects the .HOP/.IDX pointer tables
 name DATA:134C selection
 comment DATA:134C menu selection: 1-8 tables, 9 history, 0Ah options
 name DATA:1356 sound_loaded
@@ -207,7 +241,7 @@ name OPTIONS:062F options_exit
 
 ; ---- History of Pinball resources and state
 name HISTORY:0000 history_picture_files
-comment HISTORY:0000 NUL-terminated .016 picture names for the 53 table records
+comment HISTORY:0000 74 NUL-terminated .016 picture names selected by the 53 table records; select_history_picture_format changes their extensions in place to .256 for VESA
 name HISTORY:03F7 select_table_text
 name HISTORY:0404 select_manufacturer_text
 name HISTORY:0418 select_designer_text
@@ -230,6 +264,7 @@ name HISTORY:0E13 intro_module
 name HISTORY:0E1D intro2_module
 name HISTORY:0E28 deluxe_root_dir
 name HISTORY:0E30 history_font_path
+comment HISTORY:0E30 HISTORY.FNT, 800h bytes: 256 glyphs of eight row bytes
 name HISTORY:0E3C manufacturer_names
 name HISTORY:0EBE manufacturer_table
 name HISTORY:0ED2 designer_names
@@ -239,7 +274,7 @@ name HISTORY:1174 year_table
 name HISTORY:11A0 table_names
 name HISTORY:1445 table_name_table
 name HISTORY:14AF table_records
-comment HISTORY:14AF 53 nine-byte records; +1 manufacturer, +2 year, +3 designer, +5/+7 picture-name offsets
+comment HISTORY:14AF 53 nine-byte records: +0 .IDX record, +1 manufacturer, +2 year, +3 designer, +4 picture count (1 or 2), +5/+7 picture-name offsets
 name HISTORY:168C history_menu_hitboxes
 name HISTORY:16CD history_action_table
 comment HISTORY:16CD near pointers for table/manufacturer/designer/year selection and leaving the menu
@@ -255,6 +290,7 @@ name HISTORY:1879 year_filter
 name HISTORY:187A direct_table_selection
 name HISTORY:187B selected_table
 name HISTORY:187D hop_segment
+comment HISTORY:187D segment holding the selected language's .HOP text
 name HISTORY:187F vesa_window_granularity
 name HISTORY:1880 vesa_current_bank
 name HISTORY:1882 vesa_bank_step
@@ -269,6 +305,7 @@ name HISTORY:1A7F vbe_mode_list_ptr
 name HISTORY:1B71 vbe_mode_info
 name HISTORY:1B75 vbe_window_granularity_word
 name HISTORY:1D18 history_text_index
+comment HISTORY:1D18 53 five-byte .IDX records loaded by load_history_idx
 name HISTORY:1E26 scroll_line_count
 name HISTORY:1E28 scroll_text_ptr
 name HISTORY:1E2A scroll_active
