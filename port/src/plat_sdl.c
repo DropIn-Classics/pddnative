@@ -136,10 +136,25 @@ int plat_read_scancode(void)
 
 /* ---- the window ---- */
 
+int plat_has_window(void)
+{
+    return 1;
+}
+
+int plat_fullscreen(void)
+{
+    return (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP;
+}
+
+void plat_set_fullscreen(int on)
+{
+    if (!on != !plat_fullscreen())
+        SDL_SetWindowFullscreen(window, on ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+}
+
 static void toggle_fullscreen(void)
 {
-    int on = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
-    SDL_SetWindowFullscreen(window, on ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
+    plat_set_fullscreen(!plat_fullscreen());
 }
 
 int plat_init(const char *title)

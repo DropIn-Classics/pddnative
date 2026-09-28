@@ -20,6 +20,13 @@ void plat_message(const char *text);
 /* handles window messages; 0 once the window was closed */
 int plat_pump(void);
 
+/* 0 for the headless stand-in (plat_null.c), which shows nothing */
+int plat_has_window(void);
+
+/* the whole monitor (1) or a window (0); Alt+Enter switches as well */
+void plat_set_fullscreen(int on);
+int plat_fullscreen(void);
+
 /* shows width x height palette indexes with a 0x00RRGGBB palette, in the
  * 4:3 shape of a VGA screen; Alt+Enter switches to the whole monitor */
 void plat_present(const uint8_t *pixels, int width, int height, const uint32_t palette[256]);

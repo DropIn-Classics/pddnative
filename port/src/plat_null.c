@@ -95,6 +95,21 @@ int plat_pump(void)
     return 1;
 }
 
+int plat_has_window(void)
+{
+    return 0;
+}
+
+void plat_set_fullscreen(int on)
+{
+    (void)on;
+}
+
+int plat_fullscreen(void)
+{
+    return 0;
+}
+
 void plat_present(const uint8_t *pixels, int width, int height, const uint32_t palette[256])
 {
     if (width * height <= (int)sizeof last) {

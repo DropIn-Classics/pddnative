@@ -148,7 +148,38 @@ the sound as it was apart from a DC blocker). During the game `+` and
 (the characters, from the keypad or where the layout has them; the
 keypad's keys do not reach the game); a box at the top of the picture
 shows what was set (`src/hud.c`, drawn into the picture after the VGA's
-scan-out, not into video memory). The settings are not kept yet.
+scan-out, not into video memory). They are kept in `pdd.cfg` (below).
+
+### The setup screen
+
+`pdd` without `-prog` and `-table` starts with a setup screen in the
+style of a DOS setup program (`src/launcher.c`: an 80x25 text screen,
+`src/textmode.c`, drawn with a font of our own into a 640x400 picture in
+the game's window). With `-prog` or `-table` the table starts at once, as
+before; the headless build never shows it. Arrows, Enter and Esc; F1-F8
+start a table from the first two pages.
+
+- Play a table: the eight tables by name (F1-F8 as in the game's menu;
+  F1-F4 PD.EXE's tables 0-3, F5-F8 PD2.EXE's). Esc in the table (the
+  game's own quit: Esc, then Y) comes back to the setup screen; the
+  program is loaded anew for each table (`mem_load`, `pd_run`).
+- Play from the menu: greyed out until the menu is translated (T13).
+- Game options: what the menu's F10 screen sets, with its ranges (its hit
+  boxes at DDPCMAIN's OPTIONS:0009): balls (3 or 5), music (the tunes and
+  jingles, or the main tune only), colours (colour or grey), table angle
+  (1-3: gravity 9, 11, 13), screen (320x200 or 320x350), the keys for the
+  flippers, the nudge and the plunger. Written at each change as the 13
+  bytes of `DDPCOPTN.BIN` into `save/DELUXE` of the data folder
+  (`sys_data_dir()`, `PD_DATA_DIR`), where `load_options` reads it;
+  `tools/pdfiles.py options` prints it. Keys the table reads itself (Esc,
+  F1-F8, P), the sound keys, and a key already set for another of the four
+  are refused.
+- Sound and window: the volume and the shaping (as `+ - * /` set them in
+  the game), bass, treble, oomph, the headphone mode (`-fx`), full screen.
+  Kept in `pdd.cfg` in the data folder (`name = value` lines), with the
+  last table started; what the sound keys and Alt+Enter change in the
+  game is written there when the table ends. `-fx` is kept like a setting
+  made on the screen.
 
 Comparing with the original: stop both at the same place and compare
 their memory by the names of the hints. The port stops at the first routine

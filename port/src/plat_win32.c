@@ -119,6 +119,21 @@ static void set_fullscreen(int on)
     }
 }
 
+int plat_has_window(void)
+{
+    return 1;
+}
+
+void plat_set_fullscreen(int on)
+{
+    set_fullscreen(on != 0);
+}
+
+int plat_fullscreen(void)
+{
+    return fullscreen;
+}
+
 /* the picture in the largest 4:3 rectangle of the client area, black around */
 static void paint(HDC dc)
 {

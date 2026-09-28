@@ -49,6 +49,20 @@ void hud_control(int control)
     shown = SHOW_PICTURES;
 }
 
+void hud_set(int v, int s)
+{
+    volume = v < 0 ? 0 : v > HUD_VOLUME_MAX ? HUD_VOLUME_MAX : v;
+    shaping = s != 0;
+    muted = 0;
+    apply();
+}
+
+void hud_get(int *v, int *s)
+{
+    *v = volume;
+    *s = shaping;
+}
+
 /* ---- drawing: a 5x7 font of the letters the box needs */
 
 static const struct {

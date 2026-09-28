@@ -18,7 +18,7 @@ task's branch (see AGENTS.md).
 | T8 | Sol | done | tools/gfxfiles.py: the pictures and sprites (DELUXE/*.VGA, the .SPR files, TABLE2M) with their real palettes |
 | T9 | Sol | done | tools/flifiles.py: the FLI animations (DELUXE/*.FLI) and which one DDFLIPLY.EXE plays for which argument |
 | T10 | Sol | later | tools/sdrfiles.py: the sound drivers (DELUXE/*.SDR): unpacked, their INT 66h functions, SOUND.CFG |
-| T11 | Sol | open | port: the launcher, a setup program in text mode before the game (options, sound, start) |
+| T11 | Claude | review | port: the launcher, a setup program in text mode before the game (options, sound, start) |
 | T12 | Sol | later | port: game controllers (after T11) |
 | T13 | Claude | open | port: the menu (DDPCMAIN) in C as the hub between the tables |
 
@@ -415,7 +415,10 @@ started from there. Game controllers. The FLI animations (DDFLIPLY) are
 left out. T10 is `later`: the port plays the music with micromod, and
 what it needs of SBLASTER.SDR's timing is in docs/HANDOFF.md.
 
-## T11: the launcher (Sol)
+## T11: the launcher (Claude; first meant for Sol)
+
+Done on master (2026-09-28), notes in docs/tasks/T11.md; waiting for a
+try in the window (SDL on the Mac, and a build on Windows).
 
 A setup screen in text mode, 80x25, in the port's own window (keyboard
 now, controllers with T12), shown when `pdd` starts without `-prog` or

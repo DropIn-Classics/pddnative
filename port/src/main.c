@@ -6,14 +6,19 @@
  *
  * DIR is the unpacked CD (the folders DELUXE, DREAMS1, DREAMS2 ...):
  * -game, else $PDD_GAME, else `game` beside the program, else `game` in
- * the current directory.  -prog 1 runs PD.EXE's tables (Ignition, Steel
- * Wheel, Beat Box, Nightmare), 2 PD2.EXE's; -table picks one of the four,
- * as the command line digit did.  -record writes each byte of the
- * keyboard as the program gets it, with the number of the picture
+ * the current directory.  Without -prog and -table the window shows the
+ * setup screen (launcher.c), which starts the tables and comes back after
+ * each.  -prog 1 runs PD.EXE's tables (Ignition, Steel Wheel, Beat Box,
+ * Nightmare), 2 PD2.EXE's; -table picks one of the four, as the command
+ * line digit did: with either, that table runs once, without the setup
+ * screen (as the headless build always does).  -record writes each byte of
+ * the keyboard as the program gets it, with the number of the picture
  * (PICTURE:HEX, a line each): a game played in the window replays in the
  * headless build (PD_KEYS) and, through tools/portcmp.py --record, in the
- * original.  -fx shapes the sound (audiofx.h): bass and treble -12 to
- * 12 dB, oomph 0 to 12 dB, headphone 0 or 1; "0,0,0,0" is the default.
+ * original (the pictures are counted from the program's start: with
+ * -prog/-table).  -fx shapes the sound (audiofx.h): bass and treble -12
+ * to 12 dB, oomph 0 to 12 dB, headphone 0 or 1; kept as if set in the
+ * setup screen.
  *
  * For comparing with the original in tools/run: when the program stops,
  * PD_RAM names a file for memory 0-A0000h and PD_VRAM one for the 256 KB
@@ -24,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "frame.h"
+#include "launcher.h"
 #include "pd.h"
 #include "platform.h"
 #include "sound.h"
@@ -68,25 +74,50 @@ static int find_game(const char *given, char *out, size_t n)
     return sys_is_dir(out);
 }
 
+/* The setup screen, the table chosen there, back to the screen: until it
+ * is left or the window closed.  What went wrong in a table is shown on
+ * the screen. */
+static int with_launcher(const char *game)
+{
+    char err[512] = "";
+    int prog, table;
+
+    while (launcher_run(game, &prog, &table, err)) {
+        err[0] = 0;
+        if (mem_load(prog, game, err, sizeof err) != 0)
+            continue;
+        pd_run(table, game, err, sizeof err);
+        snd_stop();                     /* the table's music, if it still plays */
+        launcher_save_settings();       /* what the sound keys and Alt+Enter set */
+        if (!plat_pump())
+            break;                      /* the window was closed */
+    }
+    launcher_save_settings();
+    plat_shutdown();
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     const char *given = NULL;
     char game[SYS_PATH], err[512];
-    int prog = 1, table = 0, i, r;
+    int prog = 1, table = 0, direct = 0, fx_given = 0, i, r;
+    int fx[4] = { 0, 0, 0, 0 };
 
     for (i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-game") && i + 1 < argc)
             given = argv[++i];
-        else if (!strcmp(argv[i], "-prog") && i + 1 < argc)
+        else if (!strcmp(argv[i], "-prog") && i + 1 < argc) {
             prog = atoi(argv[++i]) == 2 ? 2 : 1;
-        else if (!strcmp(argv[i], "-table") && i + 1 < argc)
+            direct = 1;
+        } else if (!strcmp(argv[i], "-table") && i + 1 < argc) {
             table = atoi(argv[++i]) & 3;
-        else if (!strcmp(argv[i], "-record") && i + 1 < argc)
+            direct = 1;
+        } else if (!strcmp(argv[i], "-record") && i + 1 < argc)
             frame_record(argv[++i]);
         else if (!strcmp(argv[i], "-fx") && i + 1 < argc) {
-            int fx[4] = { 0, 0, 0, 0 };
             sscanf(argv[++i], "%d,%d,%d,%d", &fx[0], &fx[1], &fx[2], &fx[3]);
-            snd_set_fx(fx[0], fx[1], fx[2], fx[3]);
+            fx_given = 1;
         }
     }
     if (!plat_init("Pinball Dreams"))
@@ -97,6 +128,13 @@ int main(int argc, char **argv)
         plat_shutdown();
         return 1;
     }
+    if (plat_has_window())
+        launcher_load_settings();
+    if (fx_given)
+        launcher_set_fx(fx[0], fx[1], fx[2], fx[3]);
+    if (plat_has_window() && !direct)
+        return with_launcher(game);
+
     if (mem_load(prog, game, err, sizeof err) != 0) {
         plat_message(err);
         plat_shutdown();
@@ -110,6 +148,8 @@ int main(int argc, char **argv)
         plat_shutdown();
         return 1;
     }
+    if (plat_has_window())
+        launcher_save_settings();
     plat_shutdown();
     return 0;
 }

@@ -15,6 +15,11 @@
 /* a key from plat_read_control() */
 void hud_control(int control);
 
+/* the volume (0 to HUD_VOLUME_MAX, 3 dB a step) and the shaping on or off,
+ * as the keys leave them; hud_set applies them (not muted) */
+void hud_set(int volume, int shaping);
+void hud_get(int *volume, int *shaping);
+
 /* the box over the picture, while it is shown */
 void hud_draw(VgaFrame *picture);
 
