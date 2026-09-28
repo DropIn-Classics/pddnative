@@ -69,7 +69,8 @@ static void parse_pokes(void)
 /* PD_STOP=where#N: the program ends the Nth time it passes the checkpoint
  * `where` (for comparing its memory with a run of the original stopped at
  * the same place with tools/run's -break ADDR#N); PD_TRACE: each
- * checkpoint passed is printed with the number of pictures shown */
+ * checkpoint passed is printed with the number of pictures shown;
+ * PD_TRACE_BALL: at each frame of play the ball's place and speed */
 void checkpoint(const char *where)
 {
     static const char *stop;
@@ -91,6 +92,9 @@ void checkpoint(const char *where)
     }
     if (getenv("PD_TRACE"))
         fprintf(stderr, "%s picture %lu\n", where, frame_count());
+    if (getenv("PD_TRACE_BALL") && !strcmp(where, "st_play"))   /* the ball's pixel and speed */
+        fprintf(stderr, "ball %d %d %d %d\n", (int16_t)rw(V(ball_x_hi)) >> 2, (int16_t)rw(V(ball_y_hi)) >> 2,
+                (int16_t)rw(V(ball_vx)), (int16_t)rw(V(ball_vy)));
     for (i = 0; i < npokes; i++)
         if (!strcmp(where, pokes[i].where) && ++pokes[i].count == pokes[i].n)
             for (k = 0; k < pokes[i].len; k++)

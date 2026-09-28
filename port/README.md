@@ -79,6 +79,18 @@ space of the driver's EXEC in CODE, the stack)
 - all eight tables (PD.EXE's and PD2.EXE's) with `tools/portcmp.py` and
   one key script (F1, the plunger, 60 random flipper taps in play): equal
   at the 200th frame of play, the drain and the next ball's start.
+- whole games, from F1 to the game over, with `tools/portcmp.py` at each
+  drain and at state 7's entry: all equal.  With random flipper taps
+  (built on the port until they are placed where the ball is in play):
+  Nightmare (a ball locked, 2,841 frames of play).  With
+  `tools/portplay.py`: Steel Wheel (seed 1: the roulette, `hold_bonus`,
+  six trips to the upper level; 187 s), PD2.EXE's table 3, .STT (seed 2:
+  the roulette, locks, an extra ball, four balls lost; 300 s) and table 1,
+  .SFR (seed 1: `count_message`).
+- A ball can come to rest in the original: on Steel Wheel at (279, 25),
+  top right, its speed changing while it stays (random taps, from the
+  1,100th frame of play on); the port equal at the 1,000th, 1,100th and
+  1,500th frame.
 - XDATA's `music_pos` can differ from the original's: INT 66h AL=10h
   returns the position the driver's player has reached in the module, and
   the port's player does not advance in the headless build (no audio
@@ -105,7 +117,8 @@ not translated yet or, with `PD_STOP=where#N`, the Nth time it passes
 `st_ball_start`, `st_game_over`, `st_tilt`, `st_ball_locked`,
 `ball_locked_loop` (state 4's loop). `PD_TRACE` prints each checkpoint
 passed with the pictures shown so far, and as `note` lines each event
-object's handler run and each switch of the ball's level; `PD_POKE="where#N OFF HEX"` writes
+object's handler run and each switch of the ball's level (`PD_TRACE_BALL`:
+the ball's pixel and speed at each frame of play); `PD_POKE="where#N OFF HEX"` writes
 bytes at DATA:OFF the Nth time `where` is passed (the runner's `-poke`);
 `PD_DATA_DIR` is where the saved files are looked for and written
 (`save/` in it).
@@ -123,6 +136,16 @@ with nothing saved (in `build/portcmp/`).
 
 The results listed under "State" were found by hand this way before the
 tool; it reproduces them.
+
+`tools/portplay.py` plays a game on the port with a simple player (both
+flippers tapped when the ball comes down over their tips) and writes its
+keys file; `portcmp.py --keys` then runs the original with it:
+
+    python tools\portplay.py --table 1 --seed 1 build\game.txt
+    python tools\portcmp.py --table 1 --keys build\game.txt st_ball_lost#1 st_game_over#1
+
+It prints what the game reached (the handlers run, the level switches).
+A game longer than 300 emulated seconds needs `--until` for portcmp.
 
 ## How it works
 
