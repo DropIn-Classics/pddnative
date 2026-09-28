@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run a shipped program on the headless runner (tools/run, build/pddrun.exe)
+"""Run a shipped program on the headless runner (tools/run, build/pddrun[.exe])
 with addresses given by their names in the hints.
 
     run.py [options] PROGRAM [ARGS]
@@ -9,7 +9,7 @@ PROGRAM is a path on the CD (DREAMS1/PD.EXE); the hints file whose `exe`
 is that program gives the names.  The options are the runner's (see the
 top of tools/run/main.c); run.py only
   * finds the unpacked CD as the other tools do and passes -game,
-  * builds build/pddrun.exe when it is missing or older than its sources,
+  * builds the runner when it is missing or older than its sources,
   * translates the ADDR of -break, -log, -watch, -dump and -poke (both
       of its addresses) when it is
       SEG:OFF   with SEG a segment of the hints (CODE:4CEE, DATA:8A8A),
@@ -26,7 +26,7 @@ ROOT = os.path.normpath(os.path.join(HERE, '..'))
 sys.path.insert(0, HERE)
 from disasm import Hints, game_dir
 
-EXE = os.path.join(ROOT, 'build', 'pddrun.exe')
+EXE = os.path.join(ROOT, 'build', 'pddrun.exe' if os.name == 'nt' else 'pddrun')
 SRC = os.path.join(HERE, 'run')
 ADDR_OPTS = {'-break': 1, '-log': 1, '-watch': 1, '-dump': 1, '-poke': 2}
 # options and how many arguments they take (to find PROGRAM)
@@ -41,9 +41,11 @@ def build():
     newest = max(os.path.getmtime(os.path.join(SRC, f)) for f in os.listdir(SRC))
     if os.path.exists(EXE) and os.path.getmtime(EXE) >= newest:
         return
-    if os.name != 'nt':
-        raise SystemExit('run.py: build build/pddrun.exe first (tools/run/build.bat is for MSVC)')
-    r = subprocess.run(['cmd', '/c', os.path.join(SRC, 'build.bat')], capture_output=True, text=True)
+    if os.name == 'nt':
+        cmd = ['cmd', '/c', os.path.join(SRC, 'build.bat')]
+    else:
+        cmd = ['sh', os.path.join(SRC, 'build.sh')]
+    r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode:
         sys.stdout.write(r.stdout + r.stderr)
         raise SystemExit('run.py: the runner did not build')

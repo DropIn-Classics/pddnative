@@ -19,8 +19,12 @@ if git diff --cached --name-only | grep -Eiq '^(game|build)/|\.(exe|com|sdr|mod|
     exit 1
 fi
 
-# the checks, when something they depend on changed
+# the checks, when something they depend on changed (`python` on Windows,
+# only `python3` on a Mac)
 if git diff --cached --name-only | grep -Eq '^(src|tools|port/src/gen)/'; then
-    exec python tools/check.py
+    if command -v python >/dev/null 2>&1; then
+        exec python tools/check.py
+    fi
+    exec python3 tools/check.py
 fi
 exit 0

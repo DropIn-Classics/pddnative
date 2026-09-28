@@ -118,7 +118,7 @@ def main():
     ap.add_argument('keyfile')
     args = ap.parse_args()
     if not os.path.exists(portcmp.PORT):
-        raise SystemExit('portplay.py: build the port first (port\\build.bat)')
+        raise SystemExit(f'portplay.py: build the port first ({portcmp.BUILD_PORT})')
     ev, trace = play(args)
     with open(args.keyfile, 'w') as f:
         f.write('# portplay.py --prog %d --table %d --seed %d --max %d\n' % (args.prog, args.table, args.seed, args.max))

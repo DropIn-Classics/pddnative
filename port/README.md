@@ -112,7 +112,13 @@ space of the driver's EXEC in CODE, the stack)
 `build.bat` needs MSVC (the Visual Studio 2019 Build Tools, or what
 vswhere finds) and builds `build\pdd.exe` (a window) and
 `build\pdd-headless.exe` (no window or sound, a virtual clock; see
-`src/plat_null.c` for `PD_FRAMES`, `PD_KEYS`, `PD_DUMP`). `-game` is the
+`src/plat_null.c` for `PD_FRAMES`, `PD_KEYS`, `PD_DUMP`).
+
+On macOS and Linux `port/build.sh` builds `build/pdd` and
+`build/pdd-headless` with `cc`; the window is SDL2 (`src/plat_sdl.c`):
+SDL2.framework in `~/Library/Frameworks` or `/Library/Frameworks` on a
+Mac, else what `sdl2-config` or `pkg-config sdl2` give. Without SDL2 it
+builds the headless program only. `-game` is the
 unpacked CD (`python tools/gogx.py`), `-prog 1` PD.EXE's tables, `-prog 2`
 PD2.EXE's, `-table` 0-3.
 
@@ -194,4 +200,5 @@ from nothing saved, as portcmp's runs do (an empty `PD_DATA_DIR`):
   callback (AL=13h) wait until the driver's side of them is established
   for Dreams.
 - `src/platform.h`: window, keys, clock, audio; `plat_win32.c` (the
-  Windows SDK alone), `plat_null.c` (headless).
+  Windows SDK alone), `plat_sdl.c` (SDL2: macOS, Linux, the Steam Deck,
+  where it starts fullscreen), `plat_null.c` (headless).

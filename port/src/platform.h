@@ -3,7 +3,8 @@
  * audio stream.
  *
  * plat_win32.c implements it with the Windows SDK alone (user32, gdi32,
- * winmm); plat_null.c is a headless stand-in for tests and scripted runs.
+ * winmm), plat_sdl.c with SDL2 on macOS and Linux; plat_null.c is a
+ * headless stand-in for tests and scripted runs.
  */
 #ifndef PD_PLATFORM_H
 #define PD_PLATFORM_H

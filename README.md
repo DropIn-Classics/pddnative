@@ -42,9 +42,13 @@ check what the hints claim:
 
 (the Steel Wheel table, a game started and the ball launched, a picture
 every half second, every write to the game state printed). The runner is
-C and needs MSVC (the Visual Studio 2019 Build Tools); `run.py` builds
-it when needed. Its options are at the top of
+C: MSVC (the Visual Studio 2019 Build Tools) on Windows, `cc` (clang or
+gcc) on macOS and Linux; `run.py` builds it when needed
+(`tools/run/build.bat`, `build.sh`). Its options are at the top of
 `tools/run/main.c`.
+
+On macOS and Linux the commands are the same with `python3`, `/` and
+`\` for `^` (`gogx.py` then needs the image's path).
 
 ## Layout
 

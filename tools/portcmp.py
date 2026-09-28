@@ -31,7 +31,7 @@ same pass, unless the last such run was at the same checkpoint, at most 1000
 passes before, and the port passed it once a picture since (70.087
 pictures a second): then the time is counted on from there (as is the port's picture for a pass the
 loop was left before: a key let go after it).  The port must be built
-(port/build.bat).
+(port/build.bat, port/build.sh).
 
 --record takes a game played in the port's window (pdd -record FILE: a
 line PICTURE:HEX per keyboard byte) instead of a keys file: a run of the
@@ -57,7 +57,9 @@ ROOT = os.path.normpath(os.path.join(HERE, '..'))
 sys.path.insert(0, HERE)
 from disasm import Hints, game_dir
 
-PORT = os.path.join(ROOT, 'port', 'build', 'pdd-headless.exe')
+EXE = '.exe' if os.name == 'nt' else ''
+PORT = os.path.join(ROOT, 'port', 'build', 'pdd-headless' + EXE)
+BUILD_PORT = r'port\build.bat' if os.name == 'nt' else 'port/build.sh'
 BUILD = os.path.join(ROOT, 'build')
 RATE = 70.087        # pictures a second in the 320x200 mode (the runner's times of 6000 frames of play)
 RECOUNT = 1000       # passes at most that a time is counted on over (RATE is not exact)
@@ -298,7 +300,7 @@ def main():
     ap.add_argument('stops', nargs='+')
     args = ap.parse_args()
     if not os.path.exists(PORT):
-        raise SystemExit('portcmp.py: build the port first (port\\build.bat)')
+        raise SystemExit(f'portcmp.py: build the port first ({BUILD_PORT})')
     os.makedirs(BUILD, exist_ok=True)
     keyfile = os.path.join(BUILD, 'portcmp_keys.txt')
     events = parse_keys(args.keys) if args.keys else []

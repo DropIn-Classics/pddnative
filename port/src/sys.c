@@ -296,7 +296,7 @@ int sys_find(const char *dir, const char *name, char *out, size_t n)
     while (!found && (e = readdir(d)) != NULL) {
         if (sys_stricmp(e->d_name, name) == 0) {
             sys_join(out, n, dir, e->d_name);
-            found = sys_is_file(out);
+            found = sys_is_file(out) || sys_is_dir(out);
         }
     }
     closedir(d);

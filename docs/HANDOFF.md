@@ -12,6 +12,15 @@ translated and matches the original through a whole game on Steel Wheel.
   user pushes, push only when the user asks.
 - AGENTS.md has permanent provenance rules: read them before anything
   else.
+- Also builds and runs on macOS (2026-09-28): `port/build.sh` and
+  `tools/run/build.sh` (cc), the window on SDL2 (`port/src/plat_sdl.c`,
+  SDL2.framework in ~/Library/Frameworks), `python3` with capstone. On the
+  Mac, GOG's image is inside the app: `/Applications/Pinball Dreams
+  Deluxe.app/Contents/Resources/game/Pinball Dreams.app/Contents/Resources/
+  Pinball Dreams.boxer/game.cdmedia/game.gog` (for gogx.py). Checked there:
+  check.py all ok; portcmp equal at idle_loop#3000 and through portplay's
+  Steel Wheel game (seed 1) at each drain and the game over. The window
+  was only started, not played.
 - T1 (DDPCINTR.EXE, by Muse) and T2 (DDPCMAIN.EXE, begun by Muse and
   finished by Sol) are merged, see below. Sol, the second agent now,
   works in `../pddnative-muse` on `sol/*` (older branches `muse/*`); do
