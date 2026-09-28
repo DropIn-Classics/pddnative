@@ -60,9 +60,17 @@ int modplay_loaded(void)
 
 void modplay_render(int16_t *out, int frames)
 {
+    int i;
+
     memset(out, 0, (size_t)frames * 2 * sizeof *out);
-    if (module)
-        micromod_get_audio(out, frames);
+    if (!module)
+        return;
+    micromod_get_audio(out, frames);
+    /* micromod pans the channels hard left and right as the Amiga does;
+     * SBLASTER.SDR plays mono (DSP command 14h, the SB Pro's stereo
+     * mixer not set), so both sides get the mean */
+    for (i = 0; i < frames * 2; i += 2)
+        out[i] = out[i + 1] = (int16_t)((out[i] + out[i + 1]) / 2);
 }
 
 void modplay_set_position(int pos)

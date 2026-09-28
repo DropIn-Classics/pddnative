@@ -15,7 +15,8 @@ int modplay_load(const uint8_t *data, size_t size, long rate);
 void modplay_unload(void);
 int modplay_loaded(void);
 
-/* `frames` stereo 16-bit frames; silence without a module */
+/* `frames` stereo 16-bit frames, both sides the same (mono, as
+ * SBLASTER.SDR); silence without a module */
 void modplay_render(int16_t *out, int frames);
 
 /* row 0 of the order list's position `pos` */
