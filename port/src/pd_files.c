@@ -3,9 +3,9 @@
  *
  * A DOS name is looked up as the program would see it: "C:\DELUXE\X" from
  * the root of the game's folder, a name without a folder in the program's
- * own folder (DREAMS1 or DREAMS2, where it starts; DELUXE for the menu).  Files the program
- * writes go into the save folder (sys_data_dir()/save, the same tree), and
- * a name found there is taken before the game's. */
+ * own folder (DREAMS1 or DREAMS2, where it starts; DELUXE for the menu).
+ * Files the program writes go into the save folder (sys_data_dir()/save,
+ * the same tree), and a name found there is taken before the game's. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
