@@ -17,7 +17,9 @@ translated and matches the original through a whole game on Steel Wheel.
   SDL2.framework in ~/Library/Frameworks), `python3` with capstone. On the
   Mac, GOG's image is inside the app: `/Applications/Pinball Dreams
   Deluxe.app/Contents/Resources/game/Pinball Dreams.app/Contents/Resources/
-  Pinball Dreams.boxer/game.cdmedia/game.gog` (for gogx.py). Checked there:
+  Pinball Dreams.boxer/game.cdmedia/game.gog` (for gogx.py). The hints
+  and docs have CRLF line ends; `xfer.py` writes LF on the Mac (convert
+  back before committing). Checked there:
   check.py all ok; portcmp equal at idle_loop#3000 and through portplay's
   Steel Wheel game (seed 1) at each drain and the game over. The window
   was only started, not played.
@@ -456,7 +458,22 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    portcmp's key times over long spans (re-anchored every 1000 passes).
    Next: that recompare; those handlers (more recordings, portplay
    seeds, or --poke into the state before them); then the sound: the driver's tick is 70.087 a second in the
-   320x200 mode (measured, SBLASTER.SDR); what AL=11h (effects) and
-   AL=13h (`module_callback`) do for the driver is still to be found, and
-   the port's player does not advance in the headless build (XDATA's
-   music_pos differs).
+   320x200 mode (measured, SBLASTER.SDR), and the port's player does not
+   advance in the headless build (XDATA's music_pos differs).
+- The sound effects (2026-09-28; the user heard none on Beat Box, the port
+  had AL=11h empty): SBLASTER.SDR is EXEPACKed (unpacked by hand for
+  reading; the INT 66h dispatcher at 0049h of the unpacked code, DS
+  segment 01E2h). It converts the module's pattern cells at loading to 3
+  bytes (note 1-36 by the place of the period in its table 856..113,
+  sample, effect, parameter) and plays a row through one routine per
+  channel (0E05h). AL=11h builds such a cell and hands it to that routine
+  at once: DL the channel (from 1), BL the note, CL the sample, BH the
+  volume as effect C (0: none). The entries read (the first 19 or 20
+  of each of the eight tables' lists) all use channel 4, mostly note 13
+  (C-2) at volume 64. The port does
+  the same in micromod (`modplay_note`). Checked: the effects are called
+  on Beat Box in play (a trace build) and micromod plays a sample then;
+  portcmp on Beat Box equal at st_play#100, the drain and the next
+  ball. Not checked: heard in the window (the user's test), and how the
+  driver's own mixing of an effect against the module's next row on
+  channel 4 compares with micromod's beyond using the same cell.

@@ -195,10 +195,10 @@ from nothing saved, as portcmp's runs do (an empty `PD_DATA_DIR`):
   tick of the sound driver (70.087 a second in the 320x200 mode, measured
   in tools/run), which the program's `timer_callback` gets.
 - `src/sound.c`, `src/modplay.c`: the INT 66h functions the programs call,
-  on micromod (`third_party/micromod`). Loading a module, playing,
-  positions and the volume work; the effects (AL=11h) and the second
-  callback (AL=13h) wait until the driver's side of them is established
-  for Dreams.
+  on micromod (`third_party/micromod`): loading a module, playing,
+  positions, the volume, the pattern-jump callback (AL=13h) and the
+  effects (AL=11h: a note put into a channel of the module at once), as
+  SBLASTER.SDR does them.
 - `src/platform.h`: window, keys, clock, audio; `plat_win32.c` (the
   Windows SDK alone), `plat_sdl.c` (SDL2: macOS, Linux, the Steam Deck,
   where it starts fullscreen), `plat_null.c` (headless).

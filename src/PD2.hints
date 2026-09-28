@@ -1520,7 +1520,7 @@ comment XDATA:03A6 per table a list of module positions, by jingle_request (nega
 name XDATA:03AE main_tunes
 comment XDATA:03AE per table + 2 the position of the main tune (play_tune)
 name XDATA:03BA effect_lists
-comment XDATA:03BA per table a list of sound effects by sound_request, 4 bytes each: BL, BH, CL, DL of INT 66h AL=11h
+comment XDATA:03BA per table a list of sound effects by sound_request, 4 bytes each: BL, BH, CL, DL of INT 66h AL=11h (SBLASTER.SDR: a note put at once into channel DL of the module, BL the note 1-36 from C-1, CL the sample, BH the volume; the entries read, the first 19 or 20 of each table in PD.EXE and PD2.EXE, all use channel 4)
 name XDATA:03CA deluxe_dir
 comment XDATA:03CA "\deluxe", where load_sound_driver finds SOUND.CFG and the drivers
 name TDATA:1900 display_dots

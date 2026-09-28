@@ -27,8 +27,11 @@ int snd_position(int bx);
  * AL it returns (SBLASTER.SDR; not called while a jump is pending) */
 void snd_jump_callback(int (*callback)(int target));
 /* AL=11h: a sound effect with BL, BH, CL, DL from the table's effect
- * list.  Not implemented yet: what the four bytes mean has to be found
- * from the driver. */
+ * list, a note put at once into a channel of the module (SBLASTER.SDR):
+ * DL the channel (from 1), BL the note (1-36, the driver's periods 856 to
+ * 113), CL the sample (from 1), BH the volume (as effect C; 0: the
+ * sample's own).  The module's next row on that channel follows as
+ * usual. */
 void snd_effect(int bl, int bh, int cl, int dl);
 
 #endif

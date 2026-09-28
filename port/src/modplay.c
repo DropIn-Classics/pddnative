@@ -95,6 +95,20 @@ void modplay_set_jump_hook(int (*hook)(int pos))
     jump_hook = hook ? call_hook : NULL;
 }
 
+void modplay_note(int chan, int period, int instrument, int effect, int param)
+{
+    struct note *note;
+
+    if (!module || chan < 0 || chan >= num_channels)
+        return;
+    note = &channels[chan].note;
+    note->key = (unsigned short)period;
+    note->instrument = (unsigned char)instrument;
+    note->effect = (unsigned char)effect;
+    note->param = (unsigned char)param;
+    channel_row(&channels[chan]);
+}
+
 void modplay_set_gain(int value)
 {
     micromod_set_gain(value);

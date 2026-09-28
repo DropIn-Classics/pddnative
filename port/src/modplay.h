@@ -31,6 +31,11 @@ int modplay_jump(int pos);
  * own jumps */
 void modplay_set_jump_hook(int (*hook)(int pos));
 
+/* a pattern cell played at once in channel `chan` (from 0): the period
+ * (0: none), instrument (1-31, 0: none), effect and parameter as in a MOD
+ * row; the module's next row on that channel follows as usual */
+void modplay_note(int chan, int period, int instrument, int effect, int param);
+
 /* 0-64; 64 is the loudest a 4-channel module plays without clipping */
 void modplay_set_gain(int value);
 

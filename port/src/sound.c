@@ -87,10 +87,20 @@ void snd_jump_callback(int (*callback)(int target))
     plat_audio_unlock();
 }
 
+/* the ProTracker periods of the notes C-1 to B-3, which SBLASTER.SDR
+ * numbers 1-36 (in the pattern cells it converts at loading and in
+ * AL=11h's BL) */
+static const short periods[36] = {
+    856, 808, 762, 720, 678, 640, 604, 570, 538, 508, 480, 453,
+    428, 404, 381, 360, 339, 320, 302, 285, 269, 254, 240, 226,
+    214, 202, 190, 180, 170, 160, 151, 143, 135, 127, 120, 113
+};
+
 void snd_effect(int bl, int bh, int cl, int dl)
 {
-    (void)bl;
-    (void)bh;
-    (void)cl;
-    (void)dl;
+    int period = bl >= 1 && bl <= 36 ? periods[bl - 1] : 0;
+
+    plat_audio_lock();
+    modplay_note(dl - 1, period, cl & 0x1F, bh ? 0xC : 0, bh);
+    plat_audio_unlock();
 }
