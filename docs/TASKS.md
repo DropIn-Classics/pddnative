@@ -491,8 +491,8 @@ into the port's memory model beside the table programs, its names from
 `src/DDPCMAIN.hints` through `tools/portmap.py`, the menu loop (Mode X,
 SELECT.VGA, the mouse, F1-F8, the high scores shown), F1-F8 running the
 table in the same process and coming back to the menu with the high
-scores read again (`menu_init`). Unless the quality of life fixes are on
-(`launcher_qol`): the intro's animations at the menu's start
+scores read again (`menu_init`). Unless the quality of life fix "skip
+animation" is on (`launcher_skip_animation`): the intro's animations at the menu's start
 (`fli_play` with SPIN21ST, INTRO_P1, INTRO_P2, INTRO_P3, as DDFLIPLY
 plays for `0`) and the table's before it (`fli_before_table`, T14). F9
 (the history viewer) and F10 (the options screen) later. Checked against
@@ -505,6 +505,8 @@ all, but a launcher option "quality of life fixes" turns them off, and
 takes out the waits between a lost ball and the next one, at the game's
 start and at the bonus ("several seconds where not even sound plays").
 Done on master; notes in docs/tasks/T14.md, the details in port/README.md
-(the setup screen). Waiting for a try in the window.
+(the setup screen). The fixes each on their own on a page of the
+launcher (the user, 2026-09-28): skip animation, quick next ball, quick
+bonus. Waiting for a try in the window.
 
 

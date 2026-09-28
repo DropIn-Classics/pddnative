@@ -71,16 +71,16 @@ int bonus_count_step(void)
 }
 
 /* the bonus times the multiplier ("bonus x n", 30 frames a step), then
- * counted into the score digit by digit (pd_qol: 20 frames a step, the
- * count twice as fast, the holds before and after it shorter) */
+ * counted into the score digit by digit (QOL_BONUS: 20 frames a step,
+ * the count twice as fast, the holds before and after it shorter) */
 static void count_bonus(void)
 {
     uint16_t bx = rw(V(player_rec)), cx, di = V(txt_bonus_x);
     uint8_t dl = 1;
 
-    ww(V(wait_count), (uint16_t)qol_frames(0x46, 0x1E));
+    ww(V(wait_count), (uint16_t)qol_frames(QOL_BONUS, 0x46, 0x1E));
     ww(V(bonus_digits), 0x0F);
-    ww(V(bonus_count_period), (uint16_t)qol_frames(4, 2));
+    ww(V(bonus_count_period), (uint16_t)qol_frames(QOL_BONUS, 4, 2));
     copy_words(V(bonus_step), V(bonus_unit), 4);
     copy_words(V(bonus_left), (uint16_t)(bx + 8), 4);
     wb((uint16_t)(di + 8), '0');
@@ -94,7 +94,7 @@ static void count_bonus(void)
             dl = bcd_adc(dl, 1, &cf);
             show_bonus();
             lights_frame();
-            wait_frames(qol_frames(0x1E, 0x14));
+            wait_frames(qol_frames(QOL_BONUS, 0x1E, 0x14));
             if (!cx)
                 break;
             wb((uint16_t)(di + 8), (uint8_t)((dl >> 4) + '0'));
@@ -112,9 +112,9 @@ static void count_bonus(void)
         show_bonus_count();
         lights_frame();
     } while (!bonus_count_step());
-    wait_frames(qol_frames(0x1E, 0x0F));
+    wait_frames(qol_frames(QOL_BONUS, 0x1E, 0x0F));
     show_bonus_count();
-    wait_frames(qol_frames(0x1E, 0x0F));
+    wait_frames(qol_frames(QOL_BONUS, 0x1E, 0x0F));
 }
 
 /* booster_value (6 bytes BCD) added at player record +4 (see the hints:
@@ -178,17 +178,18 @@ static void count_boosters(void)
         wb((uint16_t)(V(boosters) + 1),
            bcd_sbb(rb((uint16_t)(V(boosters) + 1)), rb((uint16_t)(V(booster_step) + 1)), &cf));
     }
-    wait_frames(qol_frames(0x23, 0x0A));
+    wait_frames(qol_frames(QOL_BONUS, 0x23, 0x0A));
     next_player();
 }
 
-/* "ball lost" for 46h double frames (pd_qol: 23h), then (unless tilted)
- * the bonus, the held bonus again, the boosters; then the next player */
+/* "ball lost" for 46h double frames (QOL_NEXT_BALL: 23h), then (unless
+ * tilted) the bonus, the held bonus again, the boosters; then the next
+ * player */
 static void ball_lost_count(void)
 {
     ww(V(nudge_push), 0);
     lights_off_player();
-    ww(V(wait_count), (uint16_t)qol_frames(0x46, 0x23));
+    ww(V(wait_count), (uint16_t)qol_frames(QOL_NEXT_BALL, 0x46, 0x23));
     wb(V(flippers_off), 0xFF);
     wb(V(ball_held), 0xFF);
     show_text(rw(V(td_txt_ball_lost)));
@@ -204,11 +205,11 @@ static void ball_lost_count(void)
     for (;;) {
         count_bonus();
         show_bonus_count();
-        wait_frames(qol_frames(0x14, 0));
+        wait_frames(qol_frames(QOL_BONUS, 0x14, 0));
         if (!rb(V(bonus_held)))
             break;
         show_text(V(txt_bonus_held));
-        wait_frames(qol_frames(0x46, 0x28));
+        wait_frames(qol_frames(QOL_BONUS, 0x46, 0x28));
         wb(V(bonus_held), 0);
         copy_words((uint16_t)(rw(V(player_rec)) + 8), V(bonus_saved), 4);
     }
@@ -257,7 +258,7 @@ static void release_locked_ball(void)
 }
 
 /* state 6: the ball is lost: 17 more frames of the table scrolling down
- * after it, 19h frames of silence (none with pd_qol), then a locked
+ * after it, 19h frames of silence (none with QOL_NEXT_BALL), then a locked
  * ball back into play, or the bonus and the next player */
 void st_ball_lost(void)
 {
@@ -273,7 +274,7 @@ void st_ball_lost(void)
         scroll_step();
     }
     copy_words(V(bonus_saved), (uint16_t)(rw(V(player_rec)) + 8), 4);
-    wait_frames(qol_frames(0x19, 0));
+    wait_frames(qol_frames(QOL_NEXT_BALL, 0x19, 0));
     wb(V(jingle_request), 7);
     if (!rb(V(tilted)) && rb(V(ball_locked)))
         release_locked_ball();

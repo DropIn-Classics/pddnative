@@ -5,6 +5,7 @@
 #include "gog.h"
 #include "hud.h"
 #include "launcher.h"
+#include "pd.h"
 #include "platform.h"
 #include "sound.h"
 #include "sys.h"
@@ -17,8 +18,8 @@ static struct {
     int bass, treble, oomph, headphone; /* audiofx.h's */
     int fullscreen;                     /* -1: as the platform starts (the Steam Deck: full) */
     int table;                          /* the last table started, 0-7 (F1-F8) */
-    int qol;                            /* the quality of life fixes (pd_qol, no animations) */
-} cfg = { HUD_VOLUME_MAX, 1, 0, 0, 0, 0, -1, 0, 1 };
+    int skip_animation, quick_ball, quick_bonus;   /* the quality of life fixes */
+} cfg = { HUD_VOLUME_MAX, 1, 0, 0, 0, 0, -1, 0, 1, 1, 1 };
 
 static const struct {
     const char *name;
@@ -32,7 +33,9 @@ static const struct {
     { "headphone", &cfg.headphone, 0, 1 },
     { "fullscreen", &cfg.fullscreen, 0, 1 },
     { "table", &cfg.table, 0, 7 },
-    { "qol", &cfg.qol, 0, 1 },
+    { "skipanimation", &cfg.skip_animation, 0, 1 },
+    { "quickball", &cfg.quick_ball, 0, 1 },
+    { "quickbonus", &cfg.quick_bonus, 0, 1 },
 };
 #define NCFG (int)(sizeof cfg_keys / sizeof cfg_keys[0])
 
@@ -80,7 +83,12 @@ void launcher_set_fx(int bass, int treble, int oomph, int headphone)
 
 int launcher_qol(void)
 {
-    return cfg.qol;
+    return (cfg.quick_ball ? QOL_NEXT_BALL : 0) | (cfg.quick_bonus ? QOL_BONUS : 0);
+}
+
+int launcher_skip_animation(void)
+{
+    return cfg.skip_animation;
 }
 
 void launcher_save_settings(void)
@@ -253,10 +261,11 @@ enum {
     I_TABLE, I_TABLE_LAST = I_TABLE + 7,
     I_BALLS, I_MUSIC, I_COLOURS, I_ANGLE, I_SCREEN,
     I_KEY, I_KEY_LAST = I_KEY + 3, I_DEFAULTS, I_BACK,
-    I_VOLUME, I_SHAPING, I_BASS, I_TREBLE, I_OOMPH, I_HEADPHONE, I_FULLSCREEN, I_QOL
+    I_VOLUME, I_SHAPING, I_BASS, I_TREBLE, I_OOMPH, I_HEADPHONE, I_FULLSCREEN,
+    I_QOL, I_SKIP_ANIMATION, I_QUICK_BALL, I_QUICK_BONUS
 };
 enum { K_GAP, K_HEADING, K_ITEM, K_CHOICE };
-enum { P_MAIN, P_TABLES, P_OPTIONS, P_SOUND };
+enum { P_MAIN, P_TABLES, P_OPTIONS, P_SOUND, P_QOL };
 
 typedef struct {
     int kind, id;
@@ -269,7 +278,7 @@ static const Item main_items[] = {
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_OPTIONS, "Game options", "Balls, music, colours, angle, screen, keys: the menu's F10 options." },
     { K_ITEM, I_SOUND, "Sound and window", "The volume, the sound's shaping, full screen." },
-    { K_CHOICE, I_QOL, "Quality of life fixes", "On: no animation before a table; shorter waits between balls, at the bonus." },
+    { K_ITEM, I_QOL, "Quality of life fixes", "Each on its own: no animation, a quicker next ball, a quicker bonus." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_QUIT, "Quit", "Back to the system." },
 };
@@ -318,6 +327,14 @@ static const Item sound_items[] = {
     { K_ITEM, I_BACK, "Back", NULL },
 };
 
+static const Item qol_items[] = {
+    { K_CHOICE, I_SKIP_ANIMATION, "Skip animation", "On: none before a table; off: the table's, as the menu plays it." },
+    { K_CHOICE, I_QUICK_BALL, "Quick next ball", "On: before a ball only until the jingle ends; \"ball lost\" shorter." },
+    { K_CHOICE, I_QUICK_BONUS, "Quick bonus", "On: the bonus counted twice as fast, shorter holds around it." },
+    { K_GAP, 0, NULL, NULL },
+    { K_ITEM, I_BACK, "Back", NULL },
+};
+
 typedef struct {
     const char *title;
     const Item *items;
@@ -331,6 +348,7 @@ static Page pages[] = {
     { "Play a table", ITEMS(table_items), 48, P_MAIN, 1 },
     { "Game options", ITEMS(option_items), 60, P_MAIN, 0 },
     { "Sound and window", ITEMS(sound_items), 60, P_MAIN, 0 },
+    { "Quality of life fixes", ITEMS(qol_items), 60, P_MAIN, 0 },
 };
 static int page;
 
@@ -412,7 +430,9 @@ static void value_text(int id, char *out, size_t n)
     case I_OOMPH:      db(out, n, cfg.oomph); break;
     case I_HEADPHONE:  snprintf(out, n, "%s", cfg.headphone ? "On" : "Off"); break;
     case I_FULLSCREEN: snprintf(out, n, "%s", plat_fullscreen() ? "On" : "Off"); break;
-    case I_QOL:        snprintf(out, n, "%s", cfg.qol ? "On" : "Off"); break;
+    case I_SKIP_ANIMATION: snprintf(out, n, "%s", cfg.skip_animation ? "On" : "Off"); break;
+    case I_QUICK_BALL:     snprintf(out, n, "%s", cfg.quick_ball ? "On" : "Off"); break;
+    case I_QUICK_BONUS:    snprintf(out, n, "%s", cfg.quick_bonus ? "On" : "Off"); break;
     default:
         if (id >= I_KEY && id <= I_KEY_LAST)
             snprintf(out, n, "%s", key_name(key_code(id - I_KEY)));
@@ -451,7 +471,9 @@ static void change(int id, int dir, int wrap)
     case I_OOMPH:      cfg.oomph = step(cfg.oomph, dir, 0, 12, wrap); apply_fx(); break;
     case I_HEADPHONE:  cfg.headphone = !cfg.headphone; apply_fx(); break;
     case I_FULLSCREEN: plat_set_fullscreen(!plat_fullscreen()); break;
-    case I_QOL:        cfg.qol = !cfg.qol; break;
+    case I_SKIP_ANIMATION: cfg.skip_animation = !cfg.skip_animation; break;
+    case I_QUICK_BALL:     cfg.quick_ball = !cfg.quick_ball; break;
+    case I_QUICK_BONUS:    cfg.quick_bonus = !cfg.quick_bonus; break;
     default:
         return;
     }
@@ -491,6 +513,7 @@ static int activate(int *prog, int *table)
         break;
     case I_OPTIONS: go(P_OPTIONS); break;
     case I_SOUND:   go(P_SOUND); break;
+    case I_QOL:     go(P_QOL); break;
     case I_QUIT:    return QUIT;
     case I_BACK:    go(pages[page].parent); break;
     case I_DEFAULTS:

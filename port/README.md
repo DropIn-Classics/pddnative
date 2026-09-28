@@ -171,8 +171,8 @@ start a table from the first two pages.
   game's own quit: Esc, then Y) comes back to the setup screen; the
   program is loaded anew for each table (`mem_load`, `pd_run`).
 - Play from the menu: greyed out until the menu is translated (T13;
-  then the intro's animations before it, unless the quality of life fixes
-  are on).
+  then the intro's animations before it, unless the animation is
+  skipped).
 - Game options: what the menu's F10 screen sets, with its ranges (its hit
   boxes at DDPCMAIN's OPTIONS:0009): balls (3 or 5), music (the tunes and
   jingles, or the main tune only), colours (colour or grey), table angle
@@ -189,28 +189,31 @@ start a table from the first two pages.
   last table started; what the sound keys and Alt+Enter change in the
   game is written there when the table ends. `-fx` is kept like a setting
   made on the screen.
-- Quality of life fixes (on by default; `qol` in `pdd.cfg`). Off: before
-  a table its animation, as the menu has DDFLIPLY.EXE play it
-  (`src/fli.c`: the DELUXE folder's .FLI files, DDFLIPLY's timing, a key
-  ends it; then the last picture held 46h frames and faded out in 32, as
-  the menu does), and the table as the original runs it. On: no
-  animation, and the table waits less where the original holds the game
-  still (`pd_qol`, pd.h): before the next ball only until the jingle
-  playing has ended (the pattern jump that ends it; at most the original's
-  69h and B4h frames), no 19h silent frames before the ball-lost jingle,
-  "ball lost" 23h double frames instead of 46h, the bonus shown 1Eh
-  frames before it is counted instead of 46h, counted a step every 2
-  frames instead of 4, the multiplier's steps 14h frames instead of 1Eh,
-  held 0Fh + 0Fh after the count instead of 1Eh + 1Eh (and the 14h after
-  it left out), "bonus held" 28h instead of 46h, 0Ah after the boosters
+- Quality of life fixes, a page of three, each on its own and on by
+  default (`skipanimation`, `quickball`, `quickbonus` in `pdd.cfg`); off,
+  the game as the original has it. Skip animation: off, before a table
+  its animation, as the menu has DDFLIPLY.EXE play it (`src/fli.c`: the
+  DELUXE folder's .FLI files, DDFLIPLY's timing, a key ends it; then the
+  last picture held 46h frames and faded out in 32, as the menu does).
+  The other two make the table wait less where the original holds the
+  game still (`pd_qol`, pd.h). Quick next ball (`QOL_NEXT_BALL`): before
+  the next ball only until the jingle playing has ended (the pattern jump
+  that ends it; at most the original's 69h and B4h frames), no 19h silent
+  frames before the ball-lost jingle, "ball lost" 23h double frames
+  instead of 46h. Quick bonus (`QOL_BONUS`): the bonus shown 1Eh frames
+  before it is counted instead of 46h, counted a step every 2 frames
+  instead of 4, the multiplier's steps 14h frames instead of 1Eh, held
+  0Fh + 0Fh after the count instead of 1Eh + 1Eh (and the 14h after it
+  left out), "bonus held" 28h instead of 46h, 0Ah after the boosters
   instead of 23h; the countdown in play (`countdown`) the same. Measured
   with an audio capture of the headless build (one ball drained without
   the flippers on each of the eight tables): from the ball lost to the
   next ball in the lane 717-765 pictures before, 371-517 with the fixes,
   of which silent 259-407 before, 19-85 with them; from F1 to the ball
-  429 pictures before, 259-384 with them. With `-prog`/`-table` the table
-  runs as the original's unless `-qol` is given; a game played with the
-  fixes does not replay in the original (`-record`).
+  429 pictures before, 259-384 with them (both engine fixes on; measured
+  while AL=10h's jump still waited for the row's end). With `-prog`/`-table` the table runs as the
+  original's unless `-qol` is given (both engine fixes); a game played
+  with them does not replay in the original (`-record`).
 
 When no game files are found (no `-game`, no `PDD_GAME`, no folder `game`
 with a DREAMS1 in it beside the program, in the current directory or in
@@ -308,8 +311,8 @@ from nothing saved, as portcmp's runs do (an empty `PD_DATA_DIR`):
   with their box; the headless build has no output, so neither touches
   what is compared with the original.
 - `src/fli.c`: the FLI animations as DDFLIPLY.EXE plays them (fli.h),
-  shown by the window build before a table when the quality of life
-  fixes are off; the engine's `pd_qol` for them on (pd.h).
+  shown by the window build before a table unless the quality of life
+  fix "skip animation" is on; the engine's fixes are `pd_qol` (pd.h).
 - `src/platform.h`: window, keys, clock, audio; `plat_win32.c` (the
   Windows SDK alone), `plat_sdl.c` (SDL2: macOS, Linux, the Steam Deck,
   where it starts fullscreen), `plat_null.c` (headless).

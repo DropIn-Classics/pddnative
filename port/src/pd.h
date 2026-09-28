@@ -44,14 +44,17 @@ int pd_run(int table, const char *game_dir, char *err, size_t n);
 
 extern const char *pd_game_dir;
 
-/* The launcher's "quality of life fixes" (main.c sets it before pd_run):
- * the game waits less where the original holds it still between balls
- * and at the bonus count, and not after a jingle has ended.  0 in the
- * headless build and with -prog/-table, so what is compared with the
- * original is unchanged. */
+/* The launcher's "quality of life fixes" for the engine, a bit each
+ * (main.c sets them before pd_run).  QOL_NEXT_BALL: the game waits less
+ * where the original holds it still before a ball (at the game's start,
+ * after a ball lost), and not after a jingle has ended; QOL_BONUS: the
+ * bonus counted faster, with shorter holds around it.  0 in the headless
+ * build and with -prog/-table, so what is compared with the original is
+ * unchanged. */
+enum { QOL_NEXT_BALL = 1, QOL_BONUS = 2 };
 extern int pd_qol;
-/* `original` frames, or `shorter` with pd_qol */
-int qol_frames(int original, int shorter);
+/* `original` frames, or `shorter` with the fix `fix` on */
+int qol_frames(int fix, int original, int shorter);
 
 /* ---- code addresses: routines stored in the program's data (the state
  * table, frame_callback, the event objects' handlers) */

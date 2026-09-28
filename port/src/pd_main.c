@@ -11,9 +11,9 @@
 const char *pd_game_dir;
 int pd_qol;
 
-int qol_frames(int original, int shorter)
+int qol_frames(int fix, int original, int shorter)
 {
-    return pd_qol ? shorter : original;
+    return pd_qol & fix ? shorter : original;
 }
 
 static jmp_buf exit_jmp;

@@ -35,7 +35,8 @@ translated and matches the original through a whole game on Steel Wheel.
   controllers; the FLIs played unless the launcher's "quality of life
   fixes" are on) is in docs/TASKS.md; T11 (the launcher, done by
   Claude, docs/tasks/T11.md: not yet tried in the window), T14 (the FLI
-  player `port/src/fli.c` and the quality of life fixes, `pd_qol`:
+  player `port/src/fli.c` and the quality of life fixes, a page of
+  three switches in the launcher, `pd_qol`'s bits for the engine:
   docs/tasks/T14.md, port/README.md) and T13 (the menu) for Claude. Sol's branches are on the Windows machine: the user pushes one to
   `origin` for a review from the Mac. When the user says
   "Review Tn", follow CLAUDE.md (review steps) and AGENTS.md (who writes

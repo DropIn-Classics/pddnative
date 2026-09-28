@@ -16,8 +16,9 @@
  * line digit did: with either, that table runs once, without the setup
  * screen (as the headless build always does), and as the original runs
  * it unless -qol gives it the quality of life fixes (pd.h: pd_qol).  From
- * the setup screen its setting decides: on, the fixes; off, the table's
- * animation before it as the menu plays it (fli.h).  -record writes each byte of
+ * the setup screen its settings decide: the engine's fixes each, and
+ * unless the animation is skipped, the table's animation before it as the
+ * menu plays it (fli.h).  -record writes each byte of
  * the keyboard as the program gets it, with the number of the picture
  * (PICTURE:HEX, a line each): a game played in the window replays in the
  * headless build (PD_KEYS) and, through tools/portcmp.py --record, in the
@@ -103,7 +104,7 @@ static int with_launcher(const char *game)
     while (launcher_run(game, &prog, &table, err)) {
         err[0] = 0;
         pd_qol = launcher_qol();
-        if (!pd_qol && !fli_before_table(game, 4 * (prog - 1) + table))
+        if (!launcher_skip_animation() && !fli_before_table(game, 4 * (prog - 1) + table))
             break;                      /* the window was closed */
         if (mem_load(prog, game, err, sizeof err) != 0)
             continue;
@@ -137,7 +138,7 @@ int main(int argc, char **argv)
             table = atoi(argv[++i]) & 3;
             direct = 1;
         } else if (!strcmp(argv[i], "-qol"))
-            pd_qol = 1;
+            pd_qol = QOL_NEXT_BALL | QOL_BONUS;
         else if (!strcmp(argv[i], "-record") && i + 1 < argc)
             frame_record(argv[++i]);
         else if (!strcmp(argv[i], "-fx") && i + 1 < argc) {

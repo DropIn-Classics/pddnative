@@ -18,9 +18,12 @@ void launcher_load_settings(void);
 /* the shaping as -fx gives it, kept like one set in the launcher */
 void launcher_set_fx(int bass, int treble, int oomph, int headphone);
 
-/* the setting "quality of life fixes": 1 for the shorter waits (pd_qol)
- * and no animation before a table */
+/* the quality of life fixes set for the engine: pd_qol's bits (pd.h) */
 int launcher_qol(void);
+
+/* the quality of life fix "skip animation": 1 for none before a
+ * table (fli.h) */
+int launcher_skip_animation(void);
 
 /* pdd.cfg written, with what the sound keys and Alt+Enter left */
 void launcher_save_settings(void);

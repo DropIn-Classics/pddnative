@@ -227,13 +227,13 @@ int nightmare_switch(uint16_t di)
 }
 
 /* the bonus counted into the score now (td_txt_countdown), then waits
- * (pd_qol: counted twice as fast, shorter waits) */
+ * (QOL_BONUS: counted twice as fast, shorter waits) */
 int countdown(uint16_t di)
 {
     (void)di;
-    ww(V(wait_count), (uint16_t)qol_frames(0x46, 0x1E));
+    ww(V(wait_count), (uint16_t)qol_frames(QOL_BONUS, 0x46, 0x1E));
     ww(V(bonus_digits), 0x0F);
-    ww(V(bonus_count_period), (uint16_t)qol_frames(4, 2));
+    ww(V(bonus_count_period), (uint16_t)qol_frames(QOL_BONUS, 4, 2));
     copy_words(V(bonus_step), V(bonus_unit), 4);
     copy_words(V(bonus_left), (uint16_t)(rw(V(player_rec)) + 8), 4);
     show_text(rw(V(td_txt_countdown)));
@@ -242,9 +242,9 @@ int countdown(uint16_t di)
         show_bonus_count();
         lights_frame();
     } while (!bonus_count_step());
-    wait_frames(qol_frames(0x1E, 0x0F));
+    wait_frames(qol_frames(QOL_BONUS, 0x1E, 0x0F));
     show_bonus_count();
-    wait_frames(qol_frames(0x28, 0x0F));
+    wait_frames(qol_frames(QOL_BONUS, 0x28, 0x0F));
     return 1;
 }
 
