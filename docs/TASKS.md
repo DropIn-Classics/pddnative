@@ -16,7 +16,8 @@ task's branch (see AGENTS.md).
 | T5 | Sol | done | tools/pdfiles.py: the table programs' data files (collision maps, high scores, options) |
 | T7 | Sol | done | tools/ddfiles.py: the history viewer's files (HISTORY/*.HOP, *.IDX, HISTORY.FNT, the pictures) |
 | T8 | Sol | done | tools/gfxfiles.py: the pictures and sprites (DELUXE/*.VGA, the .SPR files, TABLE2M) with their real palettes |
-| T9 | Sol | open | tools/flifiles.py: the FLI animations (DELUXE/*.FLI) and which one DDFLIPLY.EXE plays for which argument |
+| T9 | Sol | done | tools/flifiles.py: the FLI animations (DELUXE/*.FLI) and which one DDFLIPLY.EXE plays for which argument |
+| T10 | Sol | open | tools/sdrfiles.py: the sound drivers (DELUXE/*.SDR): unpacked, their INT 66h functions, SOUND.CFG |
 
 ## T1: DDPCINTR.EXE, stage 1 with names
 
@@ -357,3 +358,43 @@ of one intro FLI look right as PNGs (describe them in the notes, do not
 commit them); `tools/check.py` says `all ok`; the notes say which
 statements were checked by running (`tools/run`, if at all) and which
 were only read.
+
+## T10: tools/sdrfiles.py, the sound drivers (Sol)
+
+The ten `DELUXE/*.SDR` files are the INT 66h sound drivers (Frontline
+Design); SETSOUND.EXE writes `SOUND.CFG`, which names the one PD.EXE,
+PD2.EXE and DDPCMAIN load by EXEC (`load_sound_driver` in
+`src/PD.hints`, CODE:4F50). SBLASTER.SDR is EXEPACKed, its INT 66h
+dispatcher at 0049h of the unpacked code (docs/HANDOFF.md, the sound
+effects). The functions used so far: AL=0Bh (tick callback), 10h, 11h
+(an effect: DL channel, BL note, CL sample, BH volume), 13h (pattern-jump
+callback); the table programs' calls are in `src/PD.hints` near
+`; ---- sound`.
+
+Files: `tools/sdrfiles.py` (new), `docs/tasks/T10.md`. Branch
+`sol/T10-sdr`.
+
+Steps:
+
+1. `sdrfiles.py FILE`: the EXE header, whether it is EXEPACKed, and the
+   unpacked load image (EXEPACK is documented; write the unpacker from
+   its description). Check the unpacked image of SBLASTER.SDR against
+   the driver's memory in the original after its EXEC (`tools/run`
+   running PD.EXE with SBLASTER named in SOUND.CFG; say how you did it).
+2. Per driver: how it installs itself (INT 66h vector, staying resident)
+   and its dispatcher: each AL value it accepts, the routine it jumps to,
+   and what the routine takes and returns, as far as the code shows.
+   One table per driver or one table with a column per driver, whichever
+   reads better; say where drivers differ.
+3. Which of these functions PD.EXE, PD2.EXE, DDPCMAIN.EXE and
+   DDPCINTR.EXE call, with the address of each call (from their hints and
+   `build/*.ASM`).
+4. SOUND.CFG: its format, from SETSOUND.EXE's writing and the programs'
+   reading (the fields, which the programs read, which they ignore).
+
+Done when: all ten drivers unpack (or are said to be unpacked already)
+and the tool prints their dispatcher's functions; SBLASTER's unpacked
+image is checked against the running original; the notes hold the
+function table, the callers list and SOUND.CFG's format, each statement
+marked as read from the code or checked by running; nothing of the
+drivers' bytes is committed; `tools/check.py` says `all ok`.

@@ -28,8 +28,9 @@ translated and matches the original through a whole game on Steel Wheel.
   works in `../pddnative-muse` on `sol/*` (older branches `muse/*`); do
   not touch that checkout. T5 (`tools/pdfiles.py`), T7 (`tools/ddfiles.py`)
   and T8 (`tools/gfxfiles.py`, the pictures and sprites with their real
-  palettes; docs/tasks/T8.md) are merged; T9 (the FLI files) is open for
-  Sol. Sol's branches are on the Windows machine: the user pushes one to
+  palettes; docs/tasks/T8.md) and T9 (`tools/flifiles.py`, the FLI
+  animations and DDFLIPLY; docs/tasks/T9.md) are merged; T10 (the sound
+  drivers) is open for Sol. Sol's branches are on the Windows machine: the user pushes one to
   `origin` for a review from the Mac. When the user says
   "Review Tn", follow CLAUDE.md (review steps) and AGENTS.md (who writes
   what where).
@@ -55,7 +56,8 @@ translated and matches the original through a whole game on Steel Wheel.
 |---|---|
 | `DELUXE/DDPCMAIN.EXE` | menu (F1-F8 tables, F9 history, F10 options), the "History of Pinball" viewer (640x480 pictures, texts in 5 languages), mouse |
 | `DELUXE/DDPCINTR.EXE` | intro; CodeView (NB08) debug information appended |
-| `DELUXE/DDFLIPLY.EXE` | FLI player (Borland C++ 1991), plays the `*.FLI` per table |
+| `DELUXE/DDFLIPLY.EXE` | FLI player (Borland C++ 1991): `0` the intro FLIs, `1`-`8` the table's FLI (see "DDPCMAIN.EXE") |
+| `DELUXE/*.FLI` | Autodesk FLI, 320x200: a BRUN frame, then LC frames, one palette, a ring frame (T9, `tools/flifiles.py`) |
 | `DREAMS1/PD.EXE` | the four tables of Pinball Dreams (Ignition, Steel Wheel, Beat Box, Nightmare), Spidersoft's PC version |
 | `DREAMS2/PD2.EXE` | Spidersoft's own four (Neptune, Safari, Stall Turn, and a fourth: REVENGE.FLI, files `.MNG`) |
 | `*/TABLE2M.xxx` | a table's picture: 320x512, 8 bits a pixel, raw |
@@ -290,6 +292,19 @@ designer, the filters), STACK. From the code, not run:
   `..\DREAMS1` and EXEC PD.EXE for F1-F4, `..\DREAMS2` and PD2.EXE for
   F5-F8, with a command tail of one digit `0`-`3` (the table), then
   CHDIR `..\deluxe`. So the table programs' digit is the table.
+- DDFLIPLY.EXE (T9, docs/tasks/T9.md; read, not run): the first
+  non-space character of the command tail minus `0`; 1-8 play IGNITION,
+  STEELWHL, BEATBOX, NIGHTMRE, NEPTUNE, SAFARI, REVENGE, STALLTRN (table
+  at 01F5:00F7), 0 plays SPIN21ST, INTRO_P1, INTRO_P2, INTRO_P3 in turn
+  (01F5:013B). A frame waits the header's speed x 41h units of a clock
+  of 256 units per BIOS tick (4661 a second): 13.9 ms a jiffy, not 14.3,
+  so speed 3 is 41.8 ms (24 pictures a second). The ring frame is not
+  shown. A key ends the playback (the callback 01F0:0003 polls kbhit,
+  0000:1266, while it waits); the key is not read, so with `0` the
+  remaining intro files end at once too, and the buffer is emptied
+  before the exit (0188:00A7). With no argument (or a character below
+  `0`) BL keeps the low byte of the PSP segment: 0 or 80h-FFh plays the
+  intro, others a table entry or beyond the table.
 - F10: the options screen; `save_options` writes the 13-byte
   `C:\DELUXE\DDPCOPTN.BIN` (four choice bytes, four key words, one
   resolution byte) when options are saved, not before every EXEC.
@@ -411,14 +426,15 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
 ## Next
 
 1. The menu program DDPCMAIN the same way (T2, Sol); DDPCINTR is done
-   (T1). The FLI player needs no disassembly (FLI is documented).
+   (T1). DDFLIPLY is read where needed (T9), not disassembled.
 2. Understanding, into the hints: PD.EXE's engine is done (T4, "Not
    understood" above lists what is left); the collision maps, HISCORES.PD*
    and DDPCOPTN.BIN are described (T5, `tools/pdfiles.py`), the history
    viewer's files (T7, `tools/ddfiles.py`), the DELUXE .VGA pictures, the
    .SPR files and TABLE2M with the palettes the programs set (T8,
    `tools/gfxfiles.py`; PD2's `set_palette` is not PD's, see
-   docs/tasks/T8.md); the .FLI files are T9. The table data is still DB lines apart from the handler words: a
+   docs/tasks/T8.md), the .FLI files and DDFLIPLY (T9,
+   `tools/flifiles.py`). The table data is still DB lines apart from the handler words: a
    `struct`/`dw` hint kind will be needed before data can move.
 3. The runner (done, T3) for comparing the C port with the original
    frame by frame will want savestates (start both at the same moment)
