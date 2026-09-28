@@ -137,7 +137,7 @@ static void tell_pad_keys(void)
 
     for (k = 0; k < 4; k++) {
         uint16_t w = rw((uint16_t)(V(key_lflipper) + 2 * k));
-        for (bit = 0; bit < 8 && (w >> 8) != 1u << bit; bit++)
+        for (bit = 0; bit < 8 && (w >> 8) != 1 << bit; bit++)
             ;
         if (bit == 8 || (w & 0xFF) >= 0x20)
             return;                     /* not a key: the buttons keep theirs */
