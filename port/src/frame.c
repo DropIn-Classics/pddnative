@@ -1,6 +1,7 @@
 /* frame.c - see frame.h */
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "frame.h"
 #include "platform.h"
 #include "vga.h"
@@ -11,6 +12,7 @@ static unsigned long frames;
 static uint64_t next_due;
 static int closed;
 static VgaFrame picture;
+static FILE *record;
 
 void frame_set_tick(FrameCallback tick)
 {
@@ -20,6 +22,11 @@ void frame_set_tick(FrameCallback tick)
 void frame_set_keyboard(KeyHandler handler)
 {
     key_handler = handler;
+}
+
+void frame_record(const char *path)
+{
+    record = fopen(path, "w");
 }
 
 /* sleeps until the next picture is due at the refresh rate of the mode */
@@ -49,9 +56,14 @@ int frame_wait(void)
         closed = 1;
         return 0;
     }
-    while ((b = plat_read_scancode()) >= 0)
+    while ((b = plat_read_scancode()) >= 0) {
+        if (record) {
+            fprintf(record, "%lu:%02X\n", frames, (unsigned)b);
+            fflush(record);
+        }
         if (key_handler)
             key_handler((unsigned char)b);
+    }
     if (tick_routine)
         tick_routine();
     vga_frame_start();

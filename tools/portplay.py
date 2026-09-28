@@ -37,7 +37,7 @@ def run(args, ev, pics, stop, frames):
     """a run of the port with the events at their pictures: the checkpoint
     passes and notes {(where, n): picture} and the ball at each frame of
     play {n: (x, y, vx, vy)}"""
-    d = os.path.join(portcmp.BUILD, 'portplay')
+    d = os.path.join(portcmp.BUILD, 'portplay', '%d-%d-%d' % (args.prog, args.table, args.seed))  # games apart
     shutil.rmtree(d, ignore_errors=True)
     os.makedirs(os.path.join(d, 'save', 'DELUXE'))
     env = dict(os.environ, PD_DATA_DIR=d, PD_TRACE='1', PD_TRACE_BALL='1', PD_FRAMES=str(frames),

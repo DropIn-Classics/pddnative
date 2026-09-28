@@ -147,6 +147,17 @@ keys file; `portcmp.py --keys` then runs the original with it:
 It prints what the game reached (the handlers run, the level switches).
 A game longer than 300 emulated seconds needs `--until` for portcmp.
 
+A game played by hand in the window replays in the original the same
+way: `pdd -record FILE` writes each keyboard byte with the picture it
+was handed to the program at, and `portcmp.py --record FILE` turns that
+into a keys file (a key between a checkpoint's passes as `WHERE#N+K`,
+written to `build\portcmp_record.txt`) and compares.  The game must start
+from nothing saved, as portcmp's runs do (an empty `PD_DATA_DIR`):
+
+    $env:PD_DATA_DIR = "build\play1"
+    port\build\pdd.exe -prog 1 -table 3 -record build\play1.rec
+    python tools\portcmp.py --table 3 --record build\play1.rec --until 900 st_ball_lost#1 st_game_over#1
+
 ## How it works
 
 - `src/mem.c`: the program's memory as under DOS: one megabyte, the

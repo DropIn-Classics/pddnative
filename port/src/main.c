@@ -1,13 +1,17 @@
 /* main.c - Pinball Dreams: a native compatibility implementation that
  * needs an installed copy of the game.
  *
- *     pdd [-game DIR] [-prog 1|2] [-table 0-3]
+ *     pdd [-game DIR] [-prog 1|2] [-table 0-3] [-record FILE]
  *
  * DIR is the unpacked CD (the folders DELUXE, DREAMS1, DREAMS2 ...):
  * -game, else $PDD_GAME, else `game` beside the program, else `game` in
  * the current directory.  -prog 1 runs PD.EXE's tables (Ignition, Steel
  * Wheel, Beat Box, Nightmare), 2 PD2.EXE's; -table picks one of the four,
- * as the command line digit did.
+ * as the command line digit did.  -record writes each byte of the
+ * keyboard as the program gets it, with the number of the picture
+ * (PICTURE:HEX, a line each): a game played in the window replays in the
+ * headless build (PD_KEYS) and, through tools/portcmp.py --record, in the
+ * original.
  *
  * For comparing with the original in tools/run: when the program stops,
  * PD_RAM names a file for memory 0-A0000h and PD_VRAM one for the 256 KB
@@ -74,6 +78,8 @@ int main(int argc, char **argv)
             prog = atoi(argv[++i]) == 2 ? 2 : 1;
         else if (!strcmp(argv[i], "-table") && i + 1 < argc)
             table = atoi(argv[++i]) & 3;
+        else if (!strcmp(argv[i], "-record") && i + 1 < argc)
+            frame_record(argv[++i]);
     }
     if (!plat_init("Pinball Dreams"))
         return 1;

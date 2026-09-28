@@ -23,6 +23,10 @@ void frame_set_keyboard(KeyHandler handler);
 /* waits for the next picture; 0 once the window was closed */
 int frame_wait(void);
 
+/* each keyboard byte handed to the program is written to the file `path`
+ * as PICTURE:HEX (the picture count when it was handed over) */
+void frame_record(const char *path);
+
 /* pictures shown so far */
 unsigned long frame_count(void);
 
