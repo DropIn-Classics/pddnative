@@ -1,16 +1,6 @@
 #!/bin/sh
-# Installed with: git config core.hooksPath tools/hooks  (once per clone;
-# all worktrees share it).  See AGENTS.md.
-
-branch=$(git symbolic-ref --short HEAD 2>/dev/null)
-top=$(git rev-parse --show-toplevel)
-main=$(cd "$(git rev-parse --git-common-dir)/.." && pwd)
-
-# master is written from the main checkout only (merges after review)
-if [ "$branch" = "master" ] && [ "$(cd "$top" && pwd)" != "$main" ]; then
-    echo "pre-commit: no commits on master from a worktree ($top)" >&2
-    exit 1
-fi
+# Installed with: git config core.hooksPath tools/hooks  (once per
+# clone).  See AGENTS.md.
 
 # no game data: nothing below game/ or build/, no program or data files
 if git diff --cached --name-only | grep -Eiq '^(game|build)/|\.(exe|com|sdr|mod|fli|vga|spr|ogg|gog|256|016|hop|bin)$'; then

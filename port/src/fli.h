@@ -1,6 +1,6 @@
 /* fli.h - the animations of the DELUXE folder's .FLI files (Autodesk
  * FLI, 320x200, 256 colours) played as DDFLIPLY.EXE plays them
- * (docs/tasks/T9.md, read from its code): each file's frames but the last
+ * (read from its code; docs/HANDOFF.md): each file's frames but the last
  * (the ring frame back to the first), the header's speed times 41h units
  * of a clock of 256 units a BIOS tick between two; a key ends the
  * playback, and with it the files still to come.

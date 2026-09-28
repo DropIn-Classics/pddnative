@@ -21,29 +21,20 @@ translated and matches the original through a whole game on Steel Wheel.
   and docs have CRLF line ends; `xfer.py` writes LF on the Mac (convert
   back before committing). Checked there:
   check.py all ok; portcmp equal at idle_loop#3000 and through portplay's
-  Steel Wheel game (seed 1) at each drain and the game over. The window
-  was only started, not played.
-- T1 (DDPCINTR.EXE, by Muse) and T2 (DDPCMAIN.EXE, begun by Muse and
-  finished by Sol) are merged, see below. Sol, the second agent now,
-  works in `../pddnative-muse` on `sol/*` (older branches `muse/*`); do
-  not touch that checkout. T5 (`tools/pdfiles.py`), T7 (`tools/ddfiles.py`)
-  and T8 (`tools/gfxfiles.py`, the pictures and sprites with their real
-  palettes; docs/tasks/T8.md) and T9 (`tools/flifiles.py`, the FLI
-  animations and DDFLIPLY; docs/tasks/T9.md) are merged; T10 (the sound
-  drivers) is `later`. Where the port is going (the user, 2026-09-28:
-  a launcher like a DOS setup program, the translated menu as the hub,
-  controllers; the FLIs played unless the launcher's "quality of life
-  fixes" are on) is in docs/TASKS.md; T11 (the launcher, done by
-  Claude, docs/tasks/T11.md: not yet tried in the window), T14 (the FLI
-  player `port/src/fli.c` and the quality of life fixes, a page of
-  three switches in the launcher, `pd_qol`'s bits for the engine:
-  docs/tasks/T14.md, port/README.md) and T13 (the menu) for Claude. Sol's branches are on the Windows machine: the user pushes one to
-  `origin` for a review from the Mac. When the user says
-  "Review Tn", follow CLAUDE.md (review steps) and AGENTS.md (who writes
-  what where).
-- T3 (the runner) and T4 (PD.EXE's engine into the hints) are done; see
-  "Running the originals" and "The engine" below. T6, the implementation
-  in C, is under way: port/README.md and "Next" below.
+  Steel Wheel game (seed 1) at each drain and the game over.
+- The work so far went in numbered items, T1-T14 (the T numbers in this
+  file): stage 1 of DDPCINTR (T1) and DDPCMAIN (T2), the runner (T3),
+  PD.EXE's engine in the hints (T4), the implementation in C (T6, under
+  way), `tools/pdfiles.py` (T5), `tools/ddfiles.py` (T7),
+  `tools/gfxfiles.py` (T8), `tools/flifiles.py` and DDFLIPLY (T9), the
+  launcher (T11), the FLI player and the quality of life fixes (T14).
+  Their notes (findings, addresses, what was checked and what not) are in
+  the history: `git show c070cfe:docs/tasks/T9.md` (T1, T2, T5, T7, T8,
+  T9, T11, T14). One agent, Claude, works on `master`. The runner and the
+  engine: "Running the originals" and "The engine" below; the C:
+  port/README.md.
+- Where the port is going and what is left: "Next" below. The launcher
+  and the FLI animations are not yet tried in the window.
 - Before any change to `tools/` or the hints: `python tools/check.py`
   must stay `all ok` (the hook enforces it on commit). `game/` holds the
   unpacked CD (`python tools/gogx.py` if it is missing).
@@ -285,7 +276,7 @@ from `play_tune` on run with DS = XDATA: `music_files`, `main_tunes`,
 ## DDPCMAIN.EXE (T2)
 
 Built IDENTICAL from `src/DDPCMAIN.hints` (5338 instructions); the gaps
-left are data (docs/tasks/T2.md lists them). Segments: CODE, DATA, FONTS
+left are data (T2's notes list them). Segments: CODE, DATA, FONTS
 (the menu's glyphs), OPTIONS (the F10 screen and DDPCOPTN.BIN), HISTORY
 (the F9 viewer: file names, the 53 table records with manufacturer, year,
 designer, the filters), STACK. From the code, not run:
@@ -299,7 +290,7 @@ designer, the filters), STACK. From the code, not run:
   `..\DREAMS1` and EXEC PD.EXE for F1-F4, `..\DREAMS2` and PD2.EXE for
   F5-F8, with a command tail of one digit `0`-`3` (the table), then
   CHDIR `..\deluxe`. So the table programs' digit is the table.
-- DDFLIPLY.EXE (T9, docs/tasks/T9.md; read, not run): the first
+- DDFLIPLY.EXE (T9 and its notes; read, not run): the first
   non-space character of the command tail minus `0`; 1-8 play IGNITION,
   STEELWHL, BEATBOX, NIGHTMRE, NEPTUNE, SAFARI, REVENGE, STALLTRN (table
   at 01F5:00F7), 0 plays SPIN21ST, INTRO_P1, INTRO_P2, INTRO_P3 in turn
@@ -317,7 +308,7 @@ designer, the filters), STACK. From the code, not run:
   resolution byte) when options are saved, not before every EXEC.
 - The menu loads the sound driver itself (SOUND.CFG, EXEC of the .SDR)
   and gives it a tick callback (INT 66h AL=0Bh, CODE:4421).
-- F9, the history viewer (T7, `tools/ddfiles.py`; docs/tasks/T7.md):
+- F9, the history viewer (T7, `tools/ddfiles.py`, and its notes):
   `history_init` changes to `..\HISTORY`, shows DDPCHIST.VGA in Mode X
   (its palette is `history_palette` in the program), detects VESA mode
   101h (`vesa_available`), loads HISTORY.FNT (256 8x8 glyphs) and the
@@ -348,7 +339,7 @@ time each, the fourth while MSCDEX reports the drive busy, fade out,
 stop, exit with code 0 in Mode X (no text mode). For the port: its
 failure exits before the INT 9 hook restore INT 9 to 0000:0000 (the saved
 vector is still zero), and every stop request before the drive search
-goes to drive 0. Details and addresses: docs/tasks/T1.md.
+goes to drive 0. Details and addresses: T1's notes.
 
 ## The tools and the hints
 
@@ -424,29 +415,51 @@ Not done: savestates, a window, the menu programs (DDPCMAIN, DDPCINTR:
 untried; DDPCINTR wants MSCDEX for CD audio, which the DOS layer does not
 have). The runner is not part of `check.py` (it needs MSVC and the CD).
 
-## Working with a second agent
-
-Sol works in the worktree `../pddnative-muse` on `sol/*` branches
-(earlier tasks: `muse/*`); the rules are in AGENTS.md, the tasks in
-docs/TASKS.md. `tools/check.py` guards every commit through the hook.
-
 ## Next
 
-1. The menu program DDPCMAIN the same way (T2, Sol); DDPCINTR is done
-   (T1). DDFLIPLY is read where needed (T9), not disassembled.
-2. Understanding, into the hints: PD.EXE's engine is done (T4, "Not
+1. Where the port is going (the user, 2026-09-28): it modernises the
+   game, and parts of the original that get in the way may go. The
+   launcher (done: a setup program in text mode with the game's options,
+   the sound and the quality of life fixes) comes first; after it the
+   original menu, translated, is the hub; Esc from a table goes back to
+   where it was started from. Game controllers. The FLI animations are
+   played unless the quality of life fix "skip animation" is on.
+2. The menu in C (DDPCMAIN): the program loaded into the port's memory
+   model beside the table programs, its names from `src/DDPCMAIN.hints`
+   through `tools/portmap.py`, the menu loop (Mode X, SELECT.VGA, the
+   mouse, F1-F8, the high scores shown), F1-F8 running the table in the
+   same process and coming back to the menu with the high scores read
+   again (`menu_init`). Unless "skip animation" is on
+   (`launcher_skip_animation`): the intro's animations at the menu's
+   start (`fli_play` with SPIN21ST, INTRO_P1, INTRO_P2, INTRO_P3, as
+   DDFLIPLY plays for `0`) and the table's before it
+   (`fli_before_table`). F9 (the history viewer) and F10 (the options
+   screen) later. Checked against runs of DDPCMAIN in tools/run where the
+   runner can run it. Then "Play from the menu" in the launcher.
+3. Game controllers: SDL2's game controller API in `plat_sdl.c`, XInput
+   in `plat_win32.c`; the buttons become the scan codes of the keys the
+   table reads (the two flippers, nudge, plunger, F1 to start, P for
+   pause, Esc), pushed into the same queue as the keyboard's, so
+   `-record` and the replays work with them; controllers plugged in while
+   the game runs are found. The launcher driven with the controller too,
+   with a page for the mapping.
+4. Later: the sound drivers (DELUXE/*.SDR, SOUND.CFG) described by a
+   tool, as the other files are. The port plays the music with micromod
+   and needs only SBLASTER.SDR's timing, which is described below ("The
+   music's timing").
+5. Understanding, into the hints: PD.EXE's engine is done (T4, "Not
    understood" above lists what is left); the collision maps, HISCORES.PD*
    and DDPCOPTN.BIN are described (T5, `tools/pdfiles.py`), the history
    viewer's files (T7, `tools/ddfiles.py`), the DELUXE .VGA pictures, the
    .SPR files and TABLE2M with the palettes the programs set (T8,
-   `tools/gfxfiles.py`; PD2's `set_palette` is not PD's, see
-   docs/tasks/T8.md), the .FLI files and DDFLIPLY (T9,
-   `tools/flifiles.py`). The table data is still DB lines apart from the handler words: a
+   `tools/gfxfiles.py`; PD2's `set_palette` is not PD's, see T8's
+   notes), the .FLI files and DDFLIPLY (T9, `tools/flifiles.py`). The
+   table data is still DB lines apart from the handler words: a
    `struct`/`dw` hint kind will be needed before data can move.
-3. The runner (done, T3) for comparing the C port with the original
+6. The runner (done, T3) for comparing the C port with the original
    frame by frame will want savestates (start both at the same moment)
    (`-dumpevery` dumps chosen variables at a fixed interval).
-4. The implementation in C (`port/`, T6): started 2026-09-27; every game
+7. The implementation in C (`port/`, T6): started 2026-09-27; every game
    state and the event objects' handlers are translated, and checked
    against runs of the original stopped at the same place (the idle show
    and a ball with the flippers on all eight tables; on Steel Wheel a

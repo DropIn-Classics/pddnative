@@ -82,5 +82,4 @@ On macOS and Linux the commands are the same with `python3`, `/` and
     `run.py`: its front end, takes addresses by their names in the hints.
 - `port/`: the implementation in C (its README says how far it is).
 - `docs/HANDOFF.md`: state, what was learned, what is next.
-- `AGENTS.md`: rules for the agents working on this (two at a time, each
-  in its own git worktree); `docs/TASKS.md`: who does what.
+- `AGENTS.md`: the rules for working on this (provenance, conventions).
