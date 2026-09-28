@@ -419,10 +419,17 @@ docs/TASKS.md. `tools/check.py` guards every commit through the hook.
    and how). A run confirmed that a locked ball never ends state 4 in the
    320x200 mode (the default) in the original: its scroll loop cannot
    reach its end (see the hints at `st_ball_locked`). A ball locked by
-   play is equal too (Nightmare, with locks_lit written). Not checked by a
-   run yet: longer games on the other tables.
-   Next: longer key scripts (locks, jackpots, the roulette, the upper
-   levels); then the sound: the driver's tick is 70.09 a second in the
+   play is equal too (Nightmare, with locks_lit written). Whole games are
+   equal at each drain and the game over (port/README.md): `tools/portplay.py`
+   plays the port (flippers tapped over their tips, one port run a tap) and
+   writes the keys file; the roulette, hold_bonus, extra_ball_award,
+   count_message, the locks and the level switches ran on the way. The port
+   traces the handlers it runs (PD_TRACE notes), so a game shows what it
+   reached. Not reached by any compared game yet: collect_jackpot,
+   lock_jackpot, add_hurry_value, countdown, double_score, double_bonus,
+   score_to_best, nightmare_switch, mult_4 and up, light_locks.
+   Next: those (more portplay seeds, or --poke into the state before
+   them), Nightmare (portplay's zone does not suit it); then the sound: the driver's tick is 70.09 a second in the
    320x200 mode (measured, SBLASTER.SDR); what AL=11h (effects) and
    AL=13h (`module_callback`) do for the driver is still to be found, and
    the port's player does not advance in the headless build (XDATA's
