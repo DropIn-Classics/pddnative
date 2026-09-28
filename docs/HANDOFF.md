@@ -528,8 +528,9 @@ a C compiler and the CD).
 2. The menu in C (DDPCMAIN): done 2026-09-28 (`port/src/menu.c`, "Play
    from the menu" in the launcher, `pdd -menu`; checked headless against
    tools/run, port/README.md), and F9 (the history, 16-colour pictures;
-   port/README.md), apart from: F10 (the options screen; perhaps the
-   launcher's options page instead), the history's VESA pictures (.256:
+   port/README.md), apart from: F10 (the options screen: from the
+   launcher the menu is left for its game options page instead; with
+   `pdd -menu` it comes back to the list), the history's VESA pictures (.256:
    a VESA 101h mode in vga.c and the program's banked routines), the
    port's mouse driver in the window (the computer's mouse behind it,
    tried headless only; port/README.md), the intro DDPCINTR (pictures

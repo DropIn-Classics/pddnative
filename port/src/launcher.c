@@ -830,6 +830,11 @@ static void draw(const char *game)
 #define REPEAT_DELAY 400000     /* microseconds before a held key repeats */
 #define REPEAT_EVERY 60000
 
+void launcher_show_options(void)
+{
+    go(P_OPTIONS);
+}
+
 int launcher_run(const char *game, int *prog, int *table, const char *note_text)
 {
     static uint8_t pixels[TM_WIDTH * TM_HEIGHT];

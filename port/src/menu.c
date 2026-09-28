@@ -1779,7 +1779,8 @@ static void run_table(int bx)
 }
 
 /* F1-F8: the table (its animation first); F9 the history after the
- * language screen; F10 (the options): not translated */
+ * language screen; F10 (the options): not translated, the menu left for
+ * the setup screen's options when hooks->options_leave */
 static void run_selection(void)
 {
     uint8_t sel = db(M_selection);
@@ -1790,6 +1791,8 @@ static void run_selection(void)
     dww(M_tick_remove, M_tick_nothing);
     dww(M_tick_ticker, M_tick_nothing);
     drv.host_off = 0;
+    if (sel == 0x0A && hooks->options_leave)
+        longjmp(exit_jmp, 3);
     if (sel == 9) {
         if (!language_screen())
             history_screen();
@@ -1986,7 +1989,7 @@ int menu_run(const char *game, const MenuHooks *h, char *err, size_t n)
         frame_set_tick(NULL);
         frame_set_overlay(NULL);
         dos_dir = NULL;
-        return r == 2 ? -1 : 0;
+        return r == 2 ? -1 : r == 3;
     }
 
     /* start: check_memory (mem_load_menu's arena is as after it) */

@@ -25,10 +25,15 @@ typedef struct {
      * what comes before it (the table's animation); 1 when it ended, 0 when
      * the window was closed, -1 with a message in err after an error */
     int (*table)(int prog, int table, char *err, size_t n);
+    /* 1: the options (F10) leave the menu, menu_run returning 1, where
+     * the setup screen's game options take their place; 0: they come
+     * back to the list, as their screen is not translated */
+    int options_leave;
 } MenuHooks;
 
-/* The menu until Esc leaves it (0), the window is closed (0) or an error
- * ends it (-1, the message in err).  PD_STOP=where#N ends it the Nth time
+/* The menu until Esc leaves it (0), the window is closed (0), the
+ * options leave it (1, hooks->options_leave) or an error ends it (-1,
+ * the message in err).  PD_STOP=where#N ends it the Nth time
  * it passes `where` (menu_loop, hiscore_show_loop), PD_TRACE prints each
  * pass, as the table programs' checkpoints do. */
 int menu_run(const char *game, const MenuHooks *hooks, char *err, size_t n);

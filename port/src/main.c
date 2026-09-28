@@ -139,7 +139,7 @@ static int menu_intro(void)
  * table is shown on the screen. */
 static int with_launcher(void)
 {
-    static const MenuHooks hooks = { menu_intro, play_table };
+    static const MenuHooks hooks = { menu_intro, play_table, 1 };
     char err[512] = "";
     int prog, table, r;
 
@@ -152,7 +152,9 @@ static int with_launcher(void)
         }
         r = prog == 0 ? menu_run(game_dir, &hooks, err, sizeof err)
                       : play_table(prog, table, err, sizeof err);
-        if (r == 0 && !plat_pump())
+        if (r == 1 && prog == 0)
+            launcher_show_options();    /* the menu's F10 */
+        else if (r == 0 && !plat_pump())
             break;                      /* the window was closed */
     }
     launcher_save_settings();
@@ -222,7 +224,7 @@ int main(int argc, char **argv)
         return with_launcher();
 
     if (menu) {
-        static const MenuHooks hooks = { NULL, play_table };
+        static const MenuHooks hooks = { NULL, play_table, 0 };
         pad_set_context(PAD_MENU);
         r = menu_run(game, &hooks, err, sizeof err);
         dump();

@@ -140,8 +140,10 @@ the driver play it), a table run in the same process: the menu's memory
 is kept aside while the table's program runs where tools/run loads it,
 and put back after it, as under DOS the table ran above the menu. Not
 translated: the intro (DDPCINTR.EXE, a CD audio track and four
-pictures) and the options screen (F10; the setup screen has the
-options): chosen, the menu fades out and comes back.
+pictures) and the options screen (F10): chosen from the setup screen's
+"Play from the menu", the menu fades out and is left for the setup
+screen's game options (`options_leave` in MenuHooks; Back there goes to
+the first page); with `pdd -menu` it fades out and comes back.
 
 The history (F9, translated 2026-09-28): the language screen (the
 pointer on a flag, Enter), then in HISTORY the start screen (five boxes:
@@ -210,8 +212,13 @@ with the box on F8, Down in the high score show back to the list; without
 `-qol` portcmp `--menu` still equal (Down held, menu_loop#100, #230,
 hiscore_show_loop#700). Eight Downs from F1: the box on the history,
 Enter shows the language screen; ten Downs: the box on the options (the
-tenth is not taken), Enter fades out and back to the list, as F10 and a
-click there do (the options screen is not translated). The mouse moved
+tenth is not taken), Enter does what F10 and a click there do (above).
+Checked headless with the menu's return printed (`options_leave` set
+for `-menu` in a copy of main.c): Enter on the box, F10, and a click
+on the options after the list scrolled at the bottom each end the menu
+with 1, F1 runs the table; the unchanged `-menu` stays in the menu. The
+setup screen opening on the game options after it not tried (it needs
+the window). The mouse moved
 or clicked (also in the high score show) takes the box away and shows
 the pointer, which the mouse moves and clicks as without the box; Up,
 Down or Enter bring the box back on the entry under the pointer (Up and
@@ -316,7 +323,7 @@ start a table from the first two pages.
   plays them for `0`, then faded out) unless the animation is skipped;
   a table chosen there gets its animation as from the table page. Esc in
   the menu (the menu's own: it ends DDPCMAIN) comes back to the setup
-  screen.
+  screen, Configuration (F10) there to the game options.
 - Game options: what the menu's F10 screen sets, with its ranges (its hit
   boxes at DDPCMAIN's OPTIONS:0009): balls (3 or 5), music (the tunes and
   jingles, or the main tune only), colours (colour or grey), table angle
