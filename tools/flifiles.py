@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Inspect Autodesk Animator FLI animations used by DDFLIPLY.EXE.
 
-    flifiles.py FILE [--png N OUT]
+    flifiles.py FILE [--png N OUT] [--all DIR]
 
 The tool parses the 128-byte FLI header, every frame and every chunk,
 decodes the animation, and checks that encoding the parsed structure gives
 the input bytes exactly.  ``--png`` writes zero-based displayed frame N as
-an indexed PNG using that frame's six-bit VGA palette.  PNG output uses only
-the Python standard library.
+an indexed PNG using that frame's six-bit VGA palette; ``--all`` writes every
+displayed frame into DIR as NAME_0000.png, NAME_0001.png ... (NAME the
+file's name without extension).  PNG output uses only the Python standard
+library.
 """
 import argparse
 from collections import Counter
@@ -335,7 +337,7 @@ def write_png(path, width, height, image):
         f.write(png)
 
 
-def command_fli(path, png_args):
+def command_fli(path, png_args, all_dir=None):
     data = read_file(path)
     fli = parse_fli(data)
     if encode_fli(fli) != data:
@@ -373,15 +375,25 @@ def command_fli(path, png_args):
         write_png(out, header.width, header.height, images[number])
         print(f'  png frame {number}: {out}')
 
+    if all_dir:
+        out_dir = Path(all_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for number in range(header.frames):
+            write_png(out_dir / f'{path.stem}_{number:04d}.png',
+                      header.width, header.height, images[number])
+        print(f'  png frames 0..{header.frames - 1}: {out_dir}')
+
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('file')
     ap.add_argument('--png', nargs=2, metavar=('N', 'OUT'),
                     help='write zero-based displayed frame N as a PNG')
+    ap.add_argument('--all', metavar='DIR',
+                    help='write every displayed frame into DIR as PNGs')
     args = ap.parse_args()
     try:
-        command_fli(Path(args.file), args.png)
+        command_fli(Path(args.file), args.png, args.all)
     except (OSError, ValueError, struct.error) as e:
         raise SystemExit(f'{args.file}: {e}') from e
 
