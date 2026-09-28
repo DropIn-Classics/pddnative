@@ -19,6 +19,10 @@ int modplay_loaded(void);
  * SBLASTER.SDR); silence without a module */
 void modplay_render(int16_t *out, int frames);
 
+/* the module on by `ticks` of its ticks (to the start of the next one),
+ * without output */
+void modplay_skip_ticks(int ticks);
+
 /* row 0 of the order list's position `pos` */
 void modplay_set_position(int pos);
 

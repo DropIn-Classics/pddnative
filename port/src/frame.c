@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "frame.h"
+#include "hud.h"
 #include "platform.h"
 #include "vga.h"
 
@@ -22,6 +23,16 @@ void frame_set_tick(FrameCallback tick)
 void frame_set_keyboard(KeyHandler handler)
 {
     key_handler = handler;
+}
+
+static void hand_over_byte(int b)
+{
+    if (record) {
+        fprintf(record, "%lu:%02X\n", frames, (unsigned)b);
+        fflush(record);
+    }
+    if (key_handler)
+        key_handler((unsigned char)b);
 }
 
 void frame_record(const char *path)
@@ -45,6 +56,27 @@ static void pace(void)
     next_due += period;
 }
 
+/* a byte for the program: not the keypad's + - * /, which are the sound
+ * keys (hud.c; they come again as characters) */
+static void hand_over(int b)
+{
+    static int e0;
+    int code = b & 0x7F;
+
+    if (b == 0xE0) {
+        e0 = 1;                         /* held back until the next byte */
+        return;
+    }
+    if (e0 ? code == 0x35 : code == 0x37 || code == 0x4A || code == 0x4E) {
+        e0 = 0;
+        return;
+    }
+    if (e0)
+        hand_over_byte(0xE0);
+    e0 = 0;
+    hand_over_byte(b);
+}
+
 int frame_wait(void)
 {
     int b;
@@ -56,18 +88,15 @@ int frame_wait(void)
         closed = 1;
         return 0;
     }
-    while ((b = plat_read_scancode()) >= 0) {
-        if (record) {
-            fprintf(record, "%lu:%02X\n", frames, (unsigned)b);
-            fflush(record);
-        }
-        if (key_handler)
-            key_handler((unsigned char)b);
-    }
+    while ((b = plat_read_scancode()) >= 0)
+        hand_over(b);
+    while ((b = plat_read_control()) >= 0)
+        hud_control(b);
     if (tick_routine)
         tick_routine();
     vga_frame_start();
     vga_render(&picture);
+    hud_draw(&picture);
     plat_present(picture.pixels, picture.width, picture.height, picture.palette);
     frames++;
     return 1;

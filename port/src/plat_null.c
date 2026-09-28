@@ -114,6 +114,11 @@ int plat_read_scancode(void)
     return pos_pending < npending ? pending[pos_pending++] : -1;
 }
 
+int plat_read_control(void)
+{
+    return -1;
+}
+
 uint64_t plat_micros(void)
 {
     return now_us;
@@ -129,7 +134,7 @@ int plat_audio_start(int rate, PlatAudioFill fill, void *user)
     (void)rate;
     (void)fill;
     (void)user;
-    return 1;
+    return 0;                   /* no device: sound.c moves the module */
 }
 
 void plat_audio_lock(void)

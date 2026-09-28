@@ -8,11 +8,23 @@
 
 /* opens the audio output (once) */
 void snd_init(void);
+/* the output's shaping (audiofx.h): bass, treble, oomph in dB, headphone
+ * mode 0/1; all 0 by default */
+void snd_set_fx(int bass, int treble, int oomph, int headphone);
+/* 1: the shaping off (flat) whatever snd_set_fx said */
+void snd_set_fx_bypass(int on);
+/* the player's volume over everything, 0-1 (1 by default) */
+void snd_set_gain(float gain);
 
 /* AL=12h: loads the module file at `path`; 0, or nonzero when it cannot */
 int snd_load_module(const char *path);
 /* AL=4: the music plays */
 void snd_play(void);
+/* AL=8, once a tick of the program (`hz` a second), `late` seconds later
+ * in the tick than when nothing is drawn before it: without an audio
+ * device the module moves on here as the driver mixes it (see sound.c);
+ * with one, the device's clock moves it */
+void snd_tick(double hz, double late);
 /* AL=0: the music stops, the module is gone */
 void snd_stop(void);
 /* AL=6: the volume, CX = 0-100h (music_fade's steps; presumably 100h is

@@ -182,6 +182,8 @@ static void sound_request_run(void)
  * callback, the music and sound requests, timer_tick */
 void timer_callback(void)
 {
+    double late = 0;
+
     if (frb(seg_code, V(in_timer)))
         return;
     fwb(seg_code, V(in_timer), 0xFF);
@@ -192,13 +194,17 @@ void timer_callback(void)
         map_mask = vga_inb(0x3C5);
         vga_outb(0x3CE, 4);
         read_map = vga_inb(0x3CF);
-        draw_sprites();
+        if (draw_sprites())
+            late = 0.00053;
         vga_outw(0x3C4, (uint16_t)(2 | map_mask << 8));
         vga_outw(0x3CE, (uint16_t)(4 | read_map << 8));
     }
     call_code(rw(V(frame_callback)));
     if (rb(V(sound_on)) == 1) {
-        /* AL=8: the port's driver has nothing to do here */
+        /* AL=8: when draw_sprites drew, about 0.5 ms later in the tick
+         * (measured in tools/run, the same with the ball alone and with
+         * the flippers) */
+        snd_tick(vga_refresh_hz(), late);
         if (rb(V(music_fade_dir)) != 0) {
             music_fade();
         } else if (rb(V(tune_request)) != 0xFF) {

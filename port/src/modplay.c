@@ -73,6 +73,14 @@ void modplay_render(int16_t *out, int frames)
         out[i] = out[i + 1] = (int16_t)((out[i] + out[i + 1]) / 2);
 }
 
+void modplay_skip_ticks(int ticks)
+{
+    if (!module)
+        return;
+    while (ticks-- > 0)
+        micromod_get_audio(NULL, tick_len - tick_offset);
+}
+
 void modplay_set_position(int pos)
 {
     if (module)

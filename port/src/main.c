@@ -2,6 +2,7 @@
  * needs an installed copy of the game.
  *
  *     pdd [-game DIR] [-prog 1|2] [-table 0-3] [-record FILE]
+ *         [-fx BASS,TREBLE,OOMPH,HEADPHONE]
  *
  * DIR is the unpacked CD (the folders DELUXE, DREAMS1, DREAMS2 ...):
  * -game, else $PDD_GAME, else `game` beside the program, else `game` in
@@ -11,7 +12,8 @@
  * keyboard as the program gets it, with the number of the picture
  * (PICTURE:HEX, a line each): a game played in the window replays in the
  * headless build (PD_KEYS) and, through tools/portcmp.py --record, in the
- * original.
+ * original.  -fx shapes the sound (audiofx.h): bass and treble -12 to
+ * 12 dB, oomph 0 to 12 dB, headphone 0 or 1; "0,0,0,0" is the default.
  *
  * For comparing with the original in tools/run: when the program stops,
  * PD_RAM names a file for memory 0-A0000h and PD_VRAM one for the 256 KB
@@ -24,6 +26,7 @@
 #include "frame.h"
 #include "pd.h"
 #include "platform.h"
+#include "sound.h"
 #include "sys.h"
 #include "vga.h"
 
@@ -80,6 +83,11 @@ int main(int argc, char **argv)
             table = atoi(argv[++i]) & 3;
         else if (!strcmp(argv[i], "-record") && i + 1 < argc)
             frame_record(argv[++i]);
+        else if (!strcmp(argv[i], "-fx") && i + 1 < argc) {
+            int fx[4] = { 0, 0, 0, 0 };
+            sscanf(argv[++i], "%d,%d,%d,%d", &fx[0], &fx[1], &fx[2], &fx[3]);
+            snd_set_fx(fx[0], fx[1], fx[2], fx[3]);
+        }
     }
     if (!plat_init("Pinball Dreams"))
         return 1;

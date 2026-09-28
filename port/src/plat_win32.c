@@ -61,6 +61,30 @@ static void release_all(void)
             push_key(i & 0x7F, i & 0x80, 1);
 }
 
+/* the sound keys, from WM_CHAR */
+static int controls[16], ctl_head, ctl_tail;
+
+static void push_control(char c)
+{
+    int v = c == '+' ? PLAT_VOLUME_UP : c == '-' ? PLAT_VOLUME_DOWN :
+            c == '*' ? PLAT_MUTE : c == '/' ? PLAT_EQ : 0;
+    int next = (ctl_tail + 1) % 16;
+    if (v && next != ctl_head) {
+        controls[ctl_tail] = v;
+        ctl_tail = next;
+    }
+}
+
+int plat_read_control(void)
+{
+    int v;
+    if (ctl_head == ctl_tail)
+        return -1;
+    v = controls[ctl_head];
+    ctl_head = (ctl_head + 1) % 16;
+    return v;
+}
+
 int plat_read_scancode(void)
 {
     int b;
@@ -152,6 +176,9 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_KILLFOCUS:
         release_all();
         break;
+    case WM_CHAR:
+        push_control((char)wp);
+        return 0;
     case WM_SYSKEYDOWN:
         if (wp == VK_RETURN && (lp & (1 << 29))) {          /* Alt+Enter */
             if (!(lp & (1 << 30)))

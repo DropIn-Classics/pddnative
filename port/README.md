@@ -108,10 +108,18 @@ space of the driver's EXEC in CODE, the stack)
   top right, its speed changing while it stays (random taps, from the
   1,100th frame of play on); the port equal at the 1,000th, 1,100th and
   1,500th frame.
-- XDATA's `music_pos` can differ from the original's: INT 66h AL=10h
-  returns the position the driver's player has reached in the module, and
-  the port's player does not advance in the headless build (no audio
-  device). Only the sound routines read it.
+- XDATA's `music_pos` (the module's position INT 66h AL=10h returns when
+  a tune or jingle starts): equal in the whole games above since the
+  headless build moves the module as SBLASTER.SDR mixes it (2026-09-28,
+  `src/sound.c`); without that it differs (Steel Wheel's portplay game:
+  0Fh against 2Fh at the second drain). The driver's mixing is read from
+  its code and checked against it in tools/run: fed with the DMA
+  position the driver read, the model steps the module's ticks as the
+  driver did at each of 2,681 AL=8 calls. With the read position as the
+  port computes it (the program's ticks, a phase, 0.53 ms later when
+  `draw_sprites` drew) the ticks so far are one off at 1 to 5 of some
+  4,000 calls in a minute, so `music_pos` can still differ now and then;
+  only the sound routines read it.
 
 ## Build and run
 
@@ -130,6 +138,17 @@ Mac, else what `sdl2-config` or `pkg-config sdl2` give. Without SDL2 it
 builds the headless program only. `-game` is the
 unpacked CD (`python tools/gogx.py`), `-prog 1` PD.EXE's tables, `-prog 2`
 PD2.EXE's, `-table` 0-3.
+
+The sound in the window: `-fx BASS,TREBLE,OOMPH,HEADPHONE` shapes it
+(`src/audiofx.c`: bass and treble shelves -12 to 12 dB at 200 Hz and
+4 kHz, oomph 0 to 12 dB at 120 Hz, a headphone mode that gives the mono
+music a narrow stereo image with crossfeed; `0,0,0,0`, the default, is
+the sound as it was apart from a DC blocker). During the game `+` and
+`-` set the volume, `*` mutes, `/` switches the shaping off and on
+(the characters, from the keypad or where the layout has them; the
+keypad's keys do not reach the game); a box at the top of the picture
+shows what was set (`src/hud.c`, drawn into the picture after the VGA's
+scan-out, not into video memory). The settings are not kept yet.
 
 Comparing with the original: stop both at the same place and compare
 their memory by the names of the hints. The port stops at the first routine
@@ -207,7 +226,13 @@ from nothing saved, as portcmp's runs do (an empty `PD_DATA_DIR`):
   on micromod (`third_party/micromod`): loading a module, playing,
   positions, the volume, the pattern-jump callback (AL=13h) and the
   effects (AL=11h: a note put into a channel of the module at once), as
-  SBLASTER.SDR does them.
+  SBLASTER.SDR does them. The window's audio device moves the module on;
+  without one (the headless build) AL=8, once a tick, does it as the
+  driver mixes: 240-sample ticks at 12 kHz, up to four ahead of the DMA
+  (the comment in `sound.c`).
+- `src/audiofx.c`, `src/hud.c`: the output's shaping and the sound keys
+  with their box; the headless build has no output, so neither touches
+  what is compared with the original.
 - `src/platform.h`: window, keys, clock, audio; `plat_win32.c` (the
   Windows SDK alone), `plat_sdl.c` (SDL2: macOS, Linux, the Steam Deck,
   where it starts fullscreen), `plat_null.c` (headless).

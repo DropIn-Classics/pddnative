@@ -100,6 +100,30 @@ static void release_all(void)
             push_key(i & 0x7F, i & 0x80, 1);
 }
 
+/* the sound keys, from SDL's text input */
+static int controls[16], ctl_head, ctl_tail;
+
+static void push_control(char c)
+{
+    int v = c == '+' ? PLAT_VOLUME_UP : c == '-' ? PLAT_VOLUME_DOWN :
+            c == '*' ? PLAT_MUTE : c == '/' ? PLAT_EQ : 0;
+    int next = (ctl_tail + 1) % 16;
+    if (v && next != ctl_head) {
+        controls[ctl_tail] = v;
+        ctl_tail = next;
+    }
+}
+
+int plat_read_control(void)
+{
+    int v;
+    if (ctl_head == ctl_tail)
+        return -1;
+    v = controls[ctl_head];
+    ctl_head = (ctl_head + 1) % 16;
+    return v;
+}
+
 int plat_read_scancode(void)
 {
     int b;
@@ -143,6 +167,7 @@ int plat_init(const char *title)
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     SDL_RenderPresent(renderer);
+    SDL_StartTextInput();               /* the sound keys come as text */
     return 1;
 }
 
@@ -180,6 +205,12 @@ int plat_pump(void)
             if (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
                 release_all();
             break;
+        case SDL_TEXTINPUT: {
+            const char *t;
+            for (t = e.text.text; *t; t++)
+                push_control(*t);
+            break;
+        }
         case SDL_KEYDOWN:
         case SDL_KEYUP: {
             SDL_Scancode sc = e.key.keysym.scancode;

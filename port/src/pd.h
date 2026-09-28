@@ -187,7 +187,7 @@ void set_screen_start(void);
 void upload_lights(void);
 
 /* ---- pd_sprite.c */
-void draw_sprites(void);
+int draw_sprites(void);
 void set_sprite_frame(uint16_t frame, uint16_t sprite);
 void make_sprite_shapes(uint16_t seg, uint16_t di, uint16_t bp);
 

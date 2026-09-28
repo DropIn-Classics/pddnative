@@ -29,12 +29,20 @@ void plat_present(const uint8_t *pixels, int width, int height, const uint32_t p
  * left. */
 int plat_read_scancode(void);
 
+/* The sound keys, from the characters typed (+ - * /, on the keypad or
+ * where the layout has them): one of these, -1 when none is left.  The
+ * keypad's keys also come as scan codes; frame.c keeps those from the
+ * program. */
+enum { PLAT_VOLUME_UP = 1, PLAT_VOLUME_DOWN, PLAT_MUTE, PLAT_EQ };
+int plat_read_control(void);
+
 /* monotonic clock in microseconds */
 uint64_t plat_micros(void);
 void plat_sleep_ms(int ms);
 
 /* Audio: `fill` is called from the audio thread for `frames` stereo
- * 16-bit frames at `rate` Hz.  Lock around data the callback reads. */
+ * 16-bit frames at `rate` Hz.  Lock around data the callback reads.
+ * 0 when there is no audio device. */
 typedef void (*PlatAudioFill)(int16_t *out, int frames, void *user);
 int plat_audio_start(int rate, PlatAudioFill fill, void *user);
 void plat_audio_lock(void);

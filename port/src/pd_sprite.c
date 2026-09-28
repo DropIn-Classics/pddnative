@@ -266,10 +266,11 @@ static void put_area(void)
 
 /* the four sprites: overlapping areas merged, then per area: grab the
  * screen into a buffer (video memory BB10h), put back the old backgrounds,
- * save the new ones, draw, copy back */
-void draw_sprites(void)
+ * save the new ones, draw, copy back.  Returns the areas drawn. */
+int draw_sprites(void)
 {
     uint16_t s;
+    int drawn = 0;
 
     for (s = 0; s < 4 * SPRITE_SIZE; s = (uint16_t)(s + SPRITE_SIZE)) {
         uint8_t fl = rb(sp(s, SP_FLAGS));
@@ -335,6 +336,7 @@ void draw_sprites(void)
             sort_sprite_list();
         if (grab_area())
             continue;
+        drawn++;
         restore_backgrounds();
         save_backgrounds();
         draw_sprite_shapes();
@@ -345,6 +347,7 @@ void draw_sprites(void)
         put_area();
     }
     write_mode(0);
+    return drawn;
 }
 
 /* frame `frame` for the sprite at `s` (its offset in sprites): its shape,

@@ -11,8 +11,8 @@ ball_start_loop, st_play, st_ball_lost, st_ball_start, st_game_over,
 st_tilt, st_ball_locked, ball_locked_loop, initials_loop; the port's PD_STOP and the runner's -break take
 the same name); WHERE#N its Nth pass.  Each is compared with
 tools/memcmp.py; the differences the port has no reason to share (the
-stack, the driver's EXEC scratch in CODE, the saved INT 9 vector,
-XDATA's music_pos: see port/README.md) are left out unless --all.
+stack, the driver's EXEC scratch in CODE, the saved INT 9 vector: see
+port/README.md) are left out unless --all.
 
 The keys file has a line per key event, in the order they happen:
 
@@ -75,7 +75,7 @@ EXES = {1: ('DREAMS1/PD.EXE', 'src/PD.hints'), 2: ('DREAMS2/PD2.EXE', 'src/PD2.h
 CHECKPOINTS = ('idle_loop', 'ball_start_loop', 'st_play', 'st_ball_lost', 'st_ball_start', 'st_game_over',
                'st_tilt', 'st_ball_locked', 'ball_locked_loop', 'initials_loop')
 # memcmp lines of differences that are expected (see the docstring)
-EXPECTED = re.compile(r'^\s+(STACK:|CODE:\S+ load_sound_driver\+|DATA:\S+ old_int9\+|XDATA:\S+ music_pos\+)')
+EXPECTED = re.compile(r'^\s+(STACK:|CODE:\S+ load_sound_driver\+|DATA:\S+ old_int9\+)')
 
 
 def parse_keys(path):
