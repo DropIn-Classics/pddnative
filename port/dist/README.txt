@@ -58,7 +58,7 @@ starts fullscreen; in Game Mode add pdd as a non-Steam game. The GOG
 release installed with Heroic is looked for in ~/Games/Heroic.
 
 The source, and how the port was made and checked:
-https://github.com/mindphluxnet/pddnative
+https://github.com/DropIn-Classics/pddnative
 
 MOD playback: micromod, by Martin Cameron (LICENCE-micromod.txt).
 Linux and macOS: SDL2, by Sam Lantinga and others (LICENCE-SDL2.txt).
