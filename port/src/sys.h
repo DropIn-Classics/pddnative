@@ -24,7 +24,7 @@ void sys_data_dir(char *out, size_t n);
  * number moved. */
 int sys_data_migrate(const char *const *names);
 
-/* dir + separator + name; name alone if dir is empty */
+/* dir + separator + name; name alone if dir is empty; out may be dir */
 void sys_join(char *out, size_t n, const char *dir, const char *name);
 
 /* the folder above path (out may be path); 0 if there is none.  On

@@ -35,10 +35,17 @@ int sys_stricmp(const char *a, const char *b)
 void sys_join(char *out, size_t n, const char *dir, const char *name)
 {
     size_t len = strlen(dir);
-    if (len == 0 || dir[len - 1] == '\\' || dir[len - 1] == '/')
-        snprintf(out, n, "%s%s", dir, name);
-    else
-        snprintf(out, n, "%s%c%s", dir, SEP, name);
+    size_t sep = len > 0 && dir[len - 1] != '\\' && dir[len - 1] != '/';
+
+    /* out may be dir (snprintf may not read what it writes: glibc's
+     * empties out first), so dir is copied only when it is elsewhere */
+    if (out != dir)
+        snprintf(out, n, "%s", dir);
+    if (len + sep >= n)
+        return;
+    if (sep)
+        out[len] = SEP;
+    snprintf(out + len + sep, n - len - sep, "%s", name);
 }
 
 static int is_sep(char c)
