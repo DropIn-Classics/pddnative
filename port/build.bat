@@ -24,6 +24,10 @@ if %errorlevel% neq 0 (
 
 if not exist build\obj\headless mkdir build\obj\headless
 set CFLAGS=/nologo /W4 /O2 /MT /D_CRT_SECURE_NO_WARNINGS
+rem the release's version: %PORT_VERSION%, else the tag of the commit built;
+rem none, and the program shows none
+if not defined PORT_VERSION for /f "usebackq delims=" %%v in (`git describe --tags --exact-match 2^>nul`) do set PORT_VERSION=%%v
+if defined PORT_VERSION set CFLAGS=%CFLAGS% /DPORT_VERSION=\"%PORT_VERSION%\"
 set ENGINE=src\pd_main.c src\pd1.c src\pd2.c src\pd_video.c src\pd_sprite.c src\pd_text.c src\pd_keys.c src\pd_files.c src\pd_sound.c src\pd_idle.c src\pd_ball.c src\pd_lights.c src\pd_game.c src\pd_events.c src\pd_play.c src\pd_rules.c src\pd_bcd.c src\pd_lost.c src\pd_handlers.c src\pd_over.c src\code.c src\mem.c src\menu.c
 set CORE=src\main.c src\pad.c src\fli.c src\frame.c src\sound.c src\audiofx.c src\hud.c src\launcher.c src\gog.c src\textmode.c src\modplay.c src\vga.c src\sys.c src\sha256.c
 

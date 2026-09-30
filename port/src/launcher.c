@@ -764,13 +764,20 @@ static void draw_box(const char *text, const char *footer)
     centred(x, w, y + n + 3, footer, TM_ATTR(TM_YELLOW, TM_RED));
 }
 
+/* the name, and the release's version when the build was given one */
+#ifdef PORT_VERSION
+#define TITLE "pddnative " PORT_VERSION
+#else
+#define TITLE "pddnative"
+#endif
+
 /* the blue screen with its title bar */
 static void backdrop(void)
 {
     tm_clear(' ', A_SCREEN);
     tm_fill(0, 0, TM_COLS, 1, ' ', A_BAR);
     tm_text(1, 0, "Pinball Dreams Setup", A_BAR);
-    tm_text(TM_COLS - 10, 0, "pddnative", A_BAR);
+    tm_text(TM_COLS - 1 - (int)strlen(TITLE), 0, TITLE, A_BAR);
 }
 
 static void draw(void)

@@ -294,6 +294,13 @@ unpacked CD (`python tools/gogx.py`), `-prog 1` PD.EXE's tables, `-prog 2`
 PD2.EXE's, `-table` 0-3. `-menu` starts the game's menu instead (without
 the setup screen and the animations; Esc in the menu ends the program).
 
+The version: both scripts pass `PORT_VERSION` (the environment's, else
+the tag of the commit built, `git describe --tags --exact-match`) to the
+compiler, and the setup screen shows it after "pddnative" in its title
+bar; a build of an untagged commit shows none. The workflow sets it to
+the tag's name for a tag's build. Tried with `build.sh` on macOS (none,
+from the environment, from a tag); `build.bat` and the workflow not run.
+
 The packages: `.github/workflows/build.yml` builds `pdd` on GitHub for
 Windows (windows-latest, `build.bat`; the C runtime linked in, `/MT`),
 Linux (ubuntu-22.04, for older glibcs; SDL2 built from SDL's release

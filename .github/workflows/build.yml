@@ -13,6 +13,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  # a tag's build carries its name as the version (port/build.sh)
+  PORT_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+
 jobs:
   windows:
     runs-on: windows-latest
