@@ -36,7 +36,8 @@ static int take_in(const char *dir, char *out, size_t n)
 /* GOG's installers keep a key per game under GOG.com\Games, named by
  * the game's product ID (1207664093 for this one, as the Mac release's
  * goggame-1207664093.info says), with the folder in its value "path"
- * (not checked on a Windows installation) */
+ * (so on a Windows installation of the game, the name written "PATH";
+ * the registry ignores case) */
 static int from_registry(const char *key, char *out, size_t n)
 {
     char dir[MAX_PATH];

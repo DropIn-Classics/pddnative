@@ -79,6 +79,13 @@ DELUXE.BAT runs `INSTALL.COM` and then `DDPCMAIN.EXE`, which names PD.EXE
 and PD2.EXE. The table programs read a digit from their command line
 (`CODE:4CEE`, into `[971A]`), presumably the table the menu picked.
 
+GOG's product ID for the game is 1207664093 (the Mac release's
+`.goggame-1207664093.info`). On Windows its installer writes the key
+`HKLM\SOFTWARE\WOW6432Node\GOG.com\Games\1207664093` with the install
+folder in the value `PATH`, as seen on one installation. Other GOG DOS
+games ship a `game.gog` of the same format, so the launcher reads this
+key only and checks the image for `DREAMS1/PD.EXE`.
+
 ## How the programs were made
 
 From the bytes:
