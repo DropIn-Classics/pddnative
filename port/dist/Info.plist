@@ -9,7 +9,7 @@
 	<key>CFBundleExecutable</key>
 	<string>pdd</string>
 	<key>CFBundleIdentifier</key>
-	<string>io.github.mindphluxnet.pddnative</string>
+	<string>io.github.dropin-classics.pddnative</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

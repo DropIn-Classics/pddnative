@@ -11,6 +11,7 @@
 #include "sound.h"
 #include "sys.h"
 #include "textmode.h"
+#include "update.h"
 
 /* ---- the port's settings: pdd.cfg */
 
@@ -279,7 +280,8 @@ enum {
     I_KEY, I_KEY_LAST = I_KEY + 3, I_DEFAULTS, I_BACK,
     I_VOLUME, I_SHAPING, I_BASS, I_TREBLE, I_OOMPH, I_HEADPHONE, I_FULLSCREEN,
     I_QOL, I_SKIP_ANIMATION, I_QUICK_BALL, I_QUICK_BONUS, I_MENU_BOX,
-    I_PAD, I_PAD_BUTTON, I_PAD_LAST = I_PAD_BUTTON + PAD_BUTTONS - 1, I_PAD_DEFAULTS
+    I_PAD, I_PAD_BUTTON, I_PAD_LAST = I_PAD_BUTTON + PAD_BUTTONS - 1, I_PAD_DEFAULTS,
+    I_UPDATES
 };
 enum { K_GAP, K_HEADING, K_ITEM, K_CHOICE };
 enum { P_MAIN, P_TABLES, P_OPTIONS, P_SOUND, P_QOL, P_PAD };
@@ -297,6 +299,7 @@ static const Item main_items[] = {
     { K_ITEM, I_SOUND, "Sound and window", NULL },
     { K_ITEM, I_PAD, "Controller", NULL },
     { K_ITEM, I_QOL, "Quality of life fixes", NULL },
+    { K_CHOICE, I_UPDATES, "New versions", "Looked for on GitHub once a day." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_QUIT, "Quit", NULL },
 };
@@ -430,6 +433,7 @@ static void go(int to)
 /* ---- the state of the screen: a box over the page, a note, a key being set */
 
 static char box[400];           /* a message, lines split by '\n'; "" none */
+static int box_kind;            /* B_NOTE, B_ASK, B_OFFER */
 static int capturing = -1;      /* the game key being set, 0-3 */
 static int typed_sound_key;     /* the keys read now typed + - * / as well */
 static char note[100];          /* instead of the help line for a while */
@@ -439,6 +443,63 @@ static void show_note(const char *text)
 {
     snprintf(note, sizeof note, "%s", text);
     note_until = plat_micros() + 3000000;
+}
+
+/* ---- newer releases (update.h): looked for only by a release build,
+ * after the player's yes; the workflow gives it both */
+
+enum { B_NOTE, B_ASK, B_OFFER };
+
+#ifdef PORT_VERSION
+#define VERSION PORT_VERSION
+#else
+#define VERSION ""
+#endif
+#ifndef PORT_UPDATE_URL
+#define PORT_UPDATE_URL ""
+#endif
+static const char version[] = VERSION, update_url[] = PORT_UPDATE_URL;
+
+/* built with both: a release */
+static int release_build(void)
+{
+    return strlen(version) > 0 && strlen(update_url) > 0;
+}
+
+static UpdateInfo newer;
+static int have_newer;
+
+/* the question, once, on the first start of a release build */
+static void ask_updates(void)
+{
+    snprintf(box, sizeof box, "May pddnative look for new versions of itself?\n\n"
+             "Once a day it fetches one small file from GitHub\n"
+             "and sends nothing. \"New versions\" on the first\n"
+             "page changes this later.");
+    box_kind = B_ASK;
+}
+
+/* the newer release and its notes (their first lines) in the box */
+static void offer_newer(void)
+{
+    char notes[sizeof newer.notes];
+    const char *s = newer.notes;
+    size_t k;
+    int n;
+
+    notes[0] = 0;
+    for (n = 0; n < 3 && *s; n++) {
+        k = strcspn(s, "\n");
+        snprintf(notes + strlen(notes), sizeof notes - strlen(notes), "%.*s\n", (int)k, s);
+        s += k;
+        if (*s)
+            s++;
+    }
+    snprintf(box, sizeof box, "pddnative %s is out (this is %s).\n\n%s%s"
+             "Download it from its page and put its folder in\n"
+             "place of this one: settings and saves stay.", newer.version, version, notes,
+             notes[0] ? "\n" : "");
+    box_kind = B_OFFER;
 }
 
 static void db(char *out, size_t n, int v)
@@ -476,6 +537,12 @@ static void value_text(int id, char *out, size_t n)
     case I_QUICK_BALL:     snprintf(out, n, "%s", cfg.quick_ball ? "On" : "Off"); break;
     case I_QUICK_BONUS:    snprintf(out, n, "%s", cfg.quick_bonus ? "On" : "Off"); break;
     case I_MENU_BOX:       snprintf(out, n, "%s", cfg.menu_box ? "On" : "Off"); break;
+    case I_UPDATES:
+        if (have_newer)
+            snprintf(out, n, "%s is out", newer.version);
+        else
+            snprintf(out, n, "%s", update_consent() == 1 ? "Look for" : "Off");
+        break;
     default:
         if (id >= I_KEY && id <= I_KEY_LAST)
             snprintf(out, n, "%s", key_name(key_code(id - I_KEY)));
@@ -520,6 +587,7 @@ static void change(int id, int dir, int wrap)
     case I_QUICK_BALL:     cfg.quick_ball = !cfg.quick_ball; break;
     case I_QUICK_BONUS:    cfg.quick_bonus = !cfg.quick_bonus; break;
     case I_MENU_BOX:       cfg.menu_box = !cfg.menu_box; break;
+    case I_UPDATES:        update_set_consent(update_consent() != 1); return;
     default:
         if (id < I_PAD_BUTTON || id > I_PAD_LAST)
             return;
@@ -579,6 +647,12 @@ static int activate(int *prog, int *table)
         save_game_options();
         show_note("The game options are the game's defaults again.");
         break;
+    case I_UPDATES:
+        if (have_newer)
+            offer_newer();
+        else
+            change(id, 1, 1);
+        break;
     default:
         if (it->kind == K_CHOICE)
             change(id, 1, 1);
@@ -624,7 +698,16 @@ static int key_press(int code, int *prog, int *table)
         return GO_ON;
     }
     if (box[0]) {
-        if (code == 0x1C || code == 0x9C || code == 0x01 || code == 0x39)
+        int yes = code == 0x1C || code == 0x9C || code == 0x39, no = code == 0x01;
+        if (box_kind == B_ASK) {                        /* Y or Enter, N or Esc */
+            yes |= code == 0x15;
+            no |= code == 0x31;
+            if (yes || no)
+                update_set_consent(yes);
+        } else if (box_kind == B_OFFER && yes && !update_open(newer.page)) {
+            show_note("The browser could not be started.");
+        }
+        if (yes || no)
             box[0] = 0;
         return GO_ON;
     }
@@ -648,6 +731,10 @@ static int key_press(int code, int *prog, int *table)
             cursor_to(I_QUIT);
         else
             go(p->parent);
+        break;
+    case 0x16:                                          /* U: the newer release */
+        if (have_newer)
+            offer_newer();
         break;
     default:
         if (code >= 0x3B && code <= 0x42 && (page == P_MAIN || page == P_TABLES))
@@ -793,6 +880,8 @@ static void draw(void)
     };
     static const char *const help_key[] = { "Any key", "Set it", "Esc", "Keep the key", NULL };
     static const char *const help_box[] = { "Enter", "Go on", NULL };
+    static const char *const help_ask[] = { "Y", "Yes", "N", "No", NULL };
+    static const char *const help_offer[] = { "Enter", "Open its page", "Esc", "Not now", NULL };
     const Page *p = &pages[page];
     const Item *it = &p->items[p->cursor];
     char line[TM_COLS + 1];
@@ -807,7 +896,17 @@ static void draw(void)
         centred(0, TM_COLS, 22, it->help, TM_ATTR(TM_LIGHTCYAN, TM_BLUE));
     }
 
-    if (box[0]) {
+    if (have_newer && !box[0]) {
+        snprintf(line, sizeof line, "pddnative %s is out: U shows what is new.", newer.version);
+        centred(0, TM_COLS, 23, line, A_VALUE);
+    }
+    if (box[0] && box_kind == B_ASK) {
+        draw_box(box, "Y: yes   N: no");
+        help_bar(24, help_ask);
+    } else if (box[0] && box_kind == B_OFFER) {
+        draw_box(box, "Enter: open its page   Esc: not now");
+        help_bar(24, help_offer);
+    } else if (box[0]) {
         draw_box(box, "Enter: go on");
         help_bar(24, help_box);
     } else if (capturing >= 0) {
@@ -840,9 +939,15 @@ int launcher_run(int *prog, int *table, const char *note_text)
 
     load_game_options();
     pad_set_context(PAD_TEXT);
-    if (note_text && *note_text)
+    if (note_text && *note_text) {
         snprintf(box, sizeof box, "%s", note_text);
+        box_kind = B_NOTE;
+    }
     while (r == GO_ON) {
+        if (!box[0] && release_build() && update_consent() < 0)
+            ask_updates();
+        update_start(version, update_url);
+        have_newer = update_poll(&newer);
         pad_set_context(capturing >= 0 ? PAD_OFF : PAD_TEXT);  /* a game key: the keyboard's */
         if (!plat_pump())
             return 0;

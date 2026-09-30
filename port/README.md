@@ -314,11 +314,17 @@ and macOS (x86_64 and arm64 in one program, for macOS 10.13 and newer;
 SDL2 built from SDL's release source as a static library and linked in,
 `SDL2_STATIC=1`; `dist/macapp.sh` puts `pdd` into `pddnative.app` with
 `dist/Info.plist` and signs the bundle ad hoc; the job checks that the
-program links no SDL2 and that the bundle's signature holds). The app
-keeps its settings and the game's files in `~/Library/Application
-Support/Pinball Dreams` (`sys_data_dir`), and `gog_find` looks for
-`game.gog` there too, as nothing can be put beside a program inside a
-bundle. Each package holds the program (`pdd`, on a Mac the app),
+program links no SDL2 and that the bundle's signature holds). The
+settings, saves and the game's files go into the user's data folder
+(`sys_data_dir`): `%LOCALAPPDATA%\Pinball Dreams` on Windows,
+`~/Library/Application Support/Pinball Dreams` on a Mac,
+`~/.local/share/pinball-dreams` (or `$XDG_DATA_HOME`) on Linux; never
+beside the program, so that a newer package's folder can take the old
+one's place. The window moves `pdd.cfg`, `save` and `game` from beside
+the program there on its start (`sys_data_migrate`: renamed, or copied
+where that fails, as across drives), for those who had an earlier
+version; `gog_find` looks for `game.gog` in the data folder too. Each
+package holds the program (`pdd`, on a Mac the app),
 `dist/README.txt` (for the player) and the licences of micromod and
 SDL2; they are the run's artifacts, and a pushed tag `v*` makes a
 release of them. The macOS app tried on a Mac (15.7, arm64) as built
@@ -412,6 +418,27 @@ start a table from the first two pages.
   (below), one line a button, Left and Right choose; a mark before a
   button while it is held shows which is which. Kept in `pdd.cfg`
   (`pada = 3` ...).
+- New versions (`src/update.c`, doskit's `update.h`): a release build
+  (`PORT_VERSION` and `PORT_UPDATE_URL`, both from the workflow) asks on
+  its first start, in a box, whether it may look for new versions (Y or
+  Enter, N or Esc: a controller's A and B answer too); the first page's
+  "New versions" switches it later. With a yes it fetches the latest
+  release's `latest.json` (made by the workflow's release job: version,
+  page, the annotated tag's message as notes, each package's SHA-256)
+  from `DropIn-Classics/pddnative` at most once a day, in the background
+  (WinHTTP on Windows, the system's `curl` elsewhere), kept with the
+  answer in the data folder (`latest.json`, `update.cfg`). A newer one is
+  shown under the page; U, or Enter on "New versions", shows its notes,
+  and Enter there opens its page in the browser. A failed fetch shows
+  nothing. Checked on macOS with a build as v1.02 and a `latest.json`
+  naming v1.03 given as `file://`: the window build fetched it with the
+  answer yes and nothing unasked; the setup screen drawn headless
+  (`launcher_run` on `plat_null.c`, a harness not in the tree) showed the
+  question, then the line and "v1.03 is out", U the notes, N kept a no
+  and fetched nothing. Not checked: the browser opened, the fetch from
+  GitHub itself (the repository is not in DropIn-Classics yet), the
+  moving of old files by this program (the kit's test covers the same
+  code), Windows (WinHTTP not compiled here) and Linux.
 
 Game controllers (`src/pad.c`): the buttons become keys, pushed into the
 same queue as the keyboard's, so the programs see keys and `-record`

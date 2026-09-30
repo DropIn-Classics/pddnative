@@ -1,8 +1,9 @@
 # Builds the port (port/) for Windows, Linux and macOS and packs each with
 # port/dist/README.txt and the licences of micromod (and of SDL2, which
 # the Linux package carries beside the program and the macOS app has
-# linked in).  A push of a tag v* also
-# makes a GitHub release with the three packages.  Nothing here needs the
+# linked in).  A push of a tag v* also makes a GitHub release with the
+# three packages and latest.json, which the releases look for (the setup
+# screen's "New versions", port/src/update.h).  Nothing here needs the
 # game's data: the tools' checks (tools/check.py) run on a clone with the
 # game unpacked, not here.
 name: build
@@ -17,6 +18,12 @@ on:
 env:
   # a tag's build carries its name as the version (port/build.sh)
   PORT_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+  # where a release looks for newer ones: the latest release's latest.json
+  # (port/src/update.h) in DropIn-Classics, the ports' public home.  The
+  # repository is moved there at its first public release, so what is
+  # built into a release names it, not the repository the build ran in;
+  # before the move nothing is found and nothing is shown.
+  PORT_UPDATE_URL: https://github.com/DropIn-Classics/${{ github.event.repository.name }}/releases/latest/download/latest.json
 
 jobs:
   windows:
@@ -149,10 +156,33 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
+      - name: latest.json
+        # what update.h fetches: the version, the release's page, the
+        # annotated tag's message as the players' notes (none for a
+        # lightweight tag), each package's name and SHA-256
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ref=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$GITHUB_REF_NAME")
+          notes=""
+          if [ "$(echo "$ref" | jq -r .object.type)" = tag ]; then
+            notes=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$(echo "$ref" | jq -r .object.sha)" \
+              | jq -r .message | sed '/-----BEGIN PGP SIGNATURE-----/,$d')
+          fi
+          pkg() { jq -n --arg f "$1" --arg h "$(sha256sum "$1" | cut -d' ' -f1)" '{file: $f, sha256: $h}'; }
+          jq -n --arg v "$GITHUB_REF_NAME" \
+            --arg p "https://github.com/$GITHUB_REPOSITORY/releases/tag/$GITHUB_REF_NAME" \
+            --arg n "$notes" \
+            --argjson w "$(pkg pddnative-windows-x64.zip)" \
+            --argjson l "$(pkg pddnative-linux-x64.tar.gz)" \
+            --argjson m "$(pkg pddnative-macos.zip)" \
+            '{version: $v, page: $p, notes: $n,
+              packages: {"windows-x64": $w, "linux-x64": $l, macos: $m}}' > latest.json
+          cat latest.json
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY"
           --title "$GITHUB_REF_NAME" --generate-notes
-          pddnative-windows-x64.zip pddnative-linux-x64.tar.gz pddnative-macos.zip
+          pddnative-windows-x64.zip pddnative-linux-x64.tar.gz pddnative-macos.zip latest.json

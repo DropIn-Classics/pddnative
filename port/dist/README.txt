@@ -15,16 +15,30 @@ it looks for the GOG release's game.gog: next to the program, where GOG
 installed it on Windows (found through the registry, or \GOG Games\Pinball
 Dreams Deluxe on any drive), the GOG app in /Applications or
 ~/Applications on a Mac, a few usual Wine folders elsewhere. It offers to
-copy the game's files from it into a folder "game" beside the program
-(or, where that cannot be written, ~/Library/Application Support/Pinball
-Dreams on a Mac, ~/.local/share/pinball-dreams on Linux). If it is not
-found, copy game.gog next to pdd (on a Mac into ~/Library/Application
-Support/Pinball Dreams), or name it:
+copy the game's files from it into its data folder, where the settings
+and saves go too:
+
+    Windows  %LOCALAPPDATA%\Pinball Dreams
+    macOS    ~/Library/Application Support/Pinball Dreams
+    Linux    ~/.local/share/pinball-dreams
+
+(What an earlier version kept beside the program is moved there on the
+first start.) If game.gog is not found, copy it into the data folder or
+next to pdd, or name it:
 
     pdd -gog /path/to/game.gog
 
 Then the setup screen comes first: the tables, the game's menu, the
 options.
+
+New versions: on the first start the setup screen asks whether pdd may
+look for new versions; "New versions" on its first page changes the
+answer later. With a yes it fetches one small file from GitHub that
+names the newest release, at most once a day, and sends nothing. When a
+newer version is out, the setup screen says so; U (or Enter on "New
+versions") shows what is new and opens its page. Download the package
+there and put its folder in place of this one: the settings, saves and
+the game's files stay in the data folder.
 
 Windows: pdd.exe needs nothing else.
 
