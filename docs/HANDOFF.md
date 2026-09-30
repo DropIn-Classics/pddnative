@@ -93,7 +93,11 @@ GOG's product ID for the game is 1207664093 (the Mac release's
 `HKLM\SOFTWARE\WOW6432Node\GOG.com\Games\1207664093` with the install
 folder in the value `PATH`, as seen on one installation. Other GOG DOS
 games ship a `game.gog` of the same format, so the launcher reads this
-key only and checks the image for `DREAMS1/PD.EXE`.
+key only and checks the image for `DREAMS1/PD.EXE`. GOG's Linux release,
+installed with its `.sh`, has the image in `~/GOG Games/Pinball Dreams
+Deluxe/data/game.gog` and a menu entry
+`~/.local/share/applications/gog_com-Pinball_Dreams_Deluxe_1.desktop`
+with the install folder in `Path=`, as seen on one installation.
 
 ## How the programs were made
 

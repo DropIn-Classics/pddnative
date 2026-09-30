@@ -56,12 +56,12 @@ static int take_in_prefix(const char *prefix, char *out, size_t n)
 }
 
 /* the game's folder as a GOG installer leaves it: the image in it, or in
- * its folder `game` (the Linux release's installer, the .sh, keeps the
- * game's files there beside its start.sh) */
+ * its folder `data` (where the Linux release's installer, the .sh, puts
+ * it, as seen on one installation) */
 static int take_install(const char *dir, char *out, size_t n)
 {
     char sub[SYS_PATH];
-    sys_join(sub, sizeof sub, dir, "game");
+    sys_join(sub, sizeof sub, dir, "data");
     return take_in(dir, out, n) || take_in(sub, out, n);
 }
 
@@ -280,8 +280,9 @@ int gog_find(char *out, size_t n)
 #else
     {
         /* Elsewhere GOG's Linux release, as its installer (the .sh)
-         * put it: its menu entries name the folder, by default ~/GOG
-         * Games/Pinball Dreams Deluxe (/opt/GOG Games as root).  Or the
+         * put it: its menu entry names the folder in Path=, by default
+         * ~/GOG Games/Pinball Dreams Deluxe (as seen on one
+         * installation; /opt/GOG Games as root, not checked).  Or the
          * Windows release: Heroic's list of installed games (as
          * installed and as a Flatpak); the game's folder where Heroic,
          * Minigalaxy and Lutris put games by default; Wine prefixes of
