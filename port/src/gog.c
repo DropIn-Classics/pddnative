@@ -33,35 +33,19 @@ static int take_in(const char *dir, char *out, size_t n)
 }
 
 #ifdef _WIN32
-/* GOG's installers keep a key per game under GOG.com\Games with the
- * folder in its value "path" (presumably so for this game too: not
- * checked on a Windows installation); every game's is looked at, take()
- * keeps only this one's */
+/* GOG's installers keep a key per game under GOG.com\Games, named by
+ * the game's product ID (1207664093 for this one, as the Mac release's
+ * goggame-1207664093.info says), with the folder in its value "path"
+ * (not checked on a Windows installation) */
 static int from_registry(const char *key, char *out, size_t n)
 {
-    HKEY games, game;
-    char sub[256], dir[MAX_PATH];
-    DWORD i, len, type, size;
-    int found = 0;
+    char dir[MAX_PATH];
+    DWORD size = sizeof dir;
 
-    if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, key, 0, KEY_READ, &games) != ERROR_SUCCESS)
+    if (RegGetValueA(HKEY_LOCAL_MACHINE, key, "path", RRF_RT_REG_SZ, NULL, dir, &size) !=
+        ERROR_SUCCESS)
         return 0;
-    for (i = 0; !found; i++) {
-        len = sizeof sub;
-        if (RegEnumKeyExA(games, i, sub, &len, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
-            break;
-        if (RegOpenKeyExA(games, sub, 0, KEY_READ, &game) != ERROR_SUCCESS)
-            continue;
-        size = sizeof dir - 1;
-        if (RegQueryValueExA(game, "path", NULL, &type, (BYTE *)dir, &size) == ERROR_SUCCESS &&
-            type == REG_SZ) {
-            dir[size < sizeof dir ? size : sizeof dir - 1] = 0;
-            found = take_in(dir, out, n);
-        }
-        RegCloseKey(game);
-    }
-    RegCloseKey(games);
-    return found;
+    return take_in(dir, out, n);
 }
 #endif
 
@@ -77,8 +61,8 @@ int gog_find(char *out, size_t n)
         char drive;
         const char *pf = getenv("ProgramFiles(x86)");
 
-        if (from_registry("SOFTWARE\\WOW6432Node\\GOG.com\\Games", out, n) ||
-            from_registry("SOFTWARE\\GOG.com\\Games", out, n))
+        if (from_registry("SOFTWARE\\WOW6432Node\\GOG.com\\Games\\1207664093", out, n) ||
+            from_registry("SOFTWARE\\GOG.com\\Games\\1207664093", out, n))
             return 1;
         /* the installer's default folder, on any drive; GOG Galaxy's */
         for (drive = 'C'; drive <= 'Z'; drive++) {
