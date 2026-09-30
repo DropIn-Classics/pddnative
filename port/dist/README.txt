@@ -42,6 +42,13 @@ version check") shows what is new and opens its page. Download the
 package there and put its folder in place of this one: the settings,
 saves and the game's files stay in the data folder.
 
+The download: a browser may hold back a package that few people have
+downloaded yet, as each new release is (Chrome calls it a dangerous or
+suspicious download). Open the browser's list of downloads and keep the
+file: in Chrome "Keep", or in the entry's menu "Download dangerous
+file" (or "suspicious file"). Take the package only from the release
+page on GitHub.
+
 Windows: pdd.exe needs nothing else.
 
 macOS (10.13 or newer, Intel and Apple silicon): pddnative.app needs
@@ -56,8 +63,7 @@ does the same. Or, in the Terminal, in the folder of the app:
 
 Linux and the Steam Deck: keep libSDL2-2.0.so.0 next to pdd (the package
 brings SDL2 along; nothing needs to be installed). On the Deck the game
-starts fullscreen; in Game Mode add pdd as a non-Steam game. The GOG
-release installed with Heroic is looked for in ~/Games/Heroic.
+starts fullscreen; in Game Mode add pdd as a non-Steam game.
 
 The source, and how the port was made and checked:
 https://github.com/DropIn-Classics/pddnative
