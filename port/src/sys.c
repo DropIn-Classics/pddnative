@@ -94,17 +94,26 @@ void sys_exe_dir(char *out, size_t n)
     snprintf(out, n, "%s", path);
 }
 
-/* PD_DATA_DIR if set, else beside the program, as ever on Windows */
+/* PD_DATA_DIR if set, else %LOCALAPPDATA%\Pinball Dreams (local, not
+ * roaming: the copied game is large) */
 void sys_data_dir(char *out, size_t n)
 {
-    const char *env = getenv("PD_DATA_DIR");
+    const char *env = getenv("PD_DATA_DIR"), *local = getenv("LOCALAPPDATA");
+    char base[SYS_PATH];
 
     if (env && *env) {
         snprintf(out, n, "%s", env);
         sys_mkdir(out);
         return;
     }
-    sys_exe_dir(out, n);
+    if (local && *local) {
+        snprintf(base, sizeof base, "%s", local);
+    } else {
+        sys_home_dir(base, sizeof base);
+        sys_join(base, sizeof base, base, "AppData\\Local");
+    }
+    sys_join(out, n, base, "Pinball Dreams");
+    sys_mkdir(out);
 }
 
 int sys_is_dir(const char *path)
@@ -204,25 +213,8 @@ void sys_exe_dir(char *out, size_t n)
     snprintf(out, n, "%s", path);
 }
 
-/* the program's own folder can hold the settings and the import unless it
- * is inside an AppImage (mounted read-only) or a Mac app bundle (which
- * would lose its signature; Gatekeeper may also run it from a read-only
- * copy) */
-static int packaged(const char *exe_dir)
-{
-#ifdef __APPLE__
-    const char *tail = ".app/Contents/MacOS";
-    size_t len = strlen(exe_dir), k = strlen(tail);
-    if (len >= k && !strcmp(exe_dir + len - k, tail))
-        return 1;
-#endif
-    (void)exe_dir;
-    return getenv("APPIMAGE") != NULL;
-}
-
-/* PD_DATA_DIR if set; the program's directory if it can be written and is
- * not packaged; else ~/Library/Application Support/Pinball Dreams on a
- * Mac, $XDG_DATA_HOME/pinball-dreams or ~/.local/share/pinball-dreams
+/* PD_DATA_DIR if set; else ~/Library/Application Support/Pinball Dreams
+ * on a Mac, $XDG_DATA_HOME/pinball-dreams or ~/.local/share/pinball-dreams
  * elsewhere */
 void sys_data_dir(char *out, size_t n)
 {
@@ -234,9 +226,6 @@ void sys_data_dir(char *out, size_t n)
         sys_mkdir(out);
         return;
     }
-    sys_exe_dir(out, n);
-    if (!packaged(out) && access(out, W_OK) == 0)
-        return;
     home = getenv("HOME");
 #ifdef __APPLE__
     snprintf(base, sizeof base, "%s/Library/Application Support", home ? home : ".");
@@ -408,4 +397,85 @@ int sys_steam_deck(void)
     if (env && *env)
         return atoi(env) != 0;
     return firmware_deck();
+}
+
+static int copy_file(const char *from, const char *to)
+{
+    char buf[65536];
+    size_t k;
+    int ok = 1;
+    FILE *in = fopen(from, "rb"), *out;
+
+    if (!in)
+        return 0;
+    out = fopen(to, "wb");
+    if (!out) {
+        fclose(in);
+        return 0;
+    }
+    while (ok && (k = fread(buf, 1, sizeof buf, in)) > 0)
+        ok = fwrite(buf, 1, k, out) == k;
+    fclose(in);
+    if (fclose(out) != 0)
+        ok = 0;
+    return ok;
+}
+
+struct copy_ctx {
+    const char *from, *to;
+    int ok;
+};
+
+static int copy_tree(const char *from, const char *to);
+
+static void copy_entry(void *ctx, const char *name, int is_dir)
+{
+    struct copy_ctx *c = (struct copy_ctx *)ctx;
+    char a[SYS_PATH], b[SYS_PATH];
+
+    sys_join(a, sizeof a, c->from, name);
+    sys_join(b, sizeof b, c->to, name);
+    if (!(is_dir ? copy_tree(a, b) : copy_file(a, b)))
+        c->ok = 0;
+}
+
+static int copy_tree(const char *from, const char *to)
+{
+    struct copy_ctx c;
+
+    c.from = from;
+    c.to = to;
+    c.ok = 1;
+    sys_mkdir(to);
+    if (sys_list_dir(from, copy_entry, &c) != 0)
+        return 0;
+    return c.ok;
+}
+
+int sys_data_migrate(const char *const *names)
+{
+    char exe[SYS_PATH], data[SYS_PATH], from[SYS_PATH], to[SYS_PATH], part[SYS_PATH];
+    int moved = 0;
+
+    sys_exe_dir(exe, sizeof exe);
+    sys_data_dir(data, sizeof data);
+    if (!strcmp(exe, data))
+        return 0;
+    for (; *names; names++) {
+        sys_join(from, sizeof from, exe, *names);
+        sys_join(to, sizeof to, data, *names);
+        if (!(sys_is_file(from) || sys_is_dir(from)) || sys_is_file(to) || sys_is_dir(to))
+            continue;
+        if (sys_rename(from, to) == 0) {
+            moved++;
+            continue;
+        }
+        /* copied under another name first: a half copy is never taken for one */
+        snprintf(part, sizeof part, "%s.part", to);
+        if (sys_is_dir(from) ? copy_tree(from, part) : copy_file(from, part)) {
+            if (sys_rename(part, to) == 0)
+                moved++;
+        }
+    }
+    return moved;
 }

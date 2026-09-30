@@ -7,7 +7,8 @@
  * DIR is the unpacked CD (the folders DELUXE, DREAMS1, DREAMS2 ...):
  * -game, else $PDD_GAME, else the first folder `game` with a DREAMS1 in
  * it beside the program, in the current directory or in the data folder
- * (sys_data_dir).  When there is none, the window offers to unpack the
+ * (sys_data_dir, the user's; the window moves what earlier versions kept
+ * beside the program there).  When there is none, the window offers to unpack the
  * installed GOG release's image into the data folder's `game` (gog.c;
  * -gog names the image, game.gog, instead of looking for it).  Without -prog and -table the window shows the
  * setup screen (launcher.c), which starts the tables and comes back after
@@ -197,8 +198,12 @@ int main(int argc, char **argv)
     }
     if (!plat_init("Pinball Dreams"))
         return 1;
-    if (plat_has_window())
+    if (plat_has_window()) {
+        /* what earlier versions kept beside the program */
+        static const char *const old_files[] = { "pdd.cfg", "save", "game", NULL };
+        sys_data_migrate(old_files);
         launcher_load_settings();
+    }
     if (!find_game(given, game, sizeof game)) {
         /* found by neither -game nor PDD_GAME: the GOG release's, copied */
         if (!given && !getenv("PDD_GAME") && plat_has_window()) {

@@ -10,9 +10,19 @@
 /* the directory the program runs from, without a trailing separator */
 void sys_exe_dir(char *out, size_t n);
 
-/* where the settings and the GOG import go: beside the program on Windows;
- * elsewhere too if that can be written, else the user's data directory */
+/* where settings, saves and the GOG import go, made if missing:
+ * $PD_DATA_DIR if set, else the user's data folder: %LOCALAPPDATA%\Pinball
+ * Dreams on Windows, ~/Library/Application Support/Pinball Dreams on a Mac,
+ * $XDG_DATA_HOME/pinball-dreams or ~/.local/share/pinball-dreams elsewhere.
+ * Never the program's folder, so that a newer release can take its place. */
 void sys_data_dir(char *out, size_t n);
+
+/* What an earlier version wrote beside the program moved into
+ * sys_data_dir: each of `names` (files or folders; NULL ends the list)
+ * that is beside the program and not yet in the data folder.  Renamed
+ * where that works, else copied (another drive; the old one left).  The
+ * number moved. */
+int sys_data_migrate(const char *const *names);
 
 /* dir + separator + name; name alone if dir is empty */
 void sys_join(char *out, size_t n, const char *dir, const char *name);
