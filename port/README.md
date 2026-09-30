@@ -331,9 +331,12 @@ release of them. The macOS app tried on a Mac (15.7, arm64) as built
 here, `build.sh` and `macapp.sh` with SDL2 2.32.10 built the same way:
 started with `open`, its window came up and its settings went to
 Application Support; the x86_64 half, the workflow's job, a quarantined
-download and "Open Anyway" not tried. The first release, v1.0 (2026-09-29), built on all
-three (the user's word; the run's log not read here); none of the
-packages started on Windows, Linux or a Steam Deck yet.
+download and "Open Anyway" not tried. The first release, v1.0
+(2026-09-29), built on all three (the user's word; the run's log not
+read here). The Linux package, a workflow build of 3999e3f or later,
+ran on the user's Linux (2026-09-30): the GOG release installed with
+its `.sh` found, the game's files copied, the game running (the user's
+word). Not started on Windows or a Steam Deck yet.
 
 The sound in the window: `-fx BASS,TREBLE,OOMPH,HEADPHONE` shapes it
 (`src/audiofx.c`: bass and treble shelves -12 to 12 dB at 200 Hz and

@@ -17,8 +17,10 @@ DDPCMAIN run in tools/run, a table run from it included.
 - CI (2026-09-28): `.github/workflows/build.yml` builds and packs the
   port for Windows, Linux and macOS (port/README.md, "Build and run"); it
   does not run tools/check.py, which needs the game unpacked. v1.0 was
-  released with it on 2026-09-29 (tag `v1.0`, 39ed828); the packages
-  not tried on Windows, Linux or a Steam Deck yet.
+  released with it on 2026-09-29 (tag `v1.0`, 39ed828). The Linux
+  package ran on the user's Linux on 2026-09-30, after the data folder
+  (sys_join in place) and the `.sh` installation's `data/` were fixed;
+  not tried on Windows or a Steam Deck yet.
 - macOS package (2026-09-30): v1.0's (`pdd` with SDL2.framework beside
   it) did not start for the user after a download with Chrome. Every
   unpacked file carried `com.apple.quarantine`, and SDL's release
