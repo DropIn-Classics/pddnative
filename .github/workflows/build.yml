@@ -3,9 +3,9 @@
 # the Linux package carries beside the program and the macOS app has
 # linked in).  A push of a tag v* also makes a GitHub release with the
 # three packages and latest.json, which the releases look for (the setup
-# screen's "New versions", port/src/update.h).  Nothing here needs the
-# game's data: the tools' checks (tools/check.py) run on a clone with the
-# game unpacked, not here.
+# screen's "New version check", port/src/update.h).  Nothing here needs
+# the game's data: the tools' checks (tools/check.py) run on a clone with
+# the game unpacked, not here.
 name: build
 
 on:

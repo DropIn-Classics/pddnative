@@ -422,14 +422,14 @@ start a table from the first two pages.
   (`PORT_VERSION` and `PORT_UPDATE_URL`, both from the workflow) asks on
   its first start, in a box, whether it may look for new versions (Y or
   Enter, N or Esc: a controller's A and B answer too); the first page's
-  "New versions" switches it later. With a yes it fetches the latest
-  release's `latest.json` (made by the workflow's release job: version,
+  "New version check" switches it later. With a yes it fetches the
+  latest release's `latest.json` (made by the workflow's release job: version,
   page, the annotated tag's message as notes, each package's SHA-256)
   from `DropIn-Classics/pddnative` at most once a day, in the background
   (WinHTTP on Windows, the system's `curl` elsewhere), kept with the
   answer in the data folder (`latest.json`, `update.cfg`). A newer one is
-  shown under the page; U, or Enter on "New versions", shows its notes,
-  and Enter there opens its page in the browser. A failed fetch shows
+  shown under the page; U, or Enter on "New version check", shows its
+  notes, and Enter there opens its page in the browser. A failed fetch shows
   nothing. Checked on macOS with a build as v1.02 and a `latest.json`
   naming v1.03 given as `file://`: the window build fetched it with the
   answer yes and nothing unasked; the setup screen drawn headless

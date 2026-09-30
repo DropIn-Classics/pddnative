@@ -299,7 +299,7 @@ static const Item main_items[] = {
     { K_ITEM, I_SOUND, "Sound and window", NULL },
     { K_ITEM, I_PAD, "Controller", NULL },
     { K_ITEM, I_QOL, "Quality of life fixes", NULL },
-    { K_CHOICE, I_UPDATES, "New versions", "Looked for on GitHub once a day." },
+    { K_CHOICE, I_UPDATES, "New version check", "Looked for on GitHub once a day." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_QUIT, "Quit", NULL },
 };
@@ -474,8 +474,8 @@ static void ask_updates(void)
 {
     snprintf(box, sizeof box, "May pddnative look for new versions of itself?\n\n"
              "Once a day it fetches one small file from GitHub\n"
-             "and sends nothing. \"New versions\" on the first\n"
-             "page changes this later.");
+             "and sends nothing. \"New version check\" on the\n"
+             "first page changes this later.");
     box_kind = B_ASK;
 }
 
@@ -541,7 +541,7 @@ static void value_text(int id, char *out, size_t n)
         if (have_newer)
             snprintf(out, n, "%s is out", newer.version);
         else
-            snprintf(out, n, "%s", update_consent() == 1 ? "Look for" : "Off");
+            snprintf(out, n, "%s", update_consent() == 1 ? "On" : "Off");
         break;
     default:
         if (id >= I_KEY && id <= I_KEY_LAST)

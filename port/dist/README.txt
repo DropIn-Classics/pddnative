@@ -32,13 +32,13 @@ Then the setup screen comes first: the tables, the game's menu, the
 options.
 
 New versions: on the first start the setup screen asks whether pdd may
-look for new versions; "New versions" on its first page changes the
+look for new versions; "New version check" on its first page changes the
 answer later. With a yes it fetches one small file from GitHub that
 names the newest release, at most once a day, and sends nothing. When a
 newer version is out, the setup screen says so; U (or Enter on "New
-versions") shows what is new and opens its page. Download the package
-there and put its folder in place of this one: the settings, saves and
-the game's files stay in the data folder.
+version check") shows what is new and opens its page. Download the
+package there and put its folder in place of this one: the settings,
+saves and the game's files stay in the data folder.
 
 Windows: pdd.exe needs nothing else.
 
