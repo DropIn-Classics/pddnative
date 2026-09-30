@@ -55,6 +55,16 @@ static int take_in_prefix(const char *prefix, char *out, size_t n)
     return 0;
 }
 
+/* the game's folder as a GOG installer leaves it: the image in it, or in
+ * its folder `game` (the Linux release's installer, the .sh, keeps the
+ * game's files there beside its start.sh) */
+static int take_install(const char *dir, char *out, size_t n)
+{
+    char sub[SYS_PATH];
+    sys_join(sub, sizeof sub, dir, "game");
+    return take_in(dir, out, n) || take_in(sub, out, n);
+}
+
 typedef struct {
     const char *dir;
     char *out;
@@ -74,8 +84,8 @@ static void scan_entry(void *ctx, const char *name, int is_dir)
         return;
     sys_join(dir, sizeof dir, s->dir, name);
     sys_join(sub, sizeof sub, dir, "Pinball Dreams Deluxe");
-    s->found = take_in(dir, s->out, s->n) || take_in_prefix(dir, s->out, s->n) ||
-               take_in(sub, s->out, s->n);
+    s->found = take_install(dir, s->out, s->n) || take_in_prefix(dir, s->out, s->n) ||
+               take_install(sub, s->out, s->n);
 }
 
 static int scan(const char *dir, char *out, size_t n)
@@ -89,18 +99,30 @@ static int scan(const char *dir, char *out, size_t n)
     return s.found;
 }
 
+/* a text file, ending in a 0, NULL if it cannot be read */
+static char *load_text(const char *path)
+{
+    size_t size;
+    char *data = (char *)sys_load(path, &size), *text;
+
+    if (!data || (text = realloc(data, size + 1)) == NULL) {
+        free(data);
+        return NULL;
+    }
+    text[size] = 0;
+    return text;
+}
+
 /* Heroic's list of the GOG games it installed, a JSON file: every
  * "install_path" in it tried (take() keeps only this game's image) */
 static int from_heroic(const char *json, char *out, size_t n)
 {
     static const char key[] = "\"install_path\"";
-    size_t size;
-    char *data = (char *)sys_load(json, &size), *p, dir[SYS_PATH];
+    char *data = load_text(json), *p, dir[SYS_PATH];
     int found = 0;
 
     if (!data)
         return 0;
-    data[size ? size - 1 : 0] = 0;      /* the closing brace, not needed */
     for (p = strstr(data, key); p && !found; p = strstr(p, key)) {
         size_t len = 0;
 
@@ -115,10 +137,77 @@ static int from_heroic(const char *json, char *out, size_t n)
             dir[len++] = *p++;
         }
         dir[len] = 0;
-        found = take_in(dir, out, n);
+        found = take_install(dir, out, n);
     }
     free(data);
     return found;
+}
+
+/* The Linux installer's menu entry, gog_com-NAME_1.desktop: the game's
+ * folder, wherever the player installed it, in its Path= or as the
+ * folder of the start.sh its Exec= starts */
+static int from_desktop(const char *file, char *out, size_t n)
+{
+    char *data = load_text(file), *line, *end, dir[SYS_PATH];
+    int found = 0;
+
+    if (!data)
+        return 0;
+    for (line = data; line && !found; line = end ? end + 1 : NULL) {
+        char *from, *to;
+
+        end = strchr(line, '\n');
+        if (end)
+            *end = 0;
+        if (!strncmp(line, "Path=", 5)) {
+            from = line + 5;
+            to = from + strcspn(from, "\r");
+        } else if (!strncmp(line, "Exec=", 5) && (to = strstr(line, "/start.sh")) != NULL) {
+            for (from = to; from > line + 5 && from[-1] != '"' && from[-1] != '\''; from--)
+                ;
+        } else {
+            continue;
+        }
+        if (*from == '"' && to > from && to[-1] == '"') {
+            from++;
+            to--;
+        }
+        snprintf(dir, sizeof dir, "%.*s", (int)(to - from), from);
+        found = take_install(dir, out, n);
+    }
+    free(data);
+    return found;
+}
+
+typedef struct {
+    const char *dir;
+    char *out;
+    size_t n;
+    int found;
+} Menu;
+
+static void menu_entry(void *ctx, const char *name, int is_dir)
+{
+    Menu *m = ctx;
+    size_t len = strlen(name);
+    char path[SYS_PATH];
+
+    if (m->found || is_dir || strncmp(name, "gog_com-", 8) || len < 8 ||
+        strcmp(name + len - 8, ".desktop"))
+        return;
+    sys_join(path, sizeof path, m->dir, name);
+    m->found = from_desktop(path, m->out, m->n);
+}
+
+static int from_menu(const char *dir, char *out, size_t n)
+{
+    Menu m;
+    m.dir = dir;
+    m.out = out;
+    m.n = n;
+    m.found = 0;
+    sys_list_dir(dir, menu_entry, &m);
+    return m.found;
 }
 #endif
 
@@ -190,11 +279,17 @@ int gog_find(char *out, size_t n)
     }
 #else
     {
-        /* Elsewhere the Windows release: Heroic's list of installed
-         * games (as installed and as a Flatpak); the game's folder where
-         * Heroic, Minigalaxy and Lutris put games by default; Wine
-         * prefixes of Wine, Lutris and Bottles.  The folders are the
-         * programs' defaults as documented, not checked on a machine */
+        /* Elsewhere GOG's Linux release, as its installer (the .sh)
+         * put it: its menu entries name the folder, by default ~/GOG
+         * Games/Pinball Dreams Deluxe (/opt/GOG Games as root).  Or the
+         * Windows release: Heroic's list of installed games (as
+         * installed and as a Flatpak); the game's folder where Heroic,
+         * Minigalaxy and Lutris put games by default; Wine prefixes of
+         * Wine, Lutris and Bottles.  The folders are the programs'
+         * defaults as documented, not checked on a machine */
+        static const char *const menus[] = {
+            ".local/share/applications", "Desktop",
+        };
         static const char *const heroic[] = {
             ".config/heroic/gog_store/installed.json",
             ".var/app/com.heroicgameslauncher.hgl/config/heroic/gog_store/installed.json",
@@ -214,6 +309,14 @@ int gog_find(char *out, size_t n)
         size_t i;
 
         sys_home_dir(home, sizeof home);
+        for (i = 0; i < sizeof menus / sizeof menus[0]; i++) {
+            sys_join(dir, sizeof dir, home, menus[i]);
+            if (from_menu(dir, out, n))
+                return 1;
+        }
+        if (from_menu("/usr/share/applications", out, n) ||
+            take_install("/opt/GOG Games/Pinball Dreams Deluxe", out, n))
+            return 1;
         for (i = 0; i < sizeof heroic / sizeof heroic[0]; i++) {
             sys_join(path, sizeof path, home, heroic[i]);
             if (from_heroic(path, out, n))
@@ -221,7 +324,7 @@ int gog_find(char *out, size_t n)
         }
         for (i = 0; i < sizeof game_dirs / sizeof game_dirs[0]; i++) {
             sys_join(dir, sizeof dir, home, game_dirs[i]);
-            if (take_in(dir, out, n))
+            if (take_install(dir, out, n))
                 return 1;
         }
         if (prefix && *prefix && take_in_prefix(prefix, out, n))

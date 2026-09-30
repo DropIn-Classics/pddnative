@@ -467,17 +467,24 @@ release (`src/gog.c`): its `game.gog` beside the program, in the Mac
 application in `/Applications` or `~/Applications`, on Windows where
 GOG's registry entry for the game (`GOG.com\Games\1207664093`, value
 `path`) points and in `\GOG Games\Pinball Dreams Deluxe` on any drive;
-on Linux in every `install_path` of Heroic's
-`gog_store/installed.json` (installed or as a Flatpak), in
+on Linux, for GOG's Linux release (its installer, the `.sh`), in the
+folder its menu entry `gog_com-*.desktop` (in
+`~/.local/share/applications`, `~/Desktop`, `/usr/share/applications`)
+names in `Path=` or as the folder of `start.sh` in `Exec=`, and in
+`~/GOG Games/` and `/opt/GOG Games/Pinball Dreams Deluxe`, each time in
+the folder itself or its `game` folder; for the Windows release in
+every `install_path` of Heroic's `gog_store/installed.json` (installed
+or as a Flatpak), in
 `~/Games/Heroic/` and `~/GOG Games/` (Minigalaxy), in the Wine prefixes
 `$WINEPREFIX` and `~/.wine`, and one folder down in `~/Games` (Lutris),
 Bottles' and `~/.local/share/wineprefixes`, as the game's folder, a
 prefix (`drive_c/GOG Games/...` or GOG Galaxy's folder) or a folder
 holding `Pinball Dreams Deluxe`. The name `game.gog` in any case. These
-Linux folders are the programs' defaults; the search was tried on a Mac
-with a copy of that branch against folders laid out so, not on Linux.
-Only an image whose file system
-has `DREAMS1\PD.EXE` counts: GOG's releases of other DOS games ship a
+Linux folders, the Linux release's `game` folder and its menu entry are
+the installers' defaults as known, not seen on a system; the search
+was tried on a Mac with a copy of that branch against folders laid out
+so, not on Linux. Only an image whose file system has `DREAMS1\PD.EXE`
+counts: GOG's releases of other DOS games ship a
 `game.gog` of the same format. It offers to copy the files into `game`
 in the data folder: the image's ISO 9660 file system unpacked as
 `tools/gogx.py` does it, into `game.part` first and renamed when
