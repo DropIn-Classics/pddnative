@@ -10,11 +10,8 @@ DDPCMAIN run in tools/run, a table run from it included.
 
 ## Start here (next session)
 
-- `master` has the remote `origin` (GitHub, mindphluxnet/pddnative); the
-  user pushes, push only when the user asks. At its public release the
-  repository moves to the organisation DropIn-Classics; the players'
-  README.txt, the update address (PORT_UPDATE_URL) and the Mac app's
-  identifier name it there already.
+- `master` has the remote `origin` (GitHub, DropIn-Classics/pddnative,
+  public); the user pushes, push only when the user asks.
 - AGENTS.md has permanent provenance rules: read them before anything
   else.
 - CI (2026-09-28): `.github/workflows/build.yml` builds and packs the
