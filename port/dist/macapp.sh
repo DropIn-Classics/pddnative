@@ -7,8 +7,10 @@
 # its "v".
 #   sh port/dist/macapp.sh DIR
 set -e
+mkdir -p "${1:?usage: macapp.sh DIR}"
+# DIR as given from where the script was called, before the cd below
+out=$(cd "$1" && pwd)
 cd "$(dirname "$0")/.."
-out=${1:?usage: macapp.sh DIR}
 VERSION=${PORT_VERSION:-$(git describe --tags --exact-match 2>/dev/null || true)}
 app="$out/pddnative.app"
 rm -rf "$app"
