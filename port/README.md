@@ -466,8 +466,17 @@ or in the data folder), the window first looks for the installed GOG
 release (`src/gog.c`): its `game.gog` beside the program, in the Mac
 application in `/Applications` or `~/Applications`, on Windows where
 GOG's registry entry for the game (`GOG.com\Games\1207664093`, value
-`path`) points and in `\GOG Games\Pinball Dreams Deluxe` on any drive,
-elsewhere in a few usual Wine folders. Only an image whose file system
+`path`) points and in `\GOG Games\Pinball Dreams Deluxe` on any drive;
+on Linux in every `install_path` of Heroic's
+`gog_store/installed.json` (installed or as a Flatpak), in
+`~/Games/Heroic/` and `~/GOG Games/` (Minigalaxy), in the Wine prefixes
+`$WINEPREFIX` and `~/.wine`, and one folder down in `~/Games` (Lutris),
+Bottles' and `~/.local/share/wineprefixes`, as the game's folder, a
+prefix (`drive_c/GOG Games/...` or GOG Galaxy's folder) or a folder
+holding `Pinball Dreams Deluxe`. The name `game.gog` in any case. These
+Linux folders are the programs' defaults; the search was tried on a Mac
+with a copy of that branch against folders laid out so, not on Linux.
+Only an image whose file system
 has `DREAMS1\PD.EXE` counts: GOG's releases of other DOS games ship a
 `game.gog` of the same format. It offers to copy the files into `game`
 in the data folder: the image's ISO 9660 file system unpacked as

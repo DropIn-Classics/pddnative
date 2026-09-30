@@ -14,7 +14,8 @@ Start pdd (pdd.exe on Windows, pddnative.app on a Mac). The first time
 it looks for the GOG release's game.gog: next to the program, where GOG
 installed it on Windows (found through the registry, or \GOG Games\Pinball
 Dreams Deluxe on any drive), the GOG app in /Applications or
-~/Applications on a Mac, a few usual Wine folders elsewhere. It offers to
+~/Applications on a Mac, on Linux where Heroic, Lutris, Minigalaxy,
+Bottles or Wine usually put it. It offers to
 copy the game's files from it into its data folder, where the settings
 and saves go too:
 

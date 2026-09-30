@@ -24,13 +24,103 @@ static int take(const char *path, char *out, size_t n)
     return 1;
 }
 
-/* dir/game.gog */
+/* dir/game.gog, the name in any case (a Linux file system tells
+ * GAME.GOG from game.gog) */
 static int take_in(const char *dir, char *out, size_t n)
 {
     char path[SYS_PATH];
-    sys_join(path, sizeof path, dir, "game.gog");
+    if (!sys_find(dir, "game.gog", path, sizeof path))
+        return 0;
     return take(path, out, n);
 }
+
+#if !defined _WIN32 && !defined __APPLE__
+/* The folders the Windows installer and GOG Galaxy choose, inside the
+ * Wine prefix `prefix` (Wine, Lutris, Bottles) */
+static int take_in_prefix(const char *prefix, char *out, size_t n)
+{
+    static const char *const dirs[] = {
+        "drive_c/GOG Games/Pinball Dreams Deluxe",
+        "drive_c/Program Files (x86)/GOG Galaxy/Games/Pinball Dreams Deluxe",
+        "drive_c/Program Files/GOG Galaxy/Games/Pinball Dreams Deluxe",
+    };
+    char dir[SYS_PATH];
+    size_t i;
+
+    for (i = 0; i < sizeof dirs / sizeof dirs[0]; i++) {
+        sys_join(dir, sizeof dir, prefix, dirs[i]);
+        if (take_in(dir, out, n))
+            return 1;
+    }
+    return 0;
+}
+
+typedef struct {
+    const char *dir;
+    char *out;
+    size_t n;
+    int found;
+} Scan;
+
+/* each folder in a folder of games or of Wine prefixes: the game's own
+ * folder (Lutris without Wine), a prefix, or one holding the game's
+ * folder under its name */
+static void scan_entry(void *ctx, const char *name, int is_dir)
+{
+    Scan *s = ctx;
+    char dir[SYS_PATH], sub[SYS_PATH];
+
+    if (s->found || !is_dir)
+        return;
+    sys_join(dir, sizeof dir, s->dir, name);
+    sys_join(sub, sizeof sub, dir, "Pinball Dreams Deluxe");
+    s->found = take_in(dir, s->out, s->n) || take_in_prefix(dir, s->out, s->n) ||
+               take_in(sub, s->out, s->n);
+}
+
+static int scan(const char *dir, char *out, size_t n)
+{
+    Scan s;
+    s.dir = dir;
+    s.out = out;
+    s.n = n;
+    s.found = 0;
+    sys_list_dir(dir, scan_entry, &s);
+    return s.found;
+}
+
+/* Heroic's list of the GOG games it installed, a JSON file: every
+ * "install_path" in it tried (take() keeps only this game's image) */
+static int from_heroic(const char *json, char *out, size_t n)
+{
+    static const char key[] = "\"install_path\"";
+    size_t size;
+    char *data = (char *)sys_load(json, &size), *p, dir[SYS_PATH];
+    int found = 0;
+
+    if (!data)
+        return 0;
+    data[size ? size - 1 : 0] = 0;      /* the closing brace, not needed */
+    for (p = strstr(data, key); p && !found; p = strstr(p, key)) {
+        size_t len = 0;
+
+        p += sizeof key - 1;
+        while (*p == ' ' || *p == ':' || *p == '\t' || *p == '\r' || *p == '\n')
+            p++;
+        if (*p++ != '"')
+            continue;
+        while (*p && *p != '"' && len + 1 < sizeof dir) {
+            if (*p == '\\' && p[1])
+                p++;
+            dir[len++] = *p++;
+        }
+        dir[len] = 0;
+        found = take_in(dir, out, n);
+    }
+    free(data);
+    return found;
+}
+#endif
 
 #ifdef _WIN32
 /* GOG's installers keep a key per game under GOG.com\Games, named by
@@ -80,36 +170,69 @@ int gog_find(char *out, size_t n)
         if (take_in(path, out, n))
             return 1;
     }
-#else
+#elif defined __APPLE__
     {
         /* On a Mac the release is an application with a Boxer (DOSBox)
          * bundle inside, the image in its CD folder */
         static const char *const bundle =
             "Pinball Dreams Deluxe.app/Contents/Resources/game/Pinball Dreams.app/Contents/"
             "Resources/Pinball Dreams.boxer/game.cdmedia/game.gog";
-        /* Elsewhere (the Windows release under Wine, Heroic, Lutris):
-         * guesses at the usual folders, not checked */
-        static const char *const home_dirs[] = {
-            "Applications", "GOG Games/Pinball Dreams Deluxe",
-            "Games/Heroic/Pinball Dreams Deluxe",
-            ".wine/drive_c/GOG Games/Pinball Dreams Deluxe",
-        };
         char home[SYS_PATH];
-        size_t i;
 
         snprintf(path, sizeof path, "/Applications/%s", bundle);
         if (take(path, out, n))
             return 1;
         sys_home_dir(home, sizeof home);
-        for (i = 0; i < sizeof home_dirs / sizeof home_dirs[0]; i++) {
-            sys_join(dir, sizeof dir, home, home_dirs[i]);
-            if (i == 0) {
-                sys_join(path, sizeof path, dir, bundle);
-                if (take(path, out, n))
-                    return 1;
-            } else if (take_in(dir, out, n)) {
+        sys_join(dir, sizeof dir, home, "Applications");
+        sys_join(path, sizeof path, dir, bundle);
+        if (take(path, out, n))
+            return 1;
+    }
+#else
+    {
+        /* Elsewhere the Windows release: Heroic's list of installed
+         * games (as installed and as a Flatpak); the game's folder where
+         * Heroic, Minigalaxy and Lutris put games by default; Wine
+         * prefixes of Wine, Lutris and Bottles.  The folders are the
+         * programs' defaults as documented, not checked on a machine */
+        static const char *const heroic[] = {
+            ".config/heroic/gog_store/installed.json",
+            ".var/app/com.heroicgameslauncher.hgl/config/heroic/gog_store/installed.json",
+        };
+        static const char *const game_dirs[] = {
+            "Games/Heroic/Pinball Dreams Deluxe",
+            "GOG Games/Pinball Dreams Deluxe",
+        };
+        static const char *const scan_dirs[] = {
+            "Games", "Games/Heroic", "Games/Heroic/Prefixes", "GOG Games",
+            ".local/share/bottles/bottles",
+            ".var/app/com.usebottles.bottles/data/bottles/bottles",
+            ".local/share/wineprefixes",
+        };
+        const char *prefix = getenv("WINEPREFIX");
+        char home[SYS_PATH];
+        size_t i;
+
+        sys_home_dir(home, sizeof home);
+        for (i = 0; i < sizeof heroic / sizeof heroic[0]; i++) {
+            sys_join(path, sizeof path, home, heroic[i]);
+            if (from_heroic(path, out, n))
                 return 1;
-            }
+        }
+        for (i = 0; i < sizeof game_dirs / sizeof game_dirs[0]; i++) {
+            sys_join(dir, sizeof dir, home, game_dirs[i]);
+            if (take_in(dir, out, n))
+                return 1;
+        }
+        if (prefix && *prefix && take_in_prefix(prefix, out, n))
+            return 1;
+        sys_join(dir, sizeof dir, home, ".wine");
+        if (take_in_prefix(dir, out, n))
+            return 1;
+        for (i = 0; i < sizeof scan_dirs / sizeof scan_dirs[0]; i++) {
+            sys_join(dir, sizeof dir, home, scan_dirs[i]);
+            if (scan(dir, out, n))
+                return 1;
         }
     }
 #endif
