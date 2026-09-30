@@ -418,8 +418,9 @@ the data folder), the window first looks for the installed GOG release
 (`src/gog.c`): its `game.gog` beside the program, in the Mac application
 in `/Applications` or `~/Applications`, on Windows where GOG's registry
 entries (`GOG.com\Games\*`, value `path`) point and in `\GOG Games\Pinball
-Dreams Deluxe` on any drive, elsewhere in a few usual Wine folders. It
-offers to copy the files into `game` in the data folder: the image's
+Dreams Deluxe` on any drive, elsewhere in a few usual Wine folders. Only
+an image whose file system has `DREAMS1\PD.EXE` counts: GOG's releases
+of other DOS games ship a `game.gog` of the same format. It offers to copy the files into `game` in the data folder: the image's
 ISO 9660 file system unpacked as `tools/gogx.py` does it, into
 `game.part` first and renamed when complete. `-gog FILE` names the image
 instead.

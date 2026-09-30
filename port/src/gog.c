@@ -12,9 +12,13 @@
 
 /* ---- finding game.gog */
 
+static int is_dreams(const char *image);
+
+/* `path` if it is an image of this game's CD: other GOG releases of DOS
+ * games ship a game.gog of the same format */
 static int take(const char *path, char *out, size_t n)
 {
-    if (!sys_is_file(path))
+    if (!sys_is_file(path) || !is_dreams(path))
         return 0;
     snprintf(out, n, "%s", path);
     return 1;
@@ -31,7 +35,8 @@ static int take_in(const char *dir, char *out, size_t n)
 #ifdef _WIN32
 /* GOG's installers keep a key per game under GOG.com\Games with the
  * folder in its value "path" (presumably so for this game too: not
- * checked on a Windows installation) */
+ * checked on a Windows installation); every game's is looked at, take()
+ * keeps only this one's */
 static int from_registry(const char *key, char *out, size_t n)
 {
     HKEY games, game;
@@ -281,6 +286,26 @@ static void remove_entry(void *ctx, const char *name, int is_dir)
         remove_tree(path);
     else
         remove(path);
+}
+
+/* 1 if `image` holds a CD file system with DREAMS1\PD.EXE in it */
+static int is_dreams(const char *image)
+{
+    Unpack u;
+    uint8_t pvd[DATA];
+    char err[128];
+
+    memset(&u, 0, sizeof u);
+    u.err = err;
+    u.n = sizeof err;
+    u.f = fopen(image, "rb");
+    if (!u.f)
+        return 0;
+    if (sector(&u, 16, pvd) || pvd[0] != 1 || memcmp(pvd + 1, "CD001", 5) != 0 ||
+        walk(&u, le32(pvd + 156 + 2), le32(pvd + 156 + 10), NULL, "", 0) != 0)
+        u.has_program = 0;
+    fclose(u.f);
+    return u.has_program;
 }
 
 int gog_unpack(const char *image, const char *dir,

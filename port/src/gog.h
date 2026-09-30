@@ -11,7 +11,8 @@
 
 /* The installed release's game.gog: where GOG's installers put it (on
  * Windows also where GOG's registry entries say a game is), beside the
- * program and in the current directory.  1 if found. */
+ * program and in the current directory; only an image with the game's
+ * DREAMS1\PD.EXE in it counts.  1 if found. */
 int gog_find(char *out, size_t n);
 
 /* The files of `image` unpacked into `dir`, which must not exist: into
