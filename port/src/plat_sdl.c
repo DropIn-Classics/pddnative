@@ -247,6 +247,13 @@ int plat_has_window(void)
     return 1;
 }
 
+/* the keys held with Enter to switch full screen (platform.h) */
+#ifdef __APPLE__
+#define FULLSCREEN_MODS (KMOD_ALT | KMOD_GUI)
+#else
+#define FULLSCREEN_MODS KMOD_ALT
+#endif
+
 /* full screen as asked for: on macOS the window's flags say so only when
  * the animation to or from full screen has ended, most of a second later */
 static int fullscreen;
@@ -383,7 +390,7 @@ int plat_pump(void)
         case SDL_KEYUP: {
             SDL_Scancode sc = e.key.keysym.scancode;
             int up = e.type == SDL_KEYUP, code;
-            if (!up && sc == SDL_SCANCODE_RETURN && (e.key.keysym.mod & KMOD_ALT)) {
+            if (!up && sc == SDL_SCANCODE_RETURN && (e.key.keysym.mod & FULLSCREEN_MODS)) {
                 if (!e.key.repeat)
                     toggle_fullscreen();
                 break;

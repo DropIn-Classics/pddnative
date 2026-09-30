@@ -23,7 +23,13 @@ int plat_pump(void);
 /* 0 for the headless stand-in (plat_null.c), which shows nothing */
 int plat_has_window(void);
 
-/* the whole monitor (1) or a window (0); Alt+Enter switches as well */
+/* the whole monitor (1) or a window (0); FULLSCREEN_KEYS switch as well
+ * (Alt+Enter; on macOS Cmd+Enter too, as Macs have it) */
+#ifdef __APPLE__
+#define FULLSCREEN_KEYS "Cmd+Enter"
+#else
+#define FULLSCREEN_KEYS "Alt+Enter"
+#endif
 void plat_set_fullscreen(int on);
 int plat_fullscreen(void);
 

@@ -340,7 +340,7 @@ static const Item sound_items[] = {
     { K_CHOICE, I_OOMPH, "Oomph", "120 Hz, with shaping on." },
     { K_CHOICE, I_HEADPHONE, "Headphone mode", "Wider music." },
     { K_GAP, 0, NULL, NULL },
-    { K_CHOICE, I_FULLSCREEN, "Full screen", "Alt+Enter in the game too." },
+    { K_CHOICE, I_FULLSCREEN, "Full screen", FULLSCREEN_KEYS " in the game too." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_BACK, "Back", NULL },
 };
