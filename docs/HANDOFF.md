@@ -19,6 +19,15 @@ DDPCMAIN run in tools/run, a table run from it included.
   does not run tools/check.py, which needs the game unpacked. v1.0 was
   released with it on 2026-09-29 (tag `v1.0`, 39ed828); the packages
   not tried on Windows, Linux or a Steam Deck yet.
+- macOS package (2026-09-30): v1.0's (`pdd` with SDL2.framework beside
+  it) did not start for the user after a download with Chrome. Every
+  unpacked file carried `com.apple.quarantine`, and SDL's release
+  framework is signed ad hoc only (`codesign -dv`: `Signature=adhoc`, no
+  team), so Gatekeeper blocks it on its own after `pdd` was allowed. On
+  macOS 15 the right click "Open" no longer passes Gatekeeper; "Open
+  Anyway" in Privacy & Security does, for one program. Hence now one
+  `pddnative.app` with SDL2 linked in statically (port/README.md, "The
+  packages").
 - Also builds and runs on macOS (2026-09-28): `port/build.sh` and
   `tools/run/build.sh` (cc), the window on SDL2 (`port/src/plat_sdl.c`,
   SDL2.framework in ~/Library/Frameworks), `python3` with capstone. On the

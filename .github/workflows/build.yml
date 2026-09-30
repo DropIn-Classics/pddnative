@@ -1,6 +1,7 @@
 # Builds the port (port/) for Windows, Linux and macOS and packs each with
 # port/dist/README.txt and the licences of micromod (and of SDL2, which
-# the Linux and macOS packages carry).  A push of a tag v* also
+# the Linux package carries beside the program and the macOS app has
+# linked in).  A push of a tag v* also
 # makes a GitHub release with the three packages.  Nothing here needs the
 # game's data: the tools' checks (tools/check.py) run on a clone with the
 # game unpacked, not here.
@@ -97,30 +98,42 @@ jobs:
     runs-on: macos-latest
     env:
       SDL2_VERSION: 2.32.10
+      # the oldest macOS SDL2 and the program are built for (arm64: 11)
+      MACOSX_DEPLOYMENT_TARGET: '10.13'
     steps:
       - uses: actions/checkout@v4
-      - name: Get SDL2.framework
-        # SDL's own release (x86_64 and arm64, signed); build.sh finds it
-        # in ~/Library/Frameworks, pdd finds it beside itself
+      - name: Build SDL2
+        # SDL's release built as a static library for x86_64 and arm64 and
+        # linked into pdd: the app has nothing beside the program that
+        # Gatekeeper would block on its own
         run: |
-          curl -fsSL -o SDL2.dmg https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VERSION/SDL2-$SDL2_VERSION.dmg
-          hdiutil attach -nobrowse -mountpoint sdl2dmg SDL2.dmg
-          mkdir -p ~/Library/Frameworks
-          cp -R sdl2dmg/SDL2.framework ~/Library/Frameworks/
-          cp sdl2dmg/License.txt LICENCE-SDL2.txt
-          hdiutil detach sdl2dmg
+          curl -fsSL https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VERSION/SDL2-$SDL2_VERSION.tar.gz | tar xz
+          cmake -S SDL2-$SDL2_VERSION -B sdl2build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_INSTALL_PREFIX="$PWD/sdl2" \
+            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST=OFF
+          cmake --build sdl2build -j4
+          cmake --install sdl2build
+          echo "$PWD/sdl2/bin" >> "$GITHUB_PATH"
       - name: Build
-        run: CC="cc -arch x86_64 -arch arm64" sh port/build.sh
+        run: CC="cc -arch x86_64 -arch arm64" SDL2_STATIC=1 sh port/build.sh
       - name: Pack
         run: |
           test -x port/build/pdd
           d=pddnative-macos
           mkdir $d
-          cp port/build/pdd port/dist/README.txt $d/
+          sh port/dist/macapp.sh $d
+          cp port/dist/README.txt $d/
           cp port/third_party/micromod/LICENCE.txt $d/LICENCE-micromod.txt
-          cp -R ~/Library/Frameworks/SDL2.framework $d/
-          cp LICENCE-SDL2.txt $d/
+          cp SDL2-$SDL2_VERSION/LICENSE.txt $d/LICENCE-SDL2.txt
           ditto -c -k --keepParent $d $d.zip
+      - name: Show what the package needs
+        # only the system's libraries and frameworks, both architectures
+        run: |
+          p=pddnative-macos/pddnative.app/Contents/MacOS/pdd
+          lipo -info $p
+          otool -L $p
+          if otool -L $p | grep -qi sdl; then exit 1; fi
+          codesign --verify --deep --strict -v pddnative-macos/pddnative.app
       - uses: actions/upload-artifact@v4
         with:
           name: pddnative-macos

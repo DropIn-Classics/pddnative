@@ -288,8 +288,9 @@ vswhere finds) and builds `build\pdd.exe` (a window) and
 On macOS and Linux `port/build.sh` builds `build/pdd` and
 `build/pdd-headless` with `cc`; the window is SDL2 (`src/plat_sdl.c`):
 SDL2.framework in `~/Library/Frameworks` or `/Library/Frameworks` on a
-Mac, else what `sdl2-config` or `pkg-config sdl2` give. Without SDL2 it
-builds the headless program only. `-game` is the
+Mac, else what `sdl2-config` or `pkg-config sdl2` give; with
+`SDL2_STATIC=1` `sdl2-config`'s static library, linked into `pdd`.
+Without SDL2 it builds the headless program only. `-game` is the
 unpacked CD (`python tools/gogx.py`), `-prog 1` PD.EXE's tables, `-prog 2`
 PD2.EXE's, `-table` 0-3. `-menu` starts the game's menu instead (without
 the setup screen and the animations; Esc in the menu ends the program).
@@ -309,13 +310,22 @@ present, and `libSDL2-2.0.so.0` put beside `pdd`, whose search path is
 only `$ORIGIN`: nothing to install, also on the Steam Deck's read-only
 system; the job prints the libraries and the newest glibc version the
 package needs and checks with `ldd` that the SDL2 beside it is taken)
-and macOS (x86_64 and arm64 in one program, with SDL's own
-SDL2.framework, which the package has beside `pdd`: `build.sh` adds
-`@executable_path` to its search path). Each package holds `pdd`,
+and macOS (x86_64 and arm64 in one program, for macOS 10.13 and newer;
+SDL2 built from SDL's release source as a static library and linked in,
+`SDL2_STATIC=1`; `dist/macapp.sh` puts `pdd` into `pddnative.app` with
+`dist/Info.plist` and signs the bundle ad hoc; the job checks that the
+program links no SDL2 and that the bundle's signature holds). The app
+keeps its settings and the game's files in `~/Library/Application
+Support/Pinball Dreams` (`sys_data_dir`), and `gog_find` looks for
+`game.gog` there too, as nothing can be put beside a program inside a
+bundle. Each package holds the program (`pdd`, on a Mac the app),
 `dist/README.txt` (for the player) and the licences of micromod and
 SDL2; they are the run's artifacts, and a pushed tag `v*` makes a
-release of them. The macOS packing and the framework beside the program
-tried on a Mac. The first release, v1.0 (2026-09-29), built on all
+release of them. The macOS app tried on a Mac (15.7, arm64) as built
+here, `build.sh` and `macapp.sh` with SDL2 2.32.10 built the same way:
+started with `open`, its window came up and its settings went to
+Application Support; the x86_64 half, the workflow's job, a quarantined
+download and "Open Anyway" not tried. The first release, v1.0 (2026-09-29), built on all
 three (the user's word; the run's log not read here); none of the
 packages started on Windows, Linux or a Steam Deck yet.
 

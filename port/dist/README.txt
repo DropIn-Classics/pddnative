@@ -10,15 +10,16 @@ program runs; without it nothing can be played.
 Starting
 --------
 
-Start pdd (pdd.exe on Windows). The first time it looks for the GOG
-release's game.gog: next to the program, where GOG installed it on
-Windows (found through the registry, or \GOG Games\Pinball Dreams Deluxe
-on any drive), the GOG app in /Applications or ~/Applications on a Mac,
-a few usual Wine folders elsewhere. It offers to copy the game's files
-from it into a folder "game" beside the program (or, where that cannot
-be written, ~/Library/Application Support/Pinball Dreams on a Mac,
-~/.local/share/pinball-dreams on Linux). If it is not found, copy
-game.gog next to pdd, or name it:
+Start pdd (pdd.exe on Windows, pddnative.app on a Mac). The first time
+it looks for the GOG release's game.gog: next to the program, where GOG
+installed it on Windows (found through the registry, or \GOG Games\Pinball
+Dreams Deluxe on any drive), the GOG app in /Applications or
+~/Applications on a Mac, a few usual Wine folders elsewhere. It offers to
+copy the game's files from it into a folder "game" beside the program
+(or, where that cannot be written, ~/Library/Application Support/Pinball
+Dreams on a Mac, ~/.local/share/pinball-dreams on Linux). If it is not
+found, copy game.gog next to pdd (on a Mac into ~/Library/Application
+Support/Pinball Dreams), or name it:
 
     pdd -gog /path/to/game.gog
 
@@ -27,11 +28,15 @@ options.
 
 Windows: pdd.exe needs nothing else.
 
-macOS: keep SDL2.framework next to pdd. The program is not signed: the
-first time, open it with a right click and "Open", or remove the
-quarantine with
+macOS (10.13 or newer, Intel and Apple silicon): pddnative.app needs
+nothing else; move it to Applications if you like. It is not signed by
+Apple, so the first start is refused ("cannot be verified"): close that
+message, open System Settings > Privacy & Security, click "Open Anyway"
+at the bottom and confirm. After that it starts with a double click. On
+macOS 14 and older a right click on the app, "Open" and "Open" again
+does the same. Or, in the Terminal, in the folder of the app:
 
-    xattr -dr com.apple.quarantine pddnative-macos
+    xattr -cr pddnative.app
 
 Linux and the Steam Deck: keep libSDL2-2.0.so.0 next to pdd (the package
 brings SDL2 along; nothing needs to be installed). On the Deck the game

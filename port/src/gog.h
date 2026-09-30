@@ -11,7 +11,8 @@
 
 /* The installed release's game.gog: where GOG's installers put it (on
  * Windows also where GOG's registry entry for the game says it is),
- * beside the program and in the current directory; only an image with
+ * beside the program, in the current directory and in the folder the
+ * settings are kept in (sys_data_dir); only an image with
  * the game's DREAMS1\PD.EXE in it counts.  1 if found. */
 int gog_find(char *out, size_t n);
 

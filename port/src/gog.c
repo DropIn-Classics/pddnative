@@ -57,6 +57,10 @@ int gog_find(char *out, size_t n)
     sys_exe_dir(dir, sizeof dir);
     if (take_in(dir, out, n) || take("game.gog", out, n))
         return 1;
+    /* where the Mac app keeps its files: its own folder is in the bundle */
+    sys_data_dir(dir, sizeof dir);
+    if (take_in(dir, out, n))
+        return 1;
 #ifdef _WIN32
     {
         char drive;

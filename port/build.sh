@@ -3,9 +3,10 @@
 # and scripted runs) with cc (clang or gcc), on macOS and Linux; build.bat
 # is the same for Windows.  SDL2 is looked for as SDL2.framework in
 # ~/Library/Frameworks or /Library/Frameworks on a Mac, else through
-# sdl2-config or pkg-config; without it only pdd-headless is built.  On a
-# Mac pdd also looks for SDL2.framework in its own directory, as the
-# packages the CI makes have it; on Linux it looks for libSDL2 there first.
+# sdl2-config or pkg-config; without it only pdd-headless is built.  With
+# SDL2_STATIC=1 SDL2 is linked into pdd from sdl2-config's static library
+# (the macOS package; nothing to carry beside it).  On Linux pdd looks for
+# libSDL2 in its own directory first, as the package has it there.
 set -e
 cd "$(dirname "$0")"
 CC=${CC:-cc}
@@ -23,9 +24,12 @@ mkdir -p build
 $CC $CFLAGS -o build/pdd-headless $ENGINE $CORE src/plat_null.c -lm
 
 sdl=
+if [ -n "$SDL2_STATIC" ]; then
+    sdl="$(sdl2-config --cflags --static-libs)"
+fi
 for fw in "$HOME/Library/Frameworks" /Library/Frameworks; do
-    if [ "$(uname)" = Darwin ] && [ -d "$fw/SDL2.framework" ]; then
-        sdl="-I$fw/SDL2.framework/Headers -F$fw -framework SDL2 -Wl,-rpath,$fw -Wl,-rpath,@executable_path"
+    if [ -z "$sdl" ] && [ "$(uname)" = Darwin ] && [ -d "$fw/SDL2.framework" ]; then
+        sdl="-I$fw/SDL2.framework/Headers -F$fw -framework SDL2 -Wl,-rpath,$fw"
         break
     fi
 done
@@ -34,7 +38,7 @@ if [ -z "$sdl" ] && command -v sdl2-config >/dev/null 2>&1; then
 elif [ -z "$sdl" ] && pkg-config --exists sdl2 2>/dev/null; then
     sdl="$(pkg-config --cflags --libs sdl2)"
 fi
-if [ -n "$sdl" ] && [ "$(uname)" != Darwin ]; then
+if [ -n "$sdl" ] && [ -z "$SDL2_STATIC" ] && [ "$(uname)" != Darwin ]; then
     sdl="$sdl -Wl,-rpath,\$ORIGIN"
 fi
 if [ -z "$sdl" ]; then
