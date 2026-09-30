@@ -290,15 +290,15 @@ typedef struct {
 } Item;
 
 static const Item main_items[] = {
-    { K_ITEM, I_PLAY, "Play a table", "One of the eight tables; Esc in the table comes back here." },
-    { K_ITEM, I_MENU, "Play from the menu", "The game's own menu, F1-F8 there; Esc in the menu comes back here." },
+    { K_ITEM, I_PLAY, "Play a table", NULL },
+    { K_ITEM, I_MENU, "Play from the menu", "The game's own menu." },
     { K_GAP, 0, NULL, NULL },
-    { K_ITEM, I_OPTIONS, "Game options", "Balls, music, colours, angle, screen, keys: the menu's F10 options." },
-    { K_ITEM, I_SOUND, "Sound and window", "The volume, the sound's shaping, full screen." },
-    { K_ITEM, I_PAD, "Controller", "What a game controller's buttons do in a table." },
-    { K_ITEM, I_QOL, "Quality of life fixes", "Each on its own: no animation, a quicker next ball and bonus, a box in the menu." },
+    { K_ITEM, I_OPTIONS, "Game options", "The menu's F10 options." },
+    { K_ITEM, I_SOUND, "Sound and window", NULL },
+    { K_ITEM, I_PAD, "Controller", NULL },
+    { K_ITEM, I_QOL, "Quality of life fixes", NULL },
     { K_GAP, 0, NULL, NULL },
-    { K_ITEM, I_QUIT, "Quit", "Back to the system." },
+    { K_ITEM, I_QUIT, "Quit", NULL },
 };
 
 static const char *const table_names[8] = {
@@ -317,63 +317,63 @@ static const Item table_items[] = {
 };
 
 static const Item option_items[] = {
-    { K_CHOICE, I_BALLS, "Balls a game", "How many balls a game has." },
-    { K_CHOICE, I_MUSIC, "Music", "The table's tunes and jingles, or its main tune only." },
-    { K_CHOICE, I_COLOURS, "Colours", "The table in colour or in grey." },
-    { K_CHOICE, I_ANGLE, "Table angle", "How steep the table is: the gravity is 9, 11 or 13." },
-    { K_CHOICE, I_SCREEN, "Screen", "320x200, or 350 lines, where the table scrolls less." },
+    { K_CHOICE, I_BALLS, "Balls a game", NULL },
+    { K_CHOICE, I_MUSIC, "Music", NULL },
+    { K_CHOICE, I_COLOURS, "Colours", NULL },
+    { K_CHOICE, I_ANGLE, "Table angle", "Gravity 9, 11 or 13." },
+    { K_CHOICE, I_SCREEN, "Screen", "350 lines: less scrolling." },
     { K_GAP, 0, NULL, NULL },
-    { K_CHOICE, I_KEY + 0, "Left flipper", "Enter, then the key for the left flipper." },
-    { K_CHOICE, I_KEY + 1, "Right flipper", "Enter, then the key for the right flipper." },
-    { K_CHOICE, I_KEY + 2, "Nudge", "Enter, then the key that nudges the table (too often: tilt)." },
-    { K_CHOICE, I_KEY + 3, "Plunger", "Enter, then the key that pulls the plunger; let go to launch." },
+    { K_CHOICE, I_KEY + 0, "Left flipper", "Enter to set." },
+    { K_CHOICE, I_KEY + 1, "Right flipper", "Enter to set." },
+    { K_CHOICE, I_KEY + 2, "Nudge", "Enter to set." },
+    { K_CHOICE, I_KEY + 3, "Plunger", "Enter to set." },
     { K_GAP, 0, NULL, NULL },
-    { K_ITEM, I_DEFAULTS, "Defaults", "All of these as the game has them without an options file." },
+    { K_ITEM, I_DEFAULTS, "Defaults", "The game's own defaults." },
     { K_ITEM, I_BACK, "Back", NULL },
 };
 
 static const Item sound_items[] = {
-    { K_CHOICE, I_VOLUME, "Volume", "In the game: + and - (keypad or main keys), * mutes." },
-    { K_CHOICE, I_SHAPING, "Sound shaping", "Off: the sound as the game made it (/ in the game)." },
-    { K_CHOICE, I_BASS, "Bass", "A shelf at 200 Hz, when the shaping is on." },
-    { K_CHOICE, I_TREBLE, "Treble", "A shelf at 4 kHz, when the shaping is on." },
-    { K_CHOICE, I_OOMPH, "Oomph", "More of the low bass (120 Hz), when the shaping is on." },
-    { K_CHOICE, I_HEADPHONE, "Headphone mode", "The mono music a little wider, for headphones." },
+    { K_CHOICE, I_VOLUME, "Volume", "In the game: + and -, * mutes." },
+    { K_CHOICE, I_SHAPING, "Sound shaping", "Off: the original sound. / in the game." },
+    { K_CHOICE, I_BASS, "Bass", "200 Hz, with shaping on." },
+    { K_CHOICE, I_TREBLE, "Treble", "4 kHz, with shaping on." },
+    { K_CHOICE, I_OOMPH, "Oomph", "120 Hz, with shaping on." },
+    { K_CHOICE, I_HEADPHONE, "Headphone mode", "Wider music." },
     { K_GAP, 0, NULL, NULL },
-    { K_CHOICE, I_FULLSCREEN, "Full screen", "The whole monitor or a window; Alt+Enter too." },
+    { K_CHOICE, I_FULLSCREEN, "Full screen", "Alt+Enter in the game too." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_BACK, "Back", NULL },
 };
 
 static const Item qol_items[] = {
-    { K_CHOICE, I_SKIP_ANIMATION, "Skip animation", "On: none before a table; off: the table's, as the menu plays it." },
-    { K_CHOICE, I_QUICK_BALL, "Quick next ball", "On: before a ball only until the jingle ends; \"ball lost\" shorter." },
-    { K_CHOICE, I_QUICK_BONUS, "Quick bonus", "On: the bonus counted twice as fast, shorter holds around it." },
-    { K_CHOICE, I_MENU_BOX, "Menu box", "On: box for keys and controller, pointer for the mouse; off: pointer only." },
+    { K_CHOICE, I_SKIP_ANIMATION, "Skip animation", "No animation before a table." },
+    { K_CHOICE, I_QUICK_BALL, "Quick next ball", "Shorter waits between balls." },
+    { K_CHOICE, I_QUICK_BONUS, "Quick bonus", "Bonus counted twice as fast." },
+    { K_CHOICE, I_MENU_BOX, "Menu box", "A selection box in the game's menu." },
     { K_GAP, 0, NULL, NULL },
     { K_ITEM, I_BACK, "Back", NULL },
 };
 
 /* the buttons in pad.h's order; a mark before the name while one is held */
-#define PAD_HELP "In a table. Here and in the menu: D-pad, A Enter, B Esc."
+#define PAD_HELP "In a table."
 static const Item pad_items[] = {
     { K_CHOICE, I_PAD_BUTTON + PAD_A, "A (bottom)", PAD_HELP },
     { K_CHOICE, I_PAD_BUTTON + PAD_B, "B (right)", PAD_HELP },
     { K_CHOICE, I_PAD_BUTTON + PAD_X, "X (left)", PAD_HELP },
     { K_CHOICE, I_PAD_BUTTON + PAD_Y, "Y (top)", PAD_HELP },
     { K_CHOICE, I_PAD_BUTTON + PAD_BACK, "Back", PAD_HELP },
-    { K_CHOICE, I_PAD_BUTTON + PAD_START, "Start", "In a table: F1 (a game for one player) and P (pause)." },
+    { K_CHOICE, I_PAD_BUTTON + PAD_START, "Start", PAD_HELP },
     { K_CHOICE, I_PAD_BUTTON + PAD_LSTICK, "Left stick press", PAD_HELP },
     { K_CHOICE, I_PAD_BUTTON + PAD_RSTICK, "Right stick press", PAD_HELP },
     { K_CHOICE, I_PAD_BUTTON + PAD_LB, "Left shoulder", PAD_HELP },
     { K_CHOICE, I_PAD_BUTTON + PAD_RB, "Right shoulder", PAD_HELP },
     { K_CHOICE, I_PAD_BUTTON + PAD_LT, "Left trigger", PAD_HELP },
     { K_CHOICE, I_PAD_BUTTON + PAD_RT, "Right trigger", PAD_HELP },
-    { K_CHOICE, I_PAD_BUTTON + PAD_UP, "D-pad up", "The left stick as well. " PAD_HELP },
-    { K_CHOICE, I_PAD_BUTTON + PAD_DOWN, "D-pad down", "The left stick as well. " PAD_HELP },
-    { K_CHOICE, I_PAD_BUTTON + PAD_LEFT, "D-pad left", "The left stick as well. " PAD_HELP },
-    { K_CHOICE, I_PAD_BUTTON + PAD_RIGHT, "D-pad right", "The left stick as well. " PAD_HELP },
-    { K_ITEM, I_PAD_DEFAULTS, "Defaults", "The buttons as pdd starts with them. Esc: back." },
+    { K_CHOICE, I_PAD_BUTTON + PAD_UP, "D-pad up", "In a table. Left stick too." },
+    { K_CHOICE, I_PAD_BUTTON + PAD_DOWN, "D-pad down", "In a table. Left stick too." },
+    { K_CHOICE, I_PAD_BUTTON + PAD_LEFT, "D-pad left", "In a table. Left stick too." },
+    { K_CHOICE, I_PAD_BUTTON + PAD_RIGHT, "D-pad right", "In a table. Left stick too." },
+    { K_ITEM, I_PAD_DEFAULTS, "Defaults", NULL },
 };
 
 typedef struct {
@@ -773,7 +773,7 @@ static void backdrop(void)
     tm_text(TM_COLS - 10, 0, "pddnative", A_BAR);
 }
 
-static void draw(const char *game)
+static void draw(void)
 {
     static const char *const help_page[] = {
         "\x18\x19", "Select", "\x1B\x1A", "Change", "Enter", "Choose", "Esc", "Back", NULL
@@ -789,7 +789,6 @@ static void draw(const char *game)
     const Page *p = &pages[page];
     const Item *it = &p->items[p->cursor];
     char line[TM_COLS + 1];
-    int n;
 
     backdrop();
     draw_page();
@@ -797,19 +796,9 @@ static void draw(const char *game)
     if (note[0] && plat_micros() < note_until) {
         tm_fill(0, 22, TM_COLS, 1, ' ', A_NOTE);
         centred(0, TM_COLS, 22, note, A_NOTE);
-    } else if (it->help || (it->id >= I_TABLE && it->id <= I_TABLE_LAST)) {
-        if (it->help)
-            snprintf(line, sizeof line, "%s", it->help);
-        else
-            snprintf(line, sizeof line, "%s, from %s. Esc in the table comes back here.",
-                     table_names[it->id - I_TABLE],
-                     it->id - I_TABLE < 4 ? "Pinball Dreams" : "Pinball Dreams 2");
-        centred(0, TM_COLS, 22, line, TM_ATTR(TM_LIGHTCYAN, TM_BLUE));
+    } else if (it->help) {
+        centred(0, TM_COLS, 22, it->help, TM_ATTR(TM_LIGHTCYAN, TM_BLUE));
     }
-    /* the game's folder, the start of a long path left out */
-    n = (int)strlen(game);
-    snprintf(line, sizeof line, "Your Pinball Dreams: %s%s", n > 52 ? "..." : "", game + (n > 52 ? n - 52 : 0));
-    centred(0, TM_COLS, 23, line, A_LABEL);
 
     if (box[0]) {
         draw_box(box, "Enter: go on");
@@ -835,7 +824,7 @@ void launcher_show_options(void)
     go(P_OPTIONS);
 }
 
-int launcher_run(const char *game, int *prog, int *table, const char *note_text)
+int launcher_run(int *prog, int *table, const char *note_text)
 {
     static uint8_t pixels[TM_WIDTH * TM_HEIGHT];
     static uint32_t palette[256];
@@ -883,7 +872,7 @@ int launcher_run(const char *game, int *prog, int *table, const char *note_text)
                     r = key_press(held, prog, table);
             repeat_at += REPEAT_EVERY;
         }
-        draw(game);
+        draw();
         tm_render(pixels, palette);
         plat_present(pixels, TM_WIDTH, TM_HEIGHT, palette);
         plat_sleep_ms(15);

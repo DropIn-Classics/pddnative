@@ -35,9 +35,9 @@ void launcher_save_settings(void);
 /* The setup screen until a table or the menu is chosen: 1 with *prog (1
  * PD.EXE, 2 PD2.EXE) and *table (0-3), or *prog 0 for the menu (menu.h);
  * 0 to quit (or the window was closed).
- * `game` is the game's folder (shown); `note`, if not NULL, is shown
- * first in a box (why the last table ended). */
-int launcher_run(const char *game, int *prog, int *table, const char *note);
+ * `note`, if not NULL, is shown first in a box (why the last table
+ * ended). */
+int launcher_run(int *prog, int *table, const char *note);
 
 /* the next launcher_run starts on the game options (the menu's F10
  * leads there); Back goes to the first page */

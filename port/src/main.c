@@ -144,7 +144,7 @@ static int with_launcher(void)
     int prog, table, r;
 
     with_setup = 1;
-    while (launcher_run(game_dir, &prog, &table, err)) {
+    while (launcher_run(&prog, &table, err)) {
         err[0] = 0;
         if (prog == 0) {
             pad_set_context(PAD_MENU);
