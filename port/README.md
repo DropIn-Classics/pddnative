@@ -374,7 +374,11 @@ start a table from the first two pages.
   Kept in `pdd.cfg` in the data folder (`name = value` lines), with the
   last table started; what the sound keys and Alt+Enter change in the
   game is written there when the table ends. `-fx` is kept like a setting
-  made on the screen.
+  made on the screen. On macOS the switch to full screen is an animation
+  of most of a second, and the window's flags change only at its end;
+  `plat_sdl.c` keeps the state asked for and lets the keys down go up
+  when it switches (a release lost in the animation made the key repeat
+  and switch back). Checked by running it on a Mac.
 - Quality of life fixes, a page of four, each on its own and on by
   default (`skipanimation`, `quickball`, `quickbonus`, `menubox` in
   `pdd.cfg`); off,

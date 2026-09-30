@@ -247,15 +247,30 @@ int plat_has_window(void)
     return 1;
 }
 
-int plat_fullscreen(void)
+/* full screen as asked for: on macOS the window's flags say so only when
+ * the animation to or from full screen has ended, most of a second later */
+static int fullscreen;
+
+static int window_fullscreen(void)
 {
     return (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP;
 }
 
+int plat_fullscreen(void)
+{
+    return fullscreen;
+}
+
 void plat_set_fullscreen(int on)
 {
-    if (!on != !plat_fullscreen())
-        SDL_SetWindowFullscreen(window, on ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+    on = on != 0;
+    if (on == fullscreen)
+        return;
+    fullscreen = on;
+    /* the keys down go up now: the key that switched could lose its
+     * release in the animation and repeat, switching back */
+    release_all();
+    SDL_SetWindowFullscreen(window, on ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
 static void toggle_fullscreen(void)
@@ -277,6 +292,7 @@ int plat_init(const char *title)
         fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError());
         return 0;
     }
+    fullscreen = window_fullscreen();
     /* no vsync: frame.c paces the pictures by the driver's tick */
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer)
@@ -326,6 +342,9 @@ int plat_pump(void)
         case SDL_WINDOWEVENT:
             if (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
                 release_all();
+            /* switched by the window's own button or the system's keys too */
+            if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+                fullscreen = window_fullscreen();
             break;
         case SDL_CONTROLLERDEVICEADDED:        /* also those there at the start */
             pad_added(e.cdevice.which);
